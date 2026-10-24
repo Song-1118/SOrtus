@@ -378,6 +378,8 @@ public static class BlurPanel
                 host.Children.Add(grid);
                 if (original is not null)
                 {
+                    // 先断开原逻辑父级，否则 Add 会抛「已是另一个元素的逻辑子元素」
+                    decorator.Child = null;
                     host.Children.Add(original);
                 }
 
@@ -392,6 +394,7 @@ public static class BlurPanel
                 host.Children.Add(grid);
                 if (original is not null)
                 {
+                    cc.Content = null;
                     host.Children.Add(original);
                 }
 

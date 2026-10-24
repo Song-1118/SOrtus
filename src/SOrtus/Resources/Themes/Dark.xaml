@@ -1,4 +1,4 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!--
@@ -6,29 +6,29 @@
         设计约束：纯中性深色底、无渐变、无蓝紫；主色为近白，靠灰阶与细边框表达层次。
     -->
 
-    <Color x:Key="ColorBackgroundA">#17191C</Color>
-    <Color x:Key="ColorBackgroundB">#0F1113</Color>
+    <Color x:Key="ColorBackgroundA">#131519</Color>
+    <Color x:Key="ColorBackgroundB">#0B0D10</Color>
     <Color x:Key="ColorAccentA">#F3F4F6</Color>
     <Color x:Key="ColorAccentB">#9CA3AF</Color>
     <Color x:Key="ColorAccentC">#6B7280</Color>
 
     <Color x:Key="ColorTextPrimary">#F3F4F6</Color>
-    <Color x:Key="ColorTextSecondary">#9CA3AF</Color>
+    <Color x:Key="ColorTextSecondary">#A9B0BA</Color>
     <Color x:Key="ColorTextOnAccent">#111827</Color>
-    <Color x:Key="ColorBorder">#2A2D31</Color>
-    <Color x:Key="ColorSurface">#1A1C1F</Color>
+    <Color x:Key="ColorBorder">#363B42</Color>
+    <Color x:Key="ColorSurface">#23262B</Color>
     <Color x:Key="ColorPrimary">#F3F4F6</Color>
     <Color x:Key="ColorShadow">#000000</Color>
 
     <!-- 模糊覆盖层颜色：深色为深灰覆盖（配合 OverlayOpacity 控制磨砂通透度） -->
-    <Color x:Key="BlurOverlayColor">#FF1A1C1F</Color>
+    <Color x:Key="BlurOverlayColor">#FF22252A</Color>
 
     <!-- 标签色板（SOrTag Tone）：中性深底亮字 -->
-    <Color x:Key="ColorTagAccentABg">#24262A</Color>
+    <Color x:Key="ColorTagAccentABg">#2B3036</Color>
     <Color x:Key="ColorTagAccentAFg">#E5E7EB</Color>
-    <Color x:Key="ColorTagAccentBBg">#24262A</Color>
+    <Color x:Key="ColorTagAccentBBg">#2B3036</Color>
     <Color x:Key="ColorTagAccentBFg">#D1D5DB</Color>
-    <Color x:Key="ColorTagAccentCBg">#24262A</Color>
+    <Color x:Key="ColorTagAccentCBg">#2B3036</Color>
     <Color x:Key="ColorTagAccentCFg">#9CA3AF</Color>
     <Color x:Key="ColorTagSuccessBg">#123024</Color>
     <Color x:Key="ColorTagSuccessFg">#75E0A7</Color>
@@ -36,7 +36,7 @@
     <Color x:Key="ColorTagWarningFg">#FEC84B</Color>
     <Color x:Key="ColorTagDangerBg">#33191B</Color>
     <Color x:Key="ColorTagDangerFg">#FDA29B</Color>
-    <Color x:Key="ColorTagNeutralBg">#24262A</Color>
+    <Color x:Key="ColorTagNeutralBg">#2B3036</Color>
     <Color x:Key="ColorTagNeutralFg">#9CA3AF</Color>
 
     <!-- 交互层：悬浮 / 按压覆盖（白色，深色主题） -->
@@ -44,17 +44,17 @@
     <Color x:Key="ColorPressOverlay">#24FFFFFF</Color>
 
     <!-- 导航 / 列表选中高亮 -->
-    <Color x:Key="ColorNavActive">#24262A</Color>
+    <Color x:Key="ColorNavActive">#2B3036</Color>
 
     <!-- 滚动条滑块 -->
     <Color x:Key="ColorScrollThumb">#3A3D42</Color>
     <Color x:Key="ColorScrollThumbHover">#4B4F55</Color>
 
     <!-- 背景装饰（仅中性灰阶）：深色主题用比底色略亮的中性灰，避免出现刺眼白斑 -->
-    <Color x:Key="ColorBackdropGlow">#FF232A32</Color>
-    <Color x:Key="ColorBackdropTint">#FF2E353D</Color>
+    <Color x:Key="ColorBackdropGlow">#FF1B1F24</Color>
+    <Color x:Key="ColorBackdropTint">#FF21262C</Color>
 
     <!-- 滑块底轨（比分隔线亮一档，避免左右两段因对比差显得粗细不一） -->
-    <Color x:Key="ColorSliderTrack">#454A52</Color>
+    <Color x:Key="ColorSliderTrack">#4A515A</Color>
 
 </ResourceDictionary>

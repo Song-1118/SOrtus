@@ -29,10 +29,15 @@ internal static class Database
     public static string CurrentDbPath => DbPath;
 
     /// <summary>SQLite 连接字符串（不存在则创建）。</summary>
+    /// <remarks>
+    /// 统一开启外键约束：<c>ProjectDocument</c> 的 <c>ON DELETE CASCADE</c> 依赖它，
+    /// SQLite 默认为关闭，必须逐连接显式打开。
+    /// </remarks>
     public static string ConnectionString => new SqliteConnectionStringBuilder
     {
         DataSource = DbPath,
         Mode = SqliteOpenMode.ReadWriteCreate,
+        ForeignKeys = true,
     }.ToString();
 
     /// <summary>确保数据库所在目录存在，并把历史文件名的旧库改名到新文件名（不丢数据）。</summary>

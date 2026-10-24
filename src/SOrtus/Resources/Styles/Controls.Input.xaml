@@ -1,4 +1,4 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:local="clr-namespace:SOrtus.Controls"
                     xmlns:conv="clr-namespace:SOrtus.Converters">
@@ -642,8 +642,8 @@
                         <!-- 底轨：整条 6px、两端圆头。颜色刻意比填充色浅一档（不是更浅），
                              否则深色填充在视觉上更「重」，会让人误以为两边比中间细。 -->
                         <Border Background="{DynamicResource SliderTrackBrush}"
-                                Height="6"
-                                CornerRadius="3"
+                                Height="8"
+                                CornerRadius="{DynamicResource CornerRadiusBar}"
                                 VerticalAlignment="Center" />
                         <Track x:Name="PART_Track" VerticalAlignment="Center">
                             <Track.DecreaseRepeatButton>
@@ -652,7 +652,7 @@
                                         <ControlTemplate TargetType="RepeatButton">
                                             <!-- 已填充段：与底轨同高同圆角，左端圆头、右端直角，与拖块无缝衔接 -->
                                             <Border Background="{DynamicResource PrimaryBrush}"
-                                                    Height="6"
+                                                    Height="8"
                                                     CornerRadius="3,0,0,3"
                                                     VerticalAlignment="Center" />
                                         </ControlTemplate>

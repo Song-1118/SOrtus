@@ -25,6 +25,7 @@ public class Project : INotifyPropertyChanged
     private string _goals = string.Empty;
     private string _acceptanceCriteria = string.Empty;
     private double _progressPercent;
+    private string _version = string.Empty;
 
     /// <summary>主键</summary>
     public int Id
@@ -143,6 +144,13 @@ public class Project : INotifyPropertyChanged
     {
         get => _progressPercent;
         set => SetField(ref _progressPercent, Math.Clamp(value, 0, 100));
+    }
+
+    /// <summary>项目版本号（编程详情页 V2 展示与维护，可自由填写如 1.2.0）</summary>
+    public string Version
+    {
+        get => _version;
+        set => SetField(ref _version, value ?? string.Empty);
     }
 
     /// <summary>技术栈解析为列表（便于 UI 多选展示）。</summary>

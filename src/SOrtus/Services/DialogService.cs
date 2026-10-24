@@ -45,6 +45,24 @@ internal sealed class DialogService : IDialogService
     public Task InfoAsync(string title, string message) =>
         ShowAsync(new ViewModels.ConfirmDialogViewModel(title, message, isConfirm: false, _localization));
 
+    public Task ShowAsync(ViewModels.IOverlayDialogViewModel viewModel)
+    {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        void OnClosed()
+        {
+            viewModel.Closed -= OnClosed;
+            SetActiveDialog(null);
+            tcs.TrySetResult();
+        }
+
+        viewModel.Closed += OnClosed;
+        SetActiveDialog(viewModel);
+        return tcs.Task;
+    }
+
     private Task<bool> ShowAsync(ViewModels.ConfirmDialogViewModel vm)
     {
         var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);

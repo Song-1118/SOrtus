@@ -1,4 +1,4 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:local="clr-namespace:SOrtus.Controls">
     <ResourceDictionary.MergedDictionaries>
@@ -14,11 +14,13 @@
     -->
 
     <!-- 覆盖层遮罩：压暗整个窗口，突出对话框 -->
-    <SolidColorBrush x:Key="ScrimBrush" Color="#66000000" />
+    <SolidColorBrush x:Key="ScrimBrush" Color="#99000000" />
 
     <!-- 浮层 / 弹窗样式：在磨砂卡片基础上使用更强模糊 -->
     <Style x:Key="BlurDialogStyle" TargetType="Border" BasedOn="{StaticResource BlurCardStyle}">
         <Setter Property="local:BlurPanel.BlurRadius" Value="{DynamicResource BlurRadiusStrong}" />
+        <!-- 弹窗需要「压住」背后的页面：覆盖层更实，避免正文透出来糊在文字上 -->
+        <Setter Property="local:BlurPanel.OverlayOpacity" Value="0.9" />
         <Setter Property="CornerRadius" Value="{DynamicResource CornerRadiusLarge}" />
     </Style>
 

@@ -58,14 +58,27 @@ public partial class App : Application
         // 服务装配（跨层通信优先接口 + 依赖注入，规范 6.3）
         IProjectRepository repository = new ProjectRepository();
         IProjectService projectService = new ProjectService(repository);
+        IProjectDocumentRepository documentRepository = new ProjectDocumentRepository();
         IThemeService themeService = new ThemeService();
         themeService.Initialize();
         ILocalizationService localizationService = new LocalizationService();
         localizationService.Initialize();
         INavigationService navigation = new NavigationService();
         IDialogService dialogService = new DialogService(localizationService);
+        IDocumentImportService importService = new DocumentImportService();
+        IGitService gitService = new GitService();
+        IFilePickerService filePicker = new FilePickerService(localizationService);
 
-        var mainViewModel = new MainViewModel(projectService, themeService, localizationService, navigation, dialogService);
+        var mainViewModel = new MainViewModel(
+            projectService,
+            themeService,
+            localizationService,
+            navigation,
+            dialogService,
+            documentRepository,
+            importService,
+            gitService,
+            filePicker);
         mainViewModel.Initialize();
 
         var window = new MainWindow { DataContext = mainViewModel };
@@ -87,8 +100,18 @@ public partial class App : Application
 
         var projectService = new SmokeProjectService();
         var navigation = new NavigationService();
-        var dialogService = new SmokeDialogService();
-        var mainViewModel = new MainViewModel(projectService, themeService, localization, navigation, dialogService);
+        // 截图需要真实覆盖层承载：这里用真实 DialogService（只渲染，不弹系统窗口）
+        var dialogService = new DialogService(localization);
+        var mainViewModel = new MainViewModel(
+            projectService,
+            themeService,
+            localization,
+            navigation,
+            dialogService,
+            new SmokeDocumentRepository(),
+            new DocumentImportService(),
+            new SmokeGitService(),
+            new SmokeFilePickerService());
         mainViewModel.Initialize();
 
         var window = new MainWindow
@@ -146,11 +169,35 @@ public partial class App : Application
         };
         mainViewModel.ShowDetail(sample);
         await SettleAsync(window);
-        SaveWindow(window, System.IO.Path.Combine(targetDir, "04-detail.png"));
+        SaveWindow(window, System.IO.Path.Combine(targetDir, "04-detail-basic.png"));
+
+        if (navigation.Current is ProjectDetailViewModel detail)
+        {
+            detail.SelectSectionCommand.Execute(ProjectDetailViewModel.SectionDev);
+            await SettleAsync(window);
+            SaveWindow(window, System.IO.Path.Combine(targetDir, "05-detail-dev.png"));
+
+            detail.SelectSectionCommand.Execute(ProjectDetailViewModel.SectionGit);
+            await SettleAsync(window);
+            SaveWindow(window, System.IO.Path.Combine(targetDir, "06-detail-git.png"));
+
+            detail.SelectSectionCommand.Execute(ProjectDetailViewModel.SectionDev);
+            await SettleAsync(window);
+
+            var document = detail.PrdDocument ?? detail.OtherDocuments.FirstOrDefault();
+            if (document is not null)
+            {
+                detail.OpenDocumentCommand.Execute(document);
+                await SettleAsync(window);
+                SaveWindow(window, System.IO.Path.Combine(targetDir, "07-document-dialog.png"));
+                mainViewModel.CloseDialogCommand.Execute(null);
+                await SettleAsync(window);
+            }
+        }
 
         await mainViewModel.ShowSettingsAsync();
         await SettleAsync(window);
-        SaveWindow(window, System.IO.Path.Combine(targetDir, "05-settings.png"));
+        SaveWindow(window, System.IO.Path.Combine(targetDir, "08-settings.png"));
 
         window.Close();
     }
@@ -248,15 +295,32 @@ public partial class App : Application
         var dialogService = new SmokeDialogService();
         var navigation = new NavigationService();
         var sampleProject = new Project { Name = "Smoke", Type = ProjectType.Programming, Status = ProjectStatus.Planning };
+        var documentRepository = new SmokeDocumentRepository();
 
         var viewModels = new object[]
         {
             new ProjectListViewModel(projectService, localization, _ => { }, () => { }),
             new ProjectWizardViewModel(projectService, localization, () => { }),
-            new ProjectDetailViewModel(projectService, localization, dialogService, sampleProject, () => { }),
+            new ProjectDetailViewModel(
+                projectService,
+                localization,
+                dialogService,
+                documentRepository,
+                new DocumentImportService(),
+                new SmokeGitService(),
+                new SmokeFilePickerService(),
+                sampleProject,
+                () => { }),
             new SettingsViewModel(themeService, localization),
             new ConfirmDialogViewModel("标题", "正文", true, localization),
             new UnsavedChangesDialogViewModel("标题", "正文", localization),
+            new DocumentDialogViewModel(
+                documentRepository.SeedDocument,
+                documentRepository,
+                new MarkdownRenderer(),
+                localization),
+            new GitViewModel(new SmokeGitService(), localization, dialogService, sampleProject),
+            new AddRemoteDialogViewModel(new SmokeGitService(), ".", "origin", "https://example.com/repo.git", localization),
         };
 
         foreach (var vm in viewModels)
@@ -339,4 +403,187 @@ internal sealed class SmokeDialogService : IDialogService
     }
 
     public Task InfoAsync(string title, string message) => Task.CompletedTask;
+
+    public Task ShowAsync(IOverlayDialogViewModel viewModel)
+    {
+        ActiveDialogChanged?.Invoke(viewModel);
+        viewModel.RequestClose();
+        ActiveDialogChanged?.Invoke(null);
+        return Task.CompletedTask;
+    }
 }
+
+/// <summary>冒烟桩：内存文档仓储（不访问数据库），为冒烟与截图提供可渲染的示例文档。</summary>
+internal sealed class SmokeDocumentRepository : IProjectDocumentRepository
+{
+    private readonly List<ProjectDocument> _documents = new();
+
+    public SmokeDocumentRepository()
+    {
+        var now = DateTime.Now;
+        _documents.Add(new ProjectDocument
+        {
+            Id = 1,
+            ProjectId = 1,
+            Category = DocumentCategory.Prd,
+            Title = "SOrtus 产品需求文档",
+            SourceFileName = "SOrtus_产品需求文档.md",
+            Format = "md",
+            SortOrder = 0,
+            CreatedAt = now.AddDays(-12),
+            UpdatedAt = now.AddDays(-1),
+            Content = SamplePrd,
+        });
+
+        _documents.Add(new ProjectDocument
+        {
+            Id = 2,
+            ProjectId = 1,
+            Category = DocumentCategory.IterationPlan,
+            Title = "SOrtus 版本迭代规划",
+            SourceFileName = "SOrtus_版本迭代规划.md",
+            Format = "md",
+            SortOrder = 0,
+            CreatedAt = now.AddDays(-11),
+            UpdatedAt = now.AddDays(-2),
+            Content = "# 版本迭代规划\n\n## 0.1.0 MVP\n\n- [x] 工程骨架与分层\n- [x] 编程立项闭环\n\n## 0.2.0 详情页 V2\n\n- [ ] 三分版块\n- [ ] 文档导入与渲染\n- [ ] Git 时间线与推送\n",
+        });
+
+        _documents.Add(new ProjectDocument
+        {
+            Id = 3,
+            ProjectId = 1,
+            Category = DocumentCategory.Other,
+            Title = "MVP 验收记录",
+            SourceFileName = "MVP验收记录.md",
+            Format = "md",
+            SortOrder = 1,
+            CreatedAt = now.AddDays(-3),
+            UpdatedAt = now.AddDays(-3),
+            Content = "# 验收结论\n\n构建零错误，数据重启不丢失。\n\n- [x] A4 数据库初始化\n- [x] A12 未保存拦截\n",
+        });
+    }
+
+    public ProjectDocument SeedDocument => _documents[0];
+
+    public Task<IReadOnlyList<ProjectDocument>> GetByProjectAsync(int projectId) =>
+        Task.FromResult<IReadOnlyList<ProjectDocument>>(
+            _documents.Where(d => d.ProjectId == projectId).ToList());
+
+    public Task<ProjectDocument?> GetSlotAsync(int projectId, DocumentCategory category) =>
+        Task.FromResult(_documents.FirstOrDefault(d =>
+            d.ProjectId == projectId && d.Category == category && category != DocumentCategory.Other));
+
+    public Task<int> UpsertAsync(ProjectDocument document)
+    {
+        if (document.Id == 0)
+        {
+            document.Id = _documents.Count == 0 ? 1 : _documents.Max(d => d.Id) + 1;
+            _documents.Add(document);
+        }
+
+        return Task.FromResult(document.Id);
+    }
+
+    public Task<bool> UpdateContentAsync(int documentId, string content)
+    {
+        var target = _documents.FirstOrDefault(d => d.Id == documentId);
+        if (target is null)
+        {
+            return Task.FromResult(false);
+        }
+
+        target.Content = content;
+        target.UpdatedAt = DateTime.UtcNow;
+        return Task.FromResult(true);
+    }
+
+    public Task<bool> DeleteAsync(int documentId) =>
+        Task.FromResult(_documents.RemoveAll(d => d.Id == documentId) > 0);
+
+    public Task<int> GetNextSortOrderAsync(int projectId) =>
+        Task.FromResult(_documents.Where(d => d.ProjectId == projectId).Select(d => d.SortOrder).DefaultIfEmpty(0).Max() + 1);
+
+    private const string SamplePrd = """
+        # SOrtus 产品需求文档
+
+        > 本地优先的立项管理工具，打通编程立项全流程。
+
+        ## 目标
+
+        用一个小工具管理您的立项，做到**立项即沉淀**。
+
+        ## 需求池
+
+        | 编号 | 需求 | 优先级 |
+        | --- | --- | --- |
+        | F0-03 | 详情页字段编辑 | P0 |
+        | F0-07 | 开发进度管理 | P1 |
+
+        ## 待办
+
+        - [x] 立项向导
+        - [x] 详情页基础字段
+        - [ ] 文档导入与渲染
+        - [ ] Git 时间线
+
+        ## 技术约定
+
+        ````csharp
+        var project = new Project { Name = "SOrtus" };
+        ````
+
+        ---
+
+        详见开发文档。
+        """;
+}
+
+/// <summary>冒烟桩：返回固定快照的 Git 服务（不调用命令行）。</summary>
+internal sealed class SmokeGitService : IGitService
+{
+    private static readonly DateTimeOffset Now = DateTimeOffset.Now;
+
+    public Task<GitRepositoryInfo> InspectAsync(string folderPath, int commitCount = 30)
+    {
+        var branches = new List<GitBranchInfo>
+        {
+            new("master", true, false, "32fe807", "build: 版本号提升至 0.1.1", Now.AddHours(-3), 2, 0),
+            new("feature/detail-v2", false, false, "a1b2c3d", "feat: 详情页三分版块", Now.AddHours(-1), 0, 0),
+            new("origin/master", false, true, "32fe807", "build: 版本号提升至 0.1.1", Now.AddHours(-4), 0, 0),
+        };
+
+        var commits = new List<GitCommitInfo>
+        {
+            new("a1b2c3d4e5f6", "a1b2c3d", "Song-1118", Now.AddHours(-1), "feat: 详情页三分版块与文档导入", ["feature/detail-v2"]),
+            new("32fe807a1b2c", "32fe807", "Song-1118", Now.AddHours(-3), "build: 版本号提升至 0.1.1", ["master", "origin/master"]),
+            new("deaa6539c8d7", "deaa653", "Song-1118", Now.AddHours(-5), "fix: 处置阶段验收遗留问题", []),
+            new("df5fef5b6a41", "df5fef5", "Song-1118", Now.AddHours(-8), "feat(ui): 交互与视觉第二轮修复", []),
+        };
+
+        return Task.FromResult(new GitRepositoryInfo(
+            true,
+            folderPath,
+            "master",
+            true,
+            true,
+            2,
+            0,
+            branches,
+            commits,
+            [new GitRemoteInfo("origin", "https://example.com/sortus.git")]));
+    }
+
+    public Task<GitOperationResult> AddOrSetRemoteAsync(string folderPath, string name, string url) =>
+        Task.FromResult(GitOperationResult.Ok());
+
+    public Task<GitOperationResult> PushAsync(string folderPath, string branch, string remote, bool setUpstream) =>
+        Task.FromResult(GitOperationResult.Ok());
+}
+
+/// <summary>冒烟桩：不弹出文件选择框（返回取消）。</summary>
+internal sealed class SmokeFilePickerService : IFilePickerService
+{
+    public string? PickDocument() => null;
+}
+

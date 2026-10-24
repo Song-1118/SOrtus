@@ -24,6 +24,10 @@
     <CornerRadius x:Key="CornerRadiusLarge">18</CornerRadius>
     <CornerRadius x:Key="CornerRadiusPill">999</CornerRadius>
 
+    <!-- 线性控件圆角：刻意小于高度的一半，视觉上才是「圆角矩形」而不是「胶囊 / 椭圆」 -->
+    <CornerRadius x:Key="CornerRadiusBar">3</CornerRadius>
+    <CornerRadius x:Key="CornerRadiusThumb">2</CornerRadius>
+
     <!-- 间距（Thickness：用于 Padding / Margin；WPF 不接受 Double） -->
     <Thickness x:Key="SpacingXs">4</Thickness>
     <Thickness x:Key="SpacingSm">8</Thickness>

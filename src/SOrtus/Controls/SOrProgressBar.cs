@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
@@ -24,11 +24,11 @@ public sealed class SOrProgressBar : RangeBase
             nameof(TrackBrush), typeof(Brush), typeof(SOrProgressBar),
             new PropertyMetadata(null, OnTrackBrushChanged));
 
-    /// <summary>圆角半径（缺省 Pill）。</summary>
+    /// <summary>圆角半径（缺省 3：圆角矩形，避免细条被渲染成胶囊）。</summary>
     public static readonly DependencyProperty CornerRadiusProperty =
         DependencyProperty.Register(
             nameof(CornerRadius), typeof(CornerRadius), typeof(SOrProgressBar),
-            new PropertyMetadata(new CornerRadius(999)));
+            new PropertyMetadata(new CornerRadius(3)));
 
     private FrameworkElement? _root;
     private Border? _fill;

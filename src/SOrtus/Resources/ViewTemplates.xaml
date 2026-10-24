@@ -1,4 +1,4 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                       xmlns:local="clr-namespace:SOrtus.Controls"
                       xmlns:vm="clr-namespace:SOrtus.ViewModels"
@@ -409,126 +409,637 @@
         </local:SOrCard>
     </DataTemplate>
 
-    <!-- ============================ 立项详情 ============================ -->
+    <!-- ============================ 立项详情（V2：基础信息 / 开发管理 / GIT 管理） ============================ -->
     <DataTemplate DataType="{x:Type vm:ProjectDetailViewModel}">
         <local:SOrCard VerticalAlignment="Stretch">
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Disabled">
-                <StackPanel MaxWidth="760" Margin="4">
-                    <!-- 头部：返回 + 标题 + 未保存徽标 -->
-                    <Grid Margin="0,0,0,16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <local:SOrButton Grid.Column="0" Variant="Ghost" Icon="{DynamicResource IconBack}"
-                                        Command="{Binding BackCommand}" Padding="12,9" />
-                        <TextBlock Grid.Column="1" Text="{Binding Project.Name}" FontSize="22" FontWeight="Bold"
-                                   VerticalAlignment="Center" Margin="10,0,0,0" TextTrimming="CharacterEllipsis" />
-                        <local:SOrTag Grid.Column="2" Tone="Warning" Content="{DynamicResource Detail_UnsavedBadge}"
-                                     Visibility="{Binding IsDirty, Converter={StaticResource BoolToVisibilityConverter}}"
-                                     VerticalAlignment="Center" />
-                    </Grid>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-                    <!-- 类型胶囊 + 状态胶囊（只读徽标）与状态编辑下拉 -->
-                    <Grid Margin="0,0,0,16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                            <local:SOrTag Margin="0,0,8,0"
-                                          Tone="{Binding Project.Type, Converter={StaticResource ProjectTypeToToneConverter}}">
-                                <TextBlock Text="{Binding Project.Type, Converter={StaticResource ProjectTypeDisplayConverter}}" FontSize="12" />
-                            </local:SOrTag>
-                            <local:SOrTag Tone="{Binding Status, Converter={StaticResource ProjectStatusToToneConverter}}">
-                                <TextBlock Text="{Binding Status, Converter={StaticResource ProjectStatusDisplayConverter}}" FontSize="12" />
-                            </local:SOrTag>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="{DynamicResource Detail_Status}" FontWeight="SemiBold"
-                                       VerticalAlignment="Center" Margin="0,0,8,0" />
-                            <local:SOrComboBox ItemsSource="{Binding StatusOptions}"
-                                              SelectedItem="{Binding Status}"
-                                              ItemTemplate="{StaticResource StatusItemTemplate}"
-                                              MinWidth="140" />
-                        </StackPanel>
-                    </Grid>
+                <!-- 头部：返回 + 标题 + 未保存徽标 -->
+                <Grid Grid.Row="0" Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <local:SOrButton Grid.Column="0" Variant="Ghost" Icon="{DynamicResource IconBack}"
+                                     Command="{Binding BackCommand}" Padding="12,9" />
+                    <TextBlock Grid.Column="1" Text="{Binding Project.Name}" FontSize="22" FontWeight="Bold"
+                               VerticalAlignment="Center" Margin="10,0,0,0" TextTrimming="CharacterEllipsis" />
+                    <local:SOrTag Grid.Column="2" Tone="Warning" Content="{DynamicResource Detail_UnsavedBadge}"
+                                  Visibility="{Binding IsDirty, Converter={StaticResource BoolToVisibilityConverter}}"
+                                  VerticalAlignment="Center" />
+                </Grid>
 
-                    <TextBlock Text="{DynamicResource Wizard_Name}" FontWeight="SemiBold" />
-                    <local:SOrTextBox Text="{Binding Project.Name, UpdateSourceTrigger=PropertyChanged}"
-                                     Margin="0,6,0,14" />
-
-                    <TextBlock Text="{DynamicResource Wizard_Summary}" FontWeight="SemiBold" />
-                    <local:SOrTextBox Text="{Binding Project.Summary, UpdateSourceTrigger=PropertyChanged}" Height="70"
-                                     AcceptsReturn="True" TextWrapping="Wrap" Margin="0,6,0,14" />
-
-                    <Grid Margin="0,0,0,14">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                            <TextBlock Text="{DynamicResource Wizard_SubType}" FontWeight="SemiBold" />
-                            <local:SOrTextBox Text="{Binding Project.SubType, UpdateSourceTrigger=PropertyChanged}"
-                                             Margin="0,6,0,0" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                            <TextBlock Text="{DynamicResource Wizard_Folder}" FontWeight="SemiBold" />
-                            <local:SOrTextBox Text="{Binding Project.FolderPath, UpdateSourceTrigger=PropertyChanged}"
-                                             Margin="0,6,0,0" />
-                        </StackPanel>
-                    </Grid>
-
-                    <TextBlock Text="{DynamicResource Wizard_TechStack}" FontWeight="SemiBold" />
-                    <local:SOrTextBox Text="{Binding TechStackText, UpdateSourceTrigger=PropertyChanged}"
-                                     Margin="0,6,0,14" />
-
-                    <TextBlock Text="{DynamicResource Detail_DevPlan}" FontWeight="SemiBold" />
-                    <local:SOrTextBox Text="{Binding Project.DevPlan, UpdateSourceTrigger=PropertyChanged}" Height="70"
-                                     AcceptsReturn="True" TextWrapping="Wrap" Margin="0,6,0,14" />
-
-                    <TextBlock Text="{DynamicResource Detail_Constraints}" FontWeight="SemiBold" />
-                    <local:SOrTextBox Text="{Binding Project.Constraints, UpdateSourceTrigger=PropertyChanged}" Height="60"
-                                     AcceptsReturn="True" TextWrapping="Wrap" Margin="0,6,0,14" />
-
-                    <TextBlock Text="{DynamicResource Detail_Goals}" FontWeight="SemiBold" />
-                    <local:SOrTextBox Text="{Binding Project.Goals, UpdateSourceTrigger=PropertyChanged}" Height="60"
-                                     AcceptsReturn="True" TextWrapping="Wrap" Margin="0,6,0,14" />
-
-                    <TextBlock Text="{DynamicResource Detail_Acceptance}" FontWeight="SemiBold" />
-                    <local:SOrTextBox Text="{Binding Project.AcceptanceCriteria, UpdateSourceTrigger=PropertyChanged}" Height="60"
-                                     AcceptsReturn="True" TextWrapping="Wrap" Margin="0,6,0,14" />
-
-                    <TextBlock Text="{DynamicResource Detail_Progress}" FontWeight="SemiBold" />
-                    <Grid Margin="0,6,0,14">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <local:SOrSlider Grid.Column="0" Minimum="0" Maximum="100"
-                                         Value="{Binding Project.ProgressPercent}" VerticalAlignment="Center" />
-                        <TextBlock Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold"
-                                   Text="{Binding Project.ProgressPercent, StringFormat={}{0:0}%}" />
-                    </Grid>
-
-                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                        <local:SOrButton Content="{DynamicResource Detail_Save}" Variant="Primary"
-                                        Command="{Binding SaveCommand}" Padding="22,10" />
-                        <local:SOrButton Content="{DynamicResource Detail_Delete}" Variant="Danger"
-                                        Command="{Binding DeleteCommand}" Margin="12,0,0,0" Padding="22,10" />
+                <!-- 版块切换（仅编程类型）：复用导航按钮的选中态，不引入 TabControl 新控件面 -->
+                <Border Grid.Row="1"
+                        Visibility="{Binding IsProgramming, Converter={StaticResource BoolToVisibilityConverter}}"
+                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Padding="0,0,0,10">
+                    <StackPanel Orientation="Horizontal">
+                        <local:SOrButton Content="{DynamicResource Detail_SectionBasic}" Variant="Nav"
+                                         Command="{Binding SelectSectionCommand}" CommandParameter="Basic"
+                                         IsActive="{Binding ActiveSection, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Basic}"
+                                         Padding="16,8" Margin="0,0,6,0" />
+                        <local:SOrButton Content="{DynamicResource Detail_SectionDev}" Variant="Nav"
+                                         Command="{Binding SelectSectionCommand}" CommandParameter="Dev"
+                                         IsActive="{Binding ActiveSection, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Dev}"
+                                         Padding="16,8" Margin="0,0,6,0" />
+                        <local:SOrButton Content="{DynamicResource Detail_SectionGit}" Variant="Nav"
+                                         Command="{Binding SelectSectionCommand}" CommandParameter="Git"
+                                         IsActive="{Binding ActiveSection, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Git}"
+                                         Padding="16,8" />
                     </StackPanel>
+                </Border>
 
-                    <!-- 时间戳页脚（创建 / 更新，本地时区） -->
-                    <TextBlock Margin="0,14,0,0" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}">
+                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <Grid Margin="0,14,4,0">
+
+                        <!-- ===== 基础信息 ===== -->
+                        <StackPanel MaxWidth="760"
+                                    Visibility="{Binding ShowBasicSection, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="{DynamicResource Wizard_Name}" FontWeight="SemiBold" />
+                            <local:SOrTextBox Text="{Binding Project.Name, UpdateSourceTrigger=PropertyChanged}"
+                                              Margin="0,6,0,14" />
+
+                            <TextBlock Text="{DynamicResource Wizard_Summary}" FontWeight="SemiBold" />
+                            <local:SOrTextBox Text="{Binding Project.Summary, UpdateSourceTrigger=PropertyChanged}" Height="70"
+                                              AcceptsReturn="True" TextWrapping="Wrap" Margin="0,6,0,14" />
+
+                            <TextBlock Text="{DynamicResource Wizard_TechStack}" FontWeight="SemiBold" />
+                            <ItemsControl ItemsSource="{Binding TechStackChips}" Margin="0,8,0,4">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{DynamicResource TagAccentABgBrush}"
+                                                CornerRadius="{DynamicResource CornerRadiusSmall}"
+                                                Padding="10,4" Margin="0,0,8,8">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding}" FontSize="12" VerticalAlignment="Center"
+                                                           Foreground="{DynamicResource TagAccentAFgBrush}" />
+                                                <local:SOrButton Variant="Ghost" Content="×" FontSize="13" Padding="6,0"
+                                                                 Margin="6,-2,0,0" ToolTip="{DynamicResource Detail_TechRemove}"
+                                                                 Command="{Binding DataContext.RemoveTechStackCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                 CommandParameter="{Binding}" />
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <local:SOrTextBox Grid.Column="0"
+                                                  Text="{Binding NewTechStack, UpdateSourceTrigger=PropertyChanged}"
+                                                  Placeholder="{DynamicResource Detail_TechAddPlaceholder}"
+                                                  SubmitCommand="{Binding AddTechStackCommand}" />
+                                <local:SOrButton Grid.Column="1" Content="{DynamicResource Detail_TechAdd}"
+                                                 Variant="Secondary" Command="{Binding AddTechStackCommand}"
+                                                 Margin="8,0,0,0" Padding="16,0" />
+                            </Grid>
+
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                    <TextBlock Text="{DynamicResource Detail_Version}" FontWeight="SemiBold" />
+                                    <local:SOrTextBox Text="{Binding Version, UpdateSourceTrigger=PropertyChanged}"
+                                                      Placeholder="{DynamicResource Detail_VersionPlaceholder}"
+                                                      Margin="0,6,0,0" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                    <TextBlock Text="{DynamicResource Detail_Status}" FontWeight="SemiBold"
+                                               VerticalAlignment="Center" Margin="0,0,8,4" />
+                                    <local:SOrComboBox ItemsSource="{Binding StatusOptions}"
+                                                       SelectedItem="{Binding Status}"
+                                                       ItemTemplate="{StaticResource StatusItemTemplate}"
+                                                       MinWidth="140" VerticalAlignment="Bottom" Margin="0,0,10,4" />
+                                    <local:SOrTag Margin="0,0,0,10"
+                                                  Tone="{Binding Project.Type, Converter={StaticResource ProjectTypeToToneConverter}}">
+                                        <TextBlock Text="{Binding Project.Type, Converter={StaticResource ProjectTypeDisplayConverter}}" FontSize="12" />
+                                    </local:SOrTag>
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                    <TextBlock Text="{DynamicResource Wizard_SubType}" FontWeight="SemiBold" />
+                                    <local:SOrTextBox Text="{Binding Project.SubType, UpdateSourceTrigger=PropertyChanged}"
+                                                      Margin="0,6,0,0" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                    <TextBlock Text="{DynamicResource Wizard_Folder}" FontWeight="SemiBold" />
+                                    <local:SOrTextBox Text="{Binding Project.FolderPath, UpdateSourceTrigger=PropertyChanged}"
+                                                      Margin="0,6,0,0" />
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Text="{DynamicResource Detail_Progress}" FontWeight="SemiBold" />
+                            <Grid Margin="0,6,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <local:SOrSlider Grid.Column="0" Minimum="0" Maximum="100"
+                                                 Value="{Binding Project.ProgressPercent}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold"
+                                           Text="{Binding Project.ProgressPercent, StringFormat={}{0:0}%}" />
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- ===== 开发管理 ===== -->
+                        <StackPanel MaxWidth="760"
+                                    Visibility="{Binding ShowDevSection, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="{DynamicResource Detail_DevPlan}" FontWeight="SemiBold" />
+                            <local:SOrTextBox Text="{Binding Project.DevPlan, UpdateSourceTrigger=PropertyChanged}" Height="80"
+                                              AcceptsReturn="True" TextWrapping="Wrap" Margin="0,6,0,14" />
+
+                            <TextBlock Text="{DynamicResource Detail_Constraints}" FontWeight="SemiBold" />
+                            <local:SOrTextBox Text="{Binding Project.Constraints, UpdateSourceTrigger=PropertyChanged}" Height="56"
+                                              AcceptsReturn="True" TextWrapping="Wrap" Margin="0,6,0,14" />
+
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                    <TextBlock Text="{DynamicResource Detail_Goals}" FontWeight="SemiBold" />
+                                    <local:SOrTextBox Text="{Binding Project.Goals, UpdateSourceTrigger=PropertyChanged}" Height="56"
+                                                      AcceptsReturn="True" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                    <TextBlock Text="{DynamicResource Detail_Acceptance}" FontWeight="SemiBold" />
+                                    <local:SOrTextBox Text="{Binding Project.AcceptanceCriteria, UpdateSourceTrigger=PropertyChanged}" Height="56"
+                                                      AcceptsReturn="True" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- 文档操作反馈 -->
+                            <Border Background="{DynamicResource TagDangerBgBrush}" CornerRadius="{DynamicResource CornerRadiusSmall}"
+                                    Padding="10,6" Margin="0,0,0,10"
+                                    Visibility="{Binding HasDocumentError, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="{Binding DocumentError}" FontSize="12" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TagDangerFgBrush}" />
+                            </Border>
+                            <Border Background="{DynamicResource TagSuccessBgBrush}" CornerRadius="{DynamicResource CornerRadiusSmall}"
+                                    Padding="10,6" Margin="0,0,0,10"
+                                    Visibility="{Binding HasDocumentStatus, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="{Binding DocumentStatus}" FontSize="12" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TagSuccessFgBrush}" />
+                            </Border>
+
+                            <TextBlock Text="{DynamicResource Doc_PrdTitle}" FontWeight="SemiBold" Margin="0,6,0,6" />
+                            <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1" CornerRadius="{DynamicResource CornerRadiusMedium}"
+                                    Padding="14" Margin="0,0,0,12">
+                                <Grid>
+                                    <StackPanel Visibility="{Binding HasPrd, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <local:SOrTag Tone="AccentA" Content="{Binding PrdDocument.FormatLabel}" Margin="0,0,8,0" />
+                                            <TextBlock Text="{Binding PrdDocument.Title}" FontWeight="SemiBold" FontSize="14"
+                                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding PrdMetaText}" FontSize="11" Margin="0,6,0,0"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                            <local:SOrButton Content="{DynamicResource Doc_Open}" Variant="Secondary"
+                                                             Command="{Binding OpenDocumentCommand}" CommandParameter="{Binding PrdDocument}" />
+                                            <local:SOrButton Content="{DynamicResource Doc_Replace}" Variant="Ghost"
+                                                             Command="{Binding ImportPrdCommand}" Margin="8,0,0,0" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel Visibility="{Binding IsPrdEmpty, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <TextBlock Text="{DynamicResource Doc_EmptyPrd}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{DynamicResource Doc_EmptyHint}" FontSize="11" Margin="0,4,0,0"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                                        <local:SOrButton Content="{DynamicResource Doc_Import}" Variant="Secondary" Margin="0,10,0,0"
+                                                         HorizontalAlignment="Left"
+                                                         Command="{Binding ImportPrdCommand}"
+                                                         IsEnabled="{Binding IsDocumentFeatureAvailable}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <TextBlock Text="{DynamicResource Doc_PlanTitle}" FontWeight="SemiBold" Margin="0,6,0,6" />
+                            <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1" CornerRadius="{DynamicResource CornerRadiusMedium}"
+                                    Padding="14" Margin="0,0,0,12">
+                                <Grid>
+                                    <StackPanel Visibility="{Binding HasPlan, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <local:SOrTag Tone="AccentB" Content="{Binding PlanDocument.FormatLabel}" Margin="0,0,8,0" />
+                                            <TextBlock Text="{Binding PlanDocument.Title}" FontWeight="SemiBold" FontSize="14"
+                                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding PlanMetaText}" FontSize="11" Margin="0,6,0,0"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                            <local:SOrButton Content="{DynamicResource Doc_Open}" Variant="Secondary"
+                                                             Command="{Binding OpenDocumentCommand}" CommandParameter="{Binding PlanDocument}" />
+                                            <local:SOrButton Content="{DynamicResource Doc_Replace}" Variant="Ghost"
+                                                             Command="{Binding ImportPlanCommand}" Margin="8,0,0,0" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel Visibility="{Binding IsPlanEmpty, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <TextBlock Text="{DynamicResource Doc_EmptyPlan}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{DynamicResource Doc_EmptyHint}" FontSize="11" Margin="0,4,0,0"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                                        <local:SOrButton Content="{DynamicResource Doc_Import}" Variant="Secondary" Margin="0,10,0,0"
+                                                         HorizontalAlignment="Left"
+                                                         Command="{Binding ImportPlanCommand}"
+                                                         IsEnabled="{Binding IsDocumentFeatureAvailable}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Grid Margin="0,6,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{DynamicResource Doc_OtherTitle}" FontWeight="SemiBold" />
+                                    <TextBlock Text="{DynamicResource Doc_OtherHint}" FontSize="11" Margin="0,3,0,0"
+                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                                </StackPanel>
+                                <local:SOrButton Grid.Column="1" Content="{DynamicResource Doc_Import}" Variant="Secondary"
+                                                 Command="{Binding ImportOtherCommand}" VerticalAlignment="Center"
+                                                 IsEnabled="{Binding IsDocumentFeatureAvailable}" />
+                            </Grid>
+
+                            <ItemsControl ItemsSource="{Binding OtherDocuments}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                                                BorderThickness="1" CornerRadius="{DynamicResource CornerRadiusMedium}"
+                                                Padding="12" Margin="0,8,0,0">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <local:SOrTag Tone="Neutral" Content="{Binding Format}" Margin="0,0,8,0" />
+                                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold"
+                                                                   TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding SourceFileName}" FontSize="11" Margin="0,4,0,0"
+                                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <local:SOrButton Content="{DynamicResource Doc_Open}" Variant="Secondary"
+                                                                     Command="{Binding DataContext.OpenDocumentCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                     CommandParameter="{Binding}" />
+                                                    <local:SOrButton Content="{DynamicResource Common_Delete}" Variant="Ghost"
+                                                                     Margin="6,0,0,0"
+                                                                     Command="{Binding DataContext.DeleteDocumentCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                     CommandParameter="{Binding}" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Text="{DynamicResource Doc_EmptyOther}" FontSize="12" Margin="0,10,0,0"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       Visibility="{Binding IsOtherDocumentsEmpty, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        </StackPanel>
+
+                        <!-- ===== GIT 管理 ===== -->
+                        <ContentControl MaxWidth="820"
+                                        Content="{Binding Git}"
+                                        Visibility="{Binding ShowGitSection, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                        <!-- ===== 剪辑 / 待办：沿用原有单栏布局 ===== -->
+                        <StackPanel MaxWidth="760"
+                                    Visibility="{Binding ShowLegacySection, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="{DynamicResource Wizard_Name}" FontWeight="SemiBold" />
+                            <local:SOrTextBox Text="{Binding Project.Name, UpdateSourceTrigger=PropertyChanged}"
+                                              Margin="0,6,0,14" />
+
+                            <TextBlock Text="{DynamicResource Wizard_Summary}" FontWeight="SemiBold" />
+                            <local:SOrTextBox Text="{Binding Project.Summary, UpdateSourceTrigger=PropertyChanged}" Height="70"
+                                              AcceptsReturn="True" TextWrapping="Wrap" Margin="0,6,0,14" />
+
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                    <TextBlock Text="{DynamicResource Wizard_SubType}" FontWeight="SemiBold" />
+                                    <local:SOrTextBox Text="{Binding Project.SubType, UpdateSourceTrigger=PropertyChanged}"
+                                                      Margin="0,6,0,0" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                    <TextBlock Text="{DynamicResource Wizard_Folder}" FontWeight="SemiBold" />
+                                    <local:SOrTextBox Text="{Binding Project.FolderPath, UpdateSourceTrigger=PropertyChanged}"
+                                                      Margin="0,6,0,0" />
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Text="{DynamicResource Wizard_TechStack}" FontWeight="SemiBold" />
+                            <local:SOrTextBox Text="{Binding TechStackText, UpdateSourceTrigger=PropertyChanged}"
+                                              Margin="0,6,0,14" />
+
+                            <TextBlock Text="{DynamicResource Detail_DevPlan}" FontWeight="SemiBold" />
+                            <local:SOrTextBox Text="{Binding Project.DevPlan, UpdateSourceTrigger=PropertyChanged}" Height="70"
+                                              AcceptsReturn="True" TextWrapping="Wrap" Margin="0,6,0,14" />
+
+                            <TextBlock Text="{DynamicResource Detail_Constraints}" FontWeight="SemiBold" />
+                            <local:SOrTextBox Text="{Binding Project.Constraints, UpdateSourceTrigger=PropertyChanged}" Height="60"
+                                              AcceptsReturn="True" TextWrapping="Wrap" Margin="0,6,0,14" />
+
+                            <TextBlock Text="{DynamicResource Detail_Goals}" FontWeight="SemiBold" />
+                            <local:SOrTextBox Text="{Binding Project.Goals, UpdateSourceTrigger=PropertyChanged}" Height="60"
+                                              AcceptsReturn="True" TextWrapping="Wrap" Margin="0,6,0,14" />
+
+                            <TextBlock Text="{DynamicResource Detail_Acceptance}" FontWeight="SemiBold" />
+                            <local:SOrTextBox Text="{Binding Project.AcceptanceCriteria, UpdateSourceTrigger=PropertyChanged}" Height="60"
+                                              AcceptsReturn="True" TextWrapping="Wrap" Margin="0,6,0,14" />
+
+                            <TextBlock Text="{DynamicResource Detail_Progress}" FontWeight="SemiBold" />
+                            <Grid Margin="0,6,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <local:SOrSlider Grid.Column="0" Minimum="0" Maximum="100"
+                                                 Value="{Binding Project.ProgressPercent}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold"
+                                           Text="{Binding Project.ProgressPercent, StringFormat={}{0:0}%}" />
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+
+                <!-- 页脚：保存 / 删除 + 时间戳（各版块共用，不随滚动丢失） -->
+                <Grid Grid.Row="3" Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <local:SOrButton Content="{DynamicResource Detail_Save}" Variant="Primary"
+                                         Command="{Binding SaveCommand}" Padding="22,10" />
+                        <local:SOrButton Content="{DynamicResource Detail_Delete}" Variant="Danger"
+                                         Command="{Binding DeleteCommand}" Margin="12,0,0,0" Padding="22,10" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" FontSize="11" VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextSecondaryBrush}">
                         <Run Text="{Binding CreatedText, Mode=OneWay}" />
                         <Run Text=" · " />
                         <Run Text="{Binding UpdatedText, Mode=OneWay}" />
                     </TextBlock>
-                </StackPanel>
-            </ScrollViewer>
+                </Grid>
+            </Grid>
         </local:SOrCard>
+    </DataTemplate>
+
+    <!-- ============================ GIT 管理版块 ============================ -->
+    <DataTemplate DataType="{x:Type vm:GitViewModel}">
+        <StackPanel>
+            <!-- 工具条：当前分支 / 领先落后 / 远端状态 + 操作 -->
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <local:SOrTag Tone="AccentB">
+                        <TextBlock Text="{Binding CurrentBranch}" FontSize="12" />
+                    </local:SOrTag>
+                    <local:SOrTag Tone="Warning" Margin="8,0,0,0"
+                                  Visibility="{Binding HasAhead, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding AheadText}" FontSize="12" />
+                    </local:SOrTag>
+                    <local:SOrTag Tone="Neutral" Margin="8,0,0,0"
+                                  Visibility="{Binding HasBehind, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding BehindText}" FontSize="12" />
+                    </local:SOrTag>
+                    <local:SOrTag Tone="Danger" Margin="8,0,0,0"
+                                  Visibility="{Binding NoRemote, Converter={StaticResource BoolToVisibilityConverter}}"
+                                  Content="{DynamicResource Git_NoRemote}" FontSize="12" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <local:SOrButton Content="{DynamicResource Git_Refresh}" Variant="Ghost"
+                                     Command="{Binding RefreshCommand}" Icon="{DynamicResource IconSearch}" />
+                    <local:SOrButton Content="{DynamicResource Git_AddRemote}" Variant="Secondary" Margin="8,0,0,0"
+                                     Command="{Binding AddRemoteCommand}" />
+                    <local:SOrButton Content="{DynamicResource Git_Push}" Variant="Primary" Margin="8,0,0,0"
+                                     Command="{Binding PushCommand}" />
+                </StackPanel>
+            </Grid>
+
+            <Border Background="{DynamicResource TagDangerBgBrush}" CornerRadius="{DynamicResource CornerRadiusSmall}"
+                    Padding="10,6" Margin="0,0,0,10"
+                    Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel>
+                    <TextBlock Text="{Binding ErrorMessage}" FontSize="12" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TagDangerFgBrush}" />
+                    <TextBlock Text="{Binding RawOutput}" FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Visibility="{Binding HasRawOutput, Converter={StaticResource BoolToVisibilityConverter}}" />
+                </StackPanel>
+            </Border>
+            <Border Background="{DynamicResource TagSuccessBgBrush}" CornerRadius="{DynamicResource CornerRadiusSmall}"
+                    Padding="10,6" Margin="0,0,0,10"
+                    Visibility="{Binding HasStatusMessage, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock Text="{Binding StatusMessage}" FontSize="12"
+                           Foreground="{DynamicResource TagSuccessFgBrush}" />
+            </Border>
+
+            <!-- 分支 -->
+            <TextBlock Text="{DynamicResource Git_Branches}" FontWeight="SemiBold" Margin="0,4,0,6" />
+            <ItemsControl ItemsSource="{Binding Branches}" Margin="0,0,0,14">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <local:SOrTag Tone="{Binding Tone}" Margin="0,0,8,8" ToolTip="{Binding TipSubject}">
+                            <TextBlock Text="{Binding Name}" FontSize="12" />
+                        </local:SOrTag>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- 时间线 -->
+            <TextBlock Text="{DynamicResource Git_Timeline}" FontWeight="SemiBold" Margin="0,4,0,8" />
+            <ScrollViewer MaxHeight="340" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Timeline}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="26" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid Grid.Column="0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <Border Grid.Row="0" Width="2" HorizontalAlignment="Center"
+                                            Background="{DynamicResource PrimaryBrush}" Opacity="0.45"
+                                            Visibility="{Binding ShowTopLine, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <Border Grid.Row="1" Width="2" HorizontalAlignment="Center"
+                                            Background="{DynamicResource PrimaryBrush}" Opacity="0.45"
+                                            Visibility="{Binding ShowBottomLine, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <Border Grid.RowSpan="2" Width="10" Height="10" CornerRadius="5"
+                                            VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,7,0,0"
+                                            Background="{DynamicResource SurfaceBrush}"
+                                            BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="1.5" />
+                                </Grid>
+                                <StackPanel Grid.Column="1" Margin="10,0,0,16">
+                                    <TextBlock Text="{Binding Subject}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                        <TextBlock Text="{Binding ShortSha}" FontFamily="Cascadia Mono, Consolas" FontSize="11"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                                        <TextBlock Text=" · " FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                        <TextBlock Text="{Binding Author}" FontSize="11"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                                        <TextBlock Text=" · " FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                        <TextBlock Text="{Binding WhenText}" FontSize="11"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding Refs}" Margin="0,6,0,0"
+                                                  Visibility="{Binding HasRefs, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <local:SOrTag Tone="AccentA" Margin="0,0,6,0" Padding="8,1">
+                                                    <TextBlock Text="{Binding}" FontSize="11" />
+                                                </local:SOrTag>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+            <TextBlock Text="{DynamicResource Git_EmptyRepo}" FontSize="12" Margin="0,8,0,0"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       Visibility="{Binding IsEmptyRepository, Converter={StaticResource BoolToVisibilityConverter}}" />
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- ============================ 文档预览弹窗 ============================ -->
+    <DataTemplate DataType="{x:Type vm:DocumentDialogViewModel}">
+        <Border Style="{StaticResource BlurDialogStyle}" Width="880" MaxHeight="660" Padding="0">
+            <Grid Margin="24,20,24,18">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- 标题栏：格式徽标 + 标题 + 来源文件 + 关闭 -->
+                <Grid Grid.Row="0" Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <local:SOrTag Grid.Column="0" Tone="AccentA" Content="{Binding FormatLabel}"
+                                  VerticalAlignment="Center" Margin="0,2,10,0" />
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Title}" FontSize="17" FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding SourceFileText}" FontSize="11" Margin="0,3,0,0"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <local:SOrButton Grid.Column="2" Variant="Ghost" Icon="{DynamicResource IconClose}"
+                                     IconSize="16" Command="{Binding CloseCommand}"
+                                     ToolTip="{DynamicResource Common_Close}" Padding="10,8"
+                                     VerticalAlignment="Top" />
+                </Grid>
+
+                <!-- 正文：FlowDocumentScrollViewer 负责连续滚动与文本选择 -->
+                <Border Grid.Row="1" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,1" Padding="0,14">
+                    <FlowDocumentScrollViewer Document="{Binding Document}"
+                                              VerticalScrollBarVisibility="Auto"
+                                              HorizontalScrollBarVisibility="Disabled"
+                                              IsToolBarVisible="False"
+                                              IsSelectionEnabled="True"
+                                              MaxHeight="430"
+                                              ScrollViewer.PanningMode="VerticalOnly"
+                                              ScrollViewer.IsDeferredScrollingEnabled="False" />
+                </Border>
+
+                <!-- 页脚：自动保存状态 + 错误提示 -->
+                <Grid Grid.Row="2" Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="{Binding SaveStateText}" FontSize="11"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                    <TextBlock Grid.Column="1" Text="{Binding ErrorMessage}" FontSize="11" TextWrapping="Wrap"
+                               HorizontalAlignment="Right" VerticalAlignment="Center" MaxWidth="480"
+                               Foreground="{DynamicResource TagDangerFgBrush}"
+                               Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}" />
+                </Grid>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
+    <!-- ============================ 配置远端弹窗 ============================ -->
+    <DataTemplate DataType="{x:Type vm:AddRemoteDialogViewModel}">
+        <Border Style="{StaticResource BlurDialogStyle}" Width="520" Padding="0">
+            <StackPanel Margin="24,20,24,20">
+                <TextBlock Text="{DynamicResource Git_AddRemoteTitle}" FontSize="16" FontWeight="Bold" Margin="0,0,0,6" />
+                <TextBlock Text="{DynamicResource Git_AddRemoteHint}" FontSize="12" TextWrapping="Wrap"
+                           Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,16" />
+
+                <TextBlock Text="{DynamicResource Git_RemoteName}" FontWeight="SemiBold" />
+                <local:SOrTextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,6,0,12" />
+
+                <TextBlock Text="{DynamicResource Git_RemoteUrl}" FontWeight="SemiBold" />
+                <local:SOrTextBox Text="{Binding Url, UpdateSourceTrigger=PropertyChanged}"
+                                  Placeholder="{DynamicResource Git_RemoteUrlPlaceholder}" Margin="0,6,0,8" />
+
+                <TextBlock Text="{Binding ErrorMessage}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,8"
+                           Foreground="{DynamicResource TagDangerFgBrush}"
+                           Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                    <local:SOrButton Content="{DynamicResource Common_Cancel}" Variant="Secondary"
+                                     Command="{Binding CloseCommand}" Padding="18,9" />
+                    <local:SOrButton Content="{DynamicResource Git_Confirm}" Variant="Primary"
+                                     Command="{Binding ConfirmCommand}" Margin="10,0,0,0" Padding="18,9" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
     </DataTemplate>
 
     <!-- ============================ 设置 ============================ -->
@@ -558,9 +1069,6 @@
                         <TextBlock Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center"
                                    Text="{Binding BlurSummary}" Foreground="{DynamicResource TextSecondaryBrush}" />
                     </Grid>
-                    <local:SOrComboBox ItemsSource="{Binding BlurOptions}"
-                                      SelectedValue="{Binding SelectedBlurValue}" SelectedValuePath="Value"
-                                      DisplayMemberPath="Display" Margin="0,4,0,14" />
                     <TextBlock Text="{DynamicResource Settings_BlurLiveHint}" Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="12" Margin="0,0,0,14" TextWrapping="Wrap" />
 
@@ -586,8 +1094,8 @@
     <!-- ============================ 确认 / 提示对话框 ============================ -->
     <DataTemplate DataType="{x:Type vm:ConfirmDialogViewModel}">
         <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Border Style="{StaticResource BlurDialogStyle}" MinWidth="320" MaxWidth="420" Padding="24">
-                <StackPanel>
+            <Border Style="{StaticResource BlurDialogStyle}" MinWidth="320" MaxWidth="420" Padding="0">
+                <StackPanel Margin="24">
                     <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="Bold" TextWrapping="Wrap" />
                     <TextBlock Text="{Binding Message}" Margin="0,10,0,18" TextWrapping="Wrap"
                                Foreground="{DynamicResource TextSecondaryBrush}" />
@@ -605,8 +1113,8 @@
     <!-- ============================ 未保存更改（保存 / 不保存 / 取消） ============================ -->
     <DataTemplate DataType="{x:Type vm:UnsavedChangesDialogViewModel}">
         <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Border Style="{StaticResource BlurDialogStyle}" MinWidth="340" MaxWidth="440" Padding="24">
-                <StackPanel>
+            <Border Style="{StaticResource BlurDialogStyle}" MinWidth="340" MaxWidth="440" Padding="0">
+                <StackPanel Margin="24">
                     <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="Bold" TextWrapping="Wrap" />
                     <TextBlock Text="{Binding Message}" Margin="0,10,0,18" TextWrapping="Wrap"
                                Foreground="{DynamicResource TextSecondaryBrush}" />

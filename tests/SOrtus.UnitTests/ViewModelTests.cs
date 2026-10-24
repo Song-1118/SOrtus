@@ -95,6 +95,17 @@ public class ViewModelTests
         }
 
         public Task InfoAsync(string title, string message) => Task.CompletedTask;
+
+        /// <summary>被展示过的覆盖层对话框（供断言是否弹出）。</summary>
+        public List<IOverlayDialogViewModel> ShownDialogs { get; } = [];
+
+        /// <summary>展示的覆盖层对话框立即视为关闭，避免用例悬挂。</summary>
+        public Task ShowAsync(IOverlayDialogViewModel viewModel)
+        {
+            ShownDialogs.Add(viewModel);
+            viewModel.RequestClose();
+            return Task.CompletedTask;
+        }
     }
 
     #endregion

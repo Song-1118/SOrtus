@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -150,4 +150,196 @@
   <data name="Dialog_DeleteTitle" xml:space="preserve"><value>删除立项</value></data>
   <data name="Dialog_DeleteMessage" xml:space="preserve"><value>确定删除「{0}」吗？该操作不可撤销。</value></data>
   <data name="Settings_BlurCustom" xml:space="preserve"><value>自定义（{0}）</value></data>
+  <data name="Detail_SectionBasic" xml:space="preserve">
+    <value>基础信息</value>
+  </data>
+  <data name="Detail_SectionDev" xml:space="preserve">
+    <value>开发管理</value>
+  </data>
+  <data name="Detail_SectionGit" xml:space="preserve">
+    <value>GIT 管理</value>
+  </data>
+  <data name="Detail_Version" xml:space="preserve">
+    <value>版本</value>
+  </data>
+  <data name="Detail_VersionPlaceholder" xml:space="preserve">
+    <value>如 v1.2.0</value>
+  </data>
+  <data name="Detail_TechAddPlaceholder" xml:space="preserve">
+    <value>输入技术栈后回车添加</value>
+  </data>
+  <data name="Detail_TechAdd" xml:space="preserve">
+    <value>添加</value>
+  </data>
+  <data name="Detail_TechRemove" xml:space="preserve">
+    <value>移除</value>
+  </data>
+  <data name="Doc_PrdTitle" xml:space="preserve">
+    <value>项目 PRD 文档</value>
+  </data>
+  <data name="Doc_PlanTitle" xml:space="preserve">
+    <value>版本迭代规划</value>
+  </data>
+  <data name="Doc_OtherTitle" xml:space="preserve">
+    <value>其他项目文档</value>
+  </data>
+  <data name="Doc_OtherHint" xml:space="preserve">
+    <value>PRD 与迭代规划各保留一份，导入会覆盖原文档</value>
+  </data>
+  <data name="Doc_Import" xml:space="preserve">
+    <value>导入文档</value>
+  </data>
+  <data name="Doc_Replace" xml:space="preserve">
+    <value>替换</value>
+  </data>
+  <data name="Doc_Open" xml:space="preserve">
+    <value>查看</value>
+  </data>
+  <data name="Doc_EmptyPrd" xml:space="preserve">
+    <value>尚未导入 PRD 文档</value>
+  </data>
+  <data name="Doc_EmptyPlan" xml:space="preserve">
+    <value>尚未导入版本迭代规划</value>
+  </data>
+  <data name="Doc_EmptyOther" xml:space="preserve">
+    <value>暂无其他文档</value>
+  </data>
+  <data name="Doc_EmptyHint" xml:space="preserve">
+    <value>支持 Markdown（.md）与 Word（.docx / .doc）</value>
+  </data>
+  <data name="Doc_MetaFormat" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="Doc_Imported" xml:space="preserve">
+    <value>已导入「{0}」</value>
+  </data>
+  <data name="Doc_DeleteTitle" xml:space="preserve">
+    <value>删除文档</value>
+  </data>
+  <data name="Doc_DeleteMessage" xml:space="preserve">
+    <value>确定删除「{0}」？此操作不可撤销。</value>
+  </data>
+  <data name="Doc_AutoSaveHint" xml:space="preserve">
+    <value>勾选待办会自动保存</value>
+  </data>
+  <data name="Doc_Saving" xml:space="preserve">
+    <value>保存中…</value>
+  </data>
+  <data name="Doc_Saved" xml:space="preserve">
+    <value>已保存</value>
+  </data>
+  <data name="Doc_SaveFailed" xml:space="preserve">
+    <value>保存失败</value>
+  </data>
+  <data name="Doc_PickTitle" xml:space="preserve">
+    <value>选择要导入的文档</value>
+  </data>
+  <data name="Doc_PickFilter" xml:space="preserve">
+    <value>支持的文档|*.md;*.markdown;*.txt;*.docx;*.doc|Markdown (*.md)|*.md|Word (*.docx;*.doc)|*.docx;*.doc|所有文件 (*.*)|*.*</value>
+  </data>
+  <data name="Doc_ReadOnlyHint" xml:space="preserve">
+    <value>文档以只读方式渲染；勾选待办会回写原文档</value>
+  </data>
+  <data name="Git_CurrentBranch" xml:space="preserve">
+    <value>当前分支</value>
+  </data>
+  <data name="Git_Branches" xml:space="preserve">
+    <value>分支</value>
+  </data>
+  <data name="Git_Timeline" xml:space="preserve">
+    <value>提交时间线</value>
+  </data>
+  <data name="Git_Remote" xml:space="preserve">
+    <value>远端</value>
+  </data>
+  <data name="Git_NoRemote" xml:space="preserve">
+    <value>尚未配置远端仓库，配置后才能推送</value>
+  </data>
+  <data name="Git_AddRemote" xml:space="preserve">
+    <value>添加远端地址</value>
+  </data>
+  <data name="Git_EditRemote" xml:space="preserve">
+    <value>修改远端地址</value>
+  </data>
+  <data name="Git_AddRemoteTitle" xml:space="preserve">
+    <value>配置远端仓库</value>
+  </data>
+  <data name="Git_AddRemoteHint" xml:space="preserve">
+    <value>首次推送需要先填写远端地址；已存在同名远端时会更新其地址。</value>
+  </data>
+  <data name="Git_RemoteName" xml:space="preserve">
+    <value>远端名称</value>
+  </data>
+  <data name="Git_RemoteUrl" xml:space="preserve">
+    <value>远端地址</value>
+  </data>
+  <data name="Git_RemoteUrlPlaceholder" xml:space="preserve">
+    <value>https://github.com/user/repo.git 或 git@host:user/repo.git</value>
+  </data>
+  <data name="Git_RemoteNameRequired" xml:space="preserve">
+    <value>请填写远端名称</value>
+  </data>
+  <data name="Git_RemoteUrlInvalid" xml:space="preserve">
+    <value>远端地址格式不正确</value>
+  </data>
+  <data name="Git_RemoteSaved" xml:space="preserve">
+    <value>远端地址已保存</value>
+  </data>
+  <data name="Git_Push" xml:space="preserve">
+    <value>推送至云端</value>
+  </data>
+  <data name="Git_Refresh" xml:space="preserve">
+    <value>刷新</value>
+  </data>
+  <data name="Git_PushSuccess" xml:space="preserve">
+    <value>推送成功</value>
+  </data>
+  <data name="Git_NoFolder" xml:space="preserve">
+    <value>未设置项目目录，无法读取 Git 信息</value>
+  </data>
+  <data name="Git_NotRepository" xml:space="preserve">
+    <value>关联目录不是 Git 仓库</value>
+  </data>
+  <data name="Git_DetachedHead" xml:space="preserve">
+    <value>游离 HEAD</value>
+  </data>
+  <data name="Git_EmptyRepo" xml:space="preserve">
+    <value>仓库还没有提交</value>
+  </data>
+  <data name="Git_NoUpstream" xml:space="preserve">
+    <value>当前分支没有上游分支，推送时会自动建立</value>
+  </data>
+  <data name="Git_Ahead" xml:space="preserve">
+    <value>领先</value>
+  </data>
+  <data name="Git_Behind" xml:space="preserve">
+    <value>落后</value>
+  </data>
+  <data name="Git_Error" xml:space="preserve">
+    <value>错误</value>
+  </data>
+  <data name="Git_RawOutput" xml:space="preserve">
+    <value>原始输出</value>
+  </data>
+  <data name="Git_ErrNotInstalled" xml:space="preserve">
+    <value>未检测到 git 命令行，请先安装 Git 并确保其在 PATH 中</value>
+  </data>
+  <data name="Git_ErrAuth" xml:space="preserve">
+    <value>远端认证失败，请先在本机 Git 中配置凭据或 SSH 密钥</value>
+  </data>
+  <data name="Git_ErrNonFastForward" xml:space="preserve">
+    <value>远端存在新提交，请先在外部拉取后再推送</value>
+  </data>
+  <data name="Git_ErrConflict" xml:space="preserve">
+    <value>存在未解决的冲突，请先处理冲突</value>
+  </data>
+  <data name="Git_ErrTimeout" xml:space="preserve">
+    <value>Git 命令超时，请检查网络或远端地址</value>
+  </data>
+  <data name="Git_ErrUnknown" xml:space="preserve">
+    <value>Git 操作失败</value>
+  </data>
+  <data name="Git_Confirm" xml:space="preserve">
+    <value>保存</value>
+  </data>
 </root>

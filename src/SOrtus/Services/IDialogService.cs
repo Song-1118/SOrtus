@@ -17,4 +17,10 @@ public interface IDialogService
 
     /// <summary>提示对话框（仅确定），返回 true。</summary>
     Task InfoAsync(string title, string message);
+
+    /// <summary>
+    /// 展示任意覆盖层对话框（文档预览 / 配置远端等），任务在对话框关闭时完成。
+    /// 视图由 ViewTemplates.xaml 中对应视图模型的 DataTemplate 提供。
+    /// </summary>
+    Task ShowAsync(ViewModels.IOverlayDialogViewModel viewModel);
 }

@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
@@ -31,11 +31,11 @@ public sealed class SOrCard : ContentControl
             nameof(BlurRadius), typeof(double), typeof(SOrCard),
             new PropertyMetadata(double.NaN, OnBlurPropertyChanged));
 
-    /// <summary>覆盖层透明度（默认 0.72：既能看见背景被模糊，又保证正文对比度）。</summary>
+    /// <summary>覆盖层透明度（默认 0.66：既能看见背景被模糊，又保证正文对比度）。</summary>
     public static readonly DependencyProperty OverlayOpacityProperty =
         DependencyProperty.Register(
             nameof(OverlayOpacity), typeof(double), typeof(SOrCard),
-            new PropertyMetadata(0.58, OnBlurPropertyChanged));
+            new PropertyMetadata(0.66, OnBlurPropertyChanged));
 
     /// <summary>圆角半径（缺省取令牌 CornerRadiusLarge）。</summary>
     public static readonly DependencyProperty CornerRadiusProperty =

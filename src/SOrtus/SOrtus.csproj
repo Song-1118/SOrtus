@@ -34,6 +34,7 @@
   <ItemGroup>
     <!-- 数据库迁移脚本（规范 9.8）：以嵌入资源形式随程序发布，启动时按版本执行 -->
     <EmbeddedResource Include="Migrations\v0001_CreateProject.sql" />
+    <EmbeddedResource Include="Migrations\v0002_project_document.sql" />
   </ItemGroup>
 
 </Project>

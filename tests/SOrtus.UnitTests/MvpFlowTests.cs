@@ -72,6 +72,13 @@ public class MvpFlowTests : IDisposable
             Task.FromResult(UnsavedChangesChoice.Discard);
 
         public Task InfoAsync(string title, string message) => Task.CompletedTask;
+
+        // 端到端用例不涉及覆盖层对话框：直接视为用户点关闭。
+        public Task ShowAsync(IOverlayDialogViewModel viewModel)
+        {
+            viewModel.RequestClose();
+            return Task.CompletedTask;
+        }
     }
 
     [Fact]

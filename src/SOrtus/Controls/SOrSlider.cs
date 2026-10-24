@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 
 namespace SOrtus.Controls;
@@ -9,11 +9,11 @@ namespace SOrtus.Controls;
 /// </summary>
 public sealed class SOrSlider : Slider
 {
-    /// <summary>圆角半径（缺省取令牌 CornerRadiusPill）。</summary>
+    /// <summary>圆角半径（缺省 3：圆角矩形，避免细轨端头呈椭圆）。</summary>
     public static readonly DependencyProperty CornerRadiusProperty =
         DependencyProperty.Register(
             nameof(CornerRadius), typeof(CornerRadius), typeof(SOrSlider),
-            new PropertyMetadata(new CornerRadius(999)));
+            new PropertyMetadata(new CornerRadius(3)));
 
     static SOrSlider()
     {

@@ -1,6 +1,7 @@
 using System.Windows.Input;
 using SOrtus.Common;
 using SOrtus.Core.Models;
+using SOrtus.Core.Repositories;
 using SOrtus.Core.Services;
 using SOrtus.Navigation;
 using SOrtus.Services;
@@ -19,6 +20,10 @@ internal sealed class MainViewModel : ViewModelBase
     private readonly ILocalizationService _localization;
     private readonly INavigationService _navigation;
     private readonly IDialogService _dialogService;
+    private readonly IProjectDocumentRepository? _documentRepository;
+    private readonly IDocumentImportService? _importService;
+    private readonly IGitService? _gitService;
+    private readonly IFilePickerService? _filePicker;
 
     private readonly AsyncRelayCommand _navigateProjectsCommand;
     private readonly AsyncRelayCommand _navigateNewCommand;
@@ -56,13 +61,21 @@ internal sealed class MainViewModel : ViewModelBase
         IThemeService themeService,
         ILocalizationService localization,
         INavigationService navigation,
-        IDialogService dialogService)
+        IDialogService dialogService,
+        IProjectDocumentRepository? documentRepository = null,
+        IDocumentImportService? importService = null,
+        IGitService? gitService = null,
+        IFilePickerService? filePicker = null)
     {
         _projectService = projectService;
         _themeService = themeService;
         _localization = localization;
         _navigation = navigation;
         _dialogService = dialogService;
+        _documentRepository = documentRepository;
+        _importService = importService;
+        _gitService = gitService;
+        _filePicker = filePicker;
         _navigation.Navigated += (_, _) =>
         {
             OnPropertyChanged(nameof(CurrentView));
@@ -121,7 +134,16 @@ internal sealed class MainViewModel : ViewModelBase
         new(_projectService, _localization, OpenDetail, () => _ = ShowNewProjectAsync());
 
     private void OpenDetail(Project project) =>
-        _navigation.NavigateTo(new ProjectDetailViewModel(_projectService, _localization, _dialogService, project, () => _ = ShowProjectsAsync()));
+        _navigation.NavigateTo(new ProjectDetailViewModel(
+            _projectService,
+            _localization,
+            _dialogService,
+            _documentRepository,
+            _importService,
+            _gitService,
+            _filePicker,
+            project,
+            () => _ = ShowProjectsAsync()));
 
     private void CloseDialog()
     {
@@ -134,6 +156,10 @@ internal sealed class MainViewModel : ViewModelBase
                  && unsaved.CancelCommand.CanExecute(null))
         {
             unsaved.CancelCommand.Execute(null);
+        }
+        else if (DialogContent is IOverlayDialogViewModel overlay)
+        {
+            overlay.RequestClose();
         }
     }
 }

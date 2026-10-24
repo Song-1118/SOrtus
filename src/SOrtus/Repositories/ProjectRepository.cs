@@ -56,10 +56,12 @@ internal sealed class ProjectRepository : IProjectRepository
         const string sql = """
             INSERT INTO Project
                 (Name, Type, Status, CreatedAt, UpdatedAt, TechStack, Summary, SubType,
-                 FolderPath, ScheduleStart, ScheduleEnd, DevPlan, Constraints, Goals, AcceptanceCriteria, ProgressPercent)
+                 FolderPath, ScheduleStart, ScheduleEnd, DevPlan, Constraints, Goals, AcceptanceCriteria, ProgressPercent,
+                 Version)
             VALUES
                 ($name, $type, $status, $createdAt, $updatedAt, $techStack, $summary, $subType,
-                 $folderPath, $scheduleStart, $scheduleEnd, $devPlan, $constraints, $goals, $acceptance, $progress);
+                 $folderPath, $scheduleStart, $scheduleEnd, $devPlan, $constraints, $goals, $acceptance, $progress,
+                 $version);
             SELECT last_insert_rowid();
             """;
         await using var connection = new SqliteConnection(Database.ConnectionString);
@@ -79,7 +81,8 @@ internal sealed class ProjectRepository : IProjectRepository
                 TechStack = $techStack, Summary = $summary, SubType = $subType,
                 FolderPath = $folderPath, ScheduleStart = $scheduleStart, ScheduleEnd = $scheduleEnd,
                 DevPlan = $devPlan, Constraints = $constraints, Goals = $goals,
-                AcceptanceCriteria = $acceptance, ProgressPercent = $progress
+                AcceptanceCriteria = $acceptance, ProgressPercent = $progress,
+                Version = $version
             WHERE Id = $id;
             """;
         await using var connection = new SqliteConnection(Database.ConnectionString);
@@ -121,7 +124,15 @@ internal sealed class ProjectRepository : IProjectRepository
             Goals = reader.GetString(reader.GetOrdinal("Goals")),
             AcceptanceCriteria = reader.GetString(reader.GetOrdinal("AcceptanceCriteria")),
             ProgressPercent = reader.GetDouble(reader.GetOrdinal("ProgressPercent")),
+            Version = ReadString(reader, "Version"),
         };
+    }
+
+    /// <summary>读取文本列，NULL 兜底为空串（历史库结构兼容）。</summary>
+    private static string ReadString(SqliteDataReader reader, string column)
+    {
+        var ordinal = reader.GetOrdinal(column);
+        return reader.IsDBNull(ordinal) ? string.Empty : reader.GetString(ordinal);
     }
 
     private static DateTime? ReadNullableDateTime(SqliteDataReader reader, string column)
@@ -154,6 +165,7 @@ internal sealed class ProjectRepository : IProjectRepository
         command.Parameters.AddWithValue("$goals", project.Goals ?? string.Empty);
         command.Parameters.AddWithValue("$acceptance", project.AcceptanceCriteria ?? string.Empty);
         command.Parameters.AddWithValue("$progress", project.ProgressPercent);
+        command.Parameters.AddWithValue("$version", project.Version ?? string.Empty);
     }
 
     /// <summary>

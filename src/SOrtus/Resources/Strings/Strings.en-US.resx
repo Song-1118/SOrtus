@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -150,4 +150,196 @@
   <data name="Dialog_DeleteTitle" xml:space="preserve"><value>Delete project</value></data>
   <data name="Dialog_DeleteMessage" xml:space="preserve"><value>Delete &quot;{0}&quot;? This action cannot be undone.</value></data>
   <data name="Settings_BlurCustom" xml:space="preserve"><value>Custom ({0})</value></data>
+  <data name="Detail_SectionBasic" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="Detail_SectionDev" xml:space="preserve">
+    <value>Development</value>
+  </data>
+  <data name="Detail_SectionGit" xml:space="preserve">
+    <value>Git</value>
+  </data>
+  <data name="Detail_Version" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="Detail_VersionPlaceholder" xml:space="preserve">
+    <value>e.g. v1.2.0</value>
+  </data>
+  <data name="Detail_TechAddPlaceholder" xml:space="preserve">
+    <value>Type a tech stack and press Enter</value>
+  </data>
+  <data name="Detail_TechAdd" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Detail_TechRemove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="Doc_PrdTitle" xml:space="preserve">
+    <value>Product requirements</value>
+  </data>
+  <data name="Doc_PlanTitle" xml:space="preserve">
+    <value>Release plan</value>
+  </data>
+  <data name="Doc_OtherTitle" xml:space="preserve">
+    <value>Other documents</value>
+  </data>
+  <data name="Doc_OtherHint" xml:space="preserve">
+    <value>One slot each for PRD and release plan; importing replaces the previous file</value>
+  </data>
+  <data name="Doc_Import" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="Doc_Replace" xml:space="preserve">
+    <value>Replace</value>
+  </data>
+  <data name="Doc_Open" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="Doc_EmptyPrd" xml:space="preserve">
+    <value>No PRD document yet</value>
+  </data>
+  <data name="Doc_EmptyPlan" xml:space="preserve">
+    <value>No release plan yet</value>
+  </data>
+  <data name="Doc_EmptyOther" xml:space="preserve">
+    <value>No other documents</value>
+  </data>
+  <data name="Doc_EmptyHint" xml:space="preserve">
+    <value>Supports Markdown (.md) and Word (.docx / .doc)</value>
+  </data>
+  <data name="Doc_MetaFormat" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="Doc_Imported" xml:space="preserve">
+    <value>Imported "{0}"</value>
+  </data>
+  <data name="Doc_DeleteTitle" xml:space="preserve">
+    <value>Delete document</value>
+  </data>
+  <data name="Doc_DeleteMessage" xml:space="preserve">
+    <value>Delete "{0}"? This cannot be undone.</value>
+  </data>
+  <data name="Doc_AutoSaveHint" xml:space="preserve">
+    <value>Checking a to-do saves automatically</value>
+  </data>
+  <data name="Doc_Saving" xml:space="preserve">
+    <value>Saving…</value>
+  </data>
+  <data name="Doc_Saved" xml:space="preserve">
+    <value>Saved</value>
+  </data>
+  <data name="Doc_SaveFailed" xml:space="preserve">
+    <value>Save failed</value>
+  </data>
+  <data name="Doc_PickTitle" xml:space="preserve">
+    <value>Choose a document to import</value>
+  </data>
+  <data name="Doc_PickFilter" xml:space="preserve">
+    <value>Supported|*.md;*.markdown;*.txt;*.docx;*.doc|Markdown (*.md)|*.md|Word (*.docx;*.doc)|*.docx;*.doc|All files (*.*)|*.*</value>
+  </data>
+  <data name="Doc_ReadOnlyHint" xml:space="preserve">
+    <value>Rendered read-only; checking a to-do writes back to the document</value>
+  </data>
+  <data name="Git_CurrentBranch" xml:space="preserve">
+    <value>Current branch</value>
+  </data>
+  <data name="Git_Branches" xml:space="preserve">
+    <value>Branches</value>
+  </data>
+  <data name="Git_Timeline" xml:space="preserve">
+    <value>Commit timeline</value>
+  </data>
+  <data name="Git_Remote" xml:space="preserve">
+    <value>Remote</value>
+  </data>
+  <data name="Git_NoRemote" xml:space="preserve">
+    <value>No remote configured; add one to push</value>
+  </data>
+  <data name="Git_AddRemote" xml:space="preserve">
+    <value>Add remote</value>
+  </data>
+  <data name="Git_EditRemote" xml:space="preserve">
+    <value>Edit remote</value>
+  </data>
+  <data name="Git_AddRemoteTitle" xml:space="preserve">
+    <value>Configure remote</value>
+  </data>
+  <data name="Git_AddRemoteHint" xml:space="preserve">
+    <value>A remote URL is required before the first push; an existing remote with the same name is updated.</value>
+  </data>
+  <data name="Git_RemoteName" xml:space="preserve">
+    <value>Remote name</value>
+  </data>
+  <data name="Git_RemoteUrl" xml:space="preserve">
+    <value>Remote URL</value>
+  </data>
+  <data name="Git_RemoteUrlPlaceholder" xml:space="preserve">
+    <value>https://github.com/user/repo.git or git@host:user/repo.git</value>
+  </data>
+  <data name="Git_RemoteNameRequired" xml:space="preserve">
+    <value>Remote name is required</value>
+  </data>
+  <data name="Git_RemoteUrlInvalid" xml:space="preserve">
+    <value>Remote URL format is invalid</value>
+  </data>
+  <data name="Git_RemoteSaved" xml:space="preserve">
+    <value>Remote saved</value>
+  </data>
+  <data name="Git_Push" xml:space="preserve">
+    <value>Push</value>
+  </data>
+  <data name="Git_Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Git_PushSuccess" xml:space="preserve">
+    <value>Pushed successfully</value>
+  </data>
+  <data name="Git_NoFolder" xml:space="preserve">
+    <value>Project folder is not set; Git info unavailable</value>
+  </data>
+  <data name="Git_NotRepository" xml:space="preserve">
+    <value>The project folder is not a Git repository</value>
+  </data>
+  <data name="Git_DetachedHead" xml:space="preserve">
+    <value>Detached HEAD</value>
+  </data>
+  <data name="Git_EmptyRepo" xml:space="preserve">
+    <value>The repository has no commits yet</value>
+  </data>
+  <data name="Git_NoUpstream" xml:space="preserve">
+    <value>No upstream branch; it will be created on push</value>
+  </data>
+  <data name="Git_Ahead" xml:space="preserve">
+    <value>Ahead</value>
+  </data>
+  <data name="Git_Behind" xml:space="preserve">
+    <value>Behind</value>
+  </data>
+  <data name="Git_Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Git_RawOutput" xml:space="preserve">
+    <value>Raw output</value>
+  </data>
+  <data name="Git_ErrNotInstalled" xml:space="preserve">
+    <value>git was not found; install Git and make sure it is on PATH</value>
+  </data>
+  <data name="Git_ErrAuth" xml:space="preserve">
+    <value>Remote authentication failed; configure credentials or an SSH key in Git</value>
+  </data>
+  <data name="Git_ErrNonFastForward" xml:space="preserve">
+    <value>The remote has new commits; pull before pushing</value>
+  </data>
+  <data name="Git_ErrConflict" xml:space="preserve">
+    <value>Unresolved conflicts must be handled first</value>
+  </data>
+  <data name="Git_ErrTimeout" xml:space="preserve">
+    <value>Git timed out; check the network or remote URL</value>
+  </data>
+  <data name="Git_ErrUnknown" xml:space="preserve">
+    <value>Git operation failed</value>
+  </data>
+  <data name="Git_Confirm" xml:space="preserve">
+    <value>Save</value>
+  </data>
 </root>

@@ -31,6 +31,15 @@
     <Thickness x:Key="SpacingLg">16</Thickness>
     <Thickness x:Key="SpacingXl">24</Thickness>
 
+    <!-- 输入类控件文本内边距（左右统一 12；上下由控件高度居中控制） -->
+    <Thickness x:Key="InputInsetHorizontal">12,0,12,0</Thickness>
+
+    <!-- 多行输入（简介 / 开发规划等）：左右 12 + 上下 8，文本左上对齐 -->
+    <Thickness x:Key="InputInsetMultiline">12,8,12,8</Thickness>
+
+    <!-- 图标与文字的固定间距（按钮 / 输入框前置图标统一 8px） -->
+    <Thickness x:Key="IconGap">0,0,8,0</Thickness>
+
     <!-- 阴影模糊半径（规范 7.6：圆角 + 阴影全局统一） -->
     <sys:Double x:Key="ShadowBlur">24</sys:Double>
     <sys:Double x:Key="ShadowOpacity">0.18</sys:Double>

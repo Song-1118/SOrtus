@@ -119,3 +119,44 @@ WPF 的 `StaticResource` 在解析时**不会跨 `MergedDictionaries` 的兄弟�
 3. **工期字段**：详情页目前只读展示工期，编辑仍在向导；建议 0.2.0 一并开放。
 4. **删除确认文案**：标题与正文复用同一条文案，可拆成两条资源键。
 5. **1.1 起的功能**：剪辑进度/素材、待办完成状态与提醒尚未实现（按版本规划在 0.2.0 / 0.3.0）。
+
+---
+
+## 六、UI 走查反馈修复（2026-10-24 第二轮）
+
+用户对首版界面提出 8 条问题，逐条修复并复验。
+
+| # | 反馈 | 根因 | 修法 |
+| --- | --- | --- | --- |
+| 1 | 菜单栏与内容区高度不一致 | 侧边栏 `Margin="0,0,18,0"`、内容区 `ContentControl Margin="2"`，两卡片上下边界不同；内容区 `ScrollViewer` 未禁用横向滚动，内容变宽会把卡片撑出可视区 | 内容区去掉 2px 边距并按行列拉伸；4 个视图的 `ScrollViewer` 统一 `HorizontalScrollBarVisibility="Disabled"`。实测两卡片上下边界均为 22 / 737px，1180 与 980 宽均一致 |
+| 2 | 「新建立项」按钮 `+` 号错位 | 模板里图标独占一列、文字 `ContentPresenter` 自带 `Padding`，两者各自排版：图标贴左、与文字不居中 | 图标列 `Auto` + 内容列 `*`，间距固定 8px（`IconGap` 令牌），内边距统一由 Border 的 `Padding` 承担；按钮被拉伸时内容能拿到确定宽度并正确换行（向导类型卡说明不再被截断） |
+| 3 | 背景色球无意义，要纯白 | `Brushes.xaml` 的 `BackdropVisual` 是「线性渐变 + 3 个强调色 Ellipse」 | 改为纯色 `WallpaperBrush`（浅色 `#FFFFFF` / 深色 `#141618`），删除全部渐变与色球；保留资源键，`PART_Backdrop` 取样与 `BlurPanel` 不受影响 |
+| 4 | 全页面禁止蓝紫渐变配色 | `Light/Dark.xaml` 的 `ColorPrimary=#4F46E5`、`AccentA/B/C`（靛紫/天蓝/粉）、`BackgroundA/B` 渐变、`NavActive`、`TagAccent*` | 全面改中性：主色近黑 `#111827`（深色主题近白），导航/选中浅灰，标签改中性灰阶 + 语义色（绿/琥珀/红）；两主题各 32 键一一对应。截图逐像素扫描「蓝紫像素」= 0 |
+| 5 | 导航聚焦后边框贴住图标 | `Variant=Nav` 的 `Padding` 只作用在文字上，图标列无左内边距，聚焦环 `Margin=-2` 贴边 | 内边距统一由 Border 承担，图标与文字一起内缩；导航图标距卡片边缘 14px，聚焦环不再压住图标 |
+| 6 | 圆角实际是方角 | `BlurPanel` 插入的模糊层与近白覆盖层是**直角矩形**且 0.86 不透明，`Border` 默认不裁剪子元素，方角由覆盖层露出来 | `BlurPanel` 新增附加属性 `CornerRadius`，两层矩形设 `RadiusX/RadiusY`；`SOrCard` 转发自身圆角并给 `PART_Root` 加 `RectangleGeometry` 圆角裁剪（尺寸/圆角变化时重建）；`BlurCardStyle`（对话框）通过 `Self` 绑定自动跟随 |
+| 7 | 输入框文字不从最左开始；「简介」应左上而非居中 | `PART_ContentHost` 用 `Margin={TemplateBinding Padding}` 与 TextBox 内部内边距叠加；多行框共用居中模板 | 模板内置 `PART_Inset` 统一提供 12px 左右内边距、控件 `Padding=0` 消除叠加；`AcceptsReturn=True` 时触发左上加 `12,8,12,8` 内边距，占位符与正文同起点 |
+| 8 | 技术栈胶囊太椭圆，应为圆角矩形 | `SOrTag.CornerRadius` 默认 `999`，预设 chips 还显式绑了 `CornerRadiusPill` | `SOrTag` 默认改 6；预设 chips 改 `CornerRadiusSmall(6)`；类型/状态标签同款圆角矩形 |
+
+### 6.1 顺带修掉的两个隐藏缺陷
+
+- **深底按钮文字消失**：`TextBlock` 隐式样式里写死 `Foreground=TextPrimaryBrush`，而 WPF 中样式 Setter 优先级**高于**属性继承，`SOrButton` 的白色前景传不进内容文字。原先主色是靛紫尚能看清，改近黑后文字与底色同色 → 完全看不见。修法：隐式 `TextBlock` 样式不再设置 `Foreground`，改由根部 `TextElement.Foreground` 继承下发（主题切换仍生效），局部前景（主按钮白字、标签色调）正常覆盖。
+- **文本被静默截断**：隐式样式同时写死 `TextTrimming=CharacterEllipsis`，导致应当换行的说明文字被截断（向导类型卡描述只显示半句）。改为按场景显式声明，需要省略号的两处（列表项名称、详情标题）保留。
+
+### 6.2 复验结果
+
+| 项目 | 结果 |
+| --- | --- |
+| 编译 | Debug / Release 0 警告 0 错误 |
+| 单元 / 集成测试 | 23 / 23 通过 |
+| 冒烟自检 | `--smoke` 退出码 0 |
+| 界面截图 | `resources/screenshots/latest` 五张（1180×760）；另用 `--shot <dir> 980 640` 验证窄窗口无错位、无横向裁切 |
+| 圆角 | 放大卡片四角核对，四角均为圆弧过渡，无直角残留 |
+| 配色 | 五张截图全图扫描「蓝紫像素」= 0 |
+| 深色主题 | 单独渲染验证：深灰底、浅色文字、主按钮浅底深字 |
+| 等高 | 卡片边界实测：侧边栏与内容区均为 y=22 → y=737；左右边界 22 / 1157（1180 宽）、22 / 957（980 宽） |
+
+### 6.3 新增开发命令
+
+```bash
+SOrtus.exe --shot <目录> [宽] [高]   # 离屏渲染核心界面，默认 1180x760
+```

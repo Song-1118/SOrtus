@@ -3,30 +3,17 @@
 
     <!--
         画刷层（规范 7.5）：所有主题相关色值一律通过 DynamicResource 引用主题字典，
-        换肤时自动重新解析，无需重启。模糊覆盖层色值、透明度语义随主题变化。
+        换肤时自动重新解析，无需重启。
+        设计约束：不使用任何渐变与装饰光斑——背景为纯色，层次靠 Surface 底 + 1px Border 表达。
     -->
 
-    <!-- 背景装饰视觉（acrylic 风格渐变 + 强调色光斑）。x:Shared=False 使每个引用获得独立实例，
-         供 Window 背景与每个 BlurPanel 的模糊层各自渲染，避免共享同一 Visual。 -->
-    <Grid x:Key="BackdropVisual" x:Shared="False">
-        <Grid.Background>
-            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="{DynamicResource ColorBackgroundA}" Offset="0" />
-                <GradientStop Color="{DynamicResource ColorBackgroundB}" Offset="1" />
-            </LinearGradientBrush>
-        </Grid.Background>
-        <Ellipse Width="540" Height="540" Fill="{DynamicResource AccentABrush}" Opacity="0.30"
-                 HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-140,-100,0,0" />
-        <Ellipse Width="440" Height="440" Fill="{DynamicResource AccentBBrush}" Opacity="0.26"
-                 HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-120,-80" />
-        <Ellipse Width="320" Height="320" Fill="{DynamicResource AccentCBrush}" Opacity="0.22"
-                 HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,60,0,0" />
-    </Grid>
+    <!-- 应用背景画刷（Window 背景、PART_Backdrop 与 BlurPanel 取样共用）。
+         纯色，无渐变、无色球。x:Shared=False：每个引用获得独立实例。 -->
+    <SolidColorBrush x:Key="WallpaperBrush" x:Shared="False" Color="{DynamicResource ColorBackgroundA}" />
 
-    <!-- 应用背景画刷（Window 背景与 BlurPanel 默认模糊层共用，保证卡片呈现磨砂质感）。
-         x:Shared=False：每个引用获得独立实例，避免多个模糊层共享同一 Visual 导致渲染冲突。 -->
-    <VisualBrush x:Key="WallpaperBrush" x:Shared="False"
-                 Visual="{StaticResource BackdropVisual}" Stretch="UniformToFill" />
+    <!-- 兼容保留：早期版本用作「渐变 + 光斑」装饰视觉的宿主，现为纯色容器。
+         BlurPanel 找不到 PART_Backdrop 时用它作为兜底取样源，键不可删。 -->
+    <Grid x:Key="BackdropVisual" x:Shared="False" Background="{DynamicResource WallpaperBrush}" />
 
     <!-- 语义画刷 -->
     <SolidColorBrush x:Key="PrimaryBrush" Color="{DynamicResource ColorPrimary}" />
@@ -43,7 +30,7 @@
     <SolidColorBrush x:Key="DangerBrush" Color="{DynamicResource ColorDanger}" />
     <SolidColorBrush x:Key="ShadowBrush" Color="{DynamicResource ColorShadow}" />
 
-    <!-- 高斯模糊覆盖层画刷：颜色随主题变化（浅色=白覆盖，深色=深色覆盖），键名与两主题一一对应 -->
+    <!-- 高斯模糊覆盖层画刷：颜色随主题变化（浅色=白覆盖，深色=深灰覆盖），键名与两主题一一对应 -->
     <SolidColorBrush x:Key="BlurOverlayBrush" Color="{DynamicResource BlurOverlayColor}" />
 
     <!-- SOrTag 色调画刷（Tone → 背景/前景，随主题切换） -->

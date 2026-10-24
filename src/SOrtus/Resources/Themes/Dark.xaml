@@ -2,52 +2,52 @@
                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!--
-        深色主题。资源键与 Light.xaml 完全一一对应（规范 7.8），仅取值不同。
+        深色主题（中性配色）。资源键与 Light.xaml 完全一一对应（规范 7.8），仅取值不同。
+        设计约束：纯中性深色底、无渐变、无蓝紫；主色为近白，靠灰阶与细边框表达层次。
     -->
 
-    <Color x:Key="ColorBackgroundA">#0B1020</Color>
-    <Color x:Key="ColorBackgroundB">#1A1030</Color>
-    <Color x:Key="ColorAccentA">#818CF8</Color>
-    <Color x:Key="ColorAccentB">#38BDF8</Color>
-    <Color x:Key="ColorAccentC">#F472B6</Color>
+    <Color x:Key="ColorBackgroundA">#141618</Color>
+    <Color x:Key="ColorBackgroundB">#141618</Color>
+    <Color x:Key="ColorAccentA">#F3F4F6</Color>
+    <Color x:Key="ColorAccentB">#9CA3AF</Color>
+    <Color x:Key="ColorAccentC">#6B7280</Color>
 
-    <Color x:Key="ColorTextPrimary">#ECEFF5</Color>
-    <Color x:Key="ColorTextSecondary">#9AA4B2</Color>
-    <Color x:Key="ColorTextOnAccent">#0B1020</Color>
-    <Color x:Key="ColorBorder">#2A3142</Color>
-    <Color x:Key="ColorSurface">#161B2B</Color>
-    <Color x:Key="ColorPrimary">#6366F1</Color>
+    <Color x:Key="ColorTextPrimary">#F3F4F6</Color>
+    <Color x:Key="ColorTextSecondary">#9CA3AF</Color>
+    <Color x:Key="ColorTextOnAccent">#111827</Color>
+    <Color x:Key="ColorBorder">#2A2D31</Color>
+    <Color x:Key="ColorSurface">#1A1C1F</Color>
+    <Color x:Key="ColorPrimary">#F3F4F6</Color>
     <Color x:Key="ColorShadow">#000000</Color>
 
-    <!-- 模糊覆盖层颜色：深色为深灰覆盖 -->
-    <!-- 模糊覆盖层颜色：深色为深墨覆盖（配合 OverlayOpacity 控制磨砂玻璃的通透度） -->
-    <Color x:Key="BlurOverlayColor">#FF171C2A</Color>
+    <!-- 模糊覆盖层颜色：深色为深灰覆盖（配合 OverlayOpacity 控制磨砂通透度） -->
+    <Color x:Key="BlurOverlayColor">#FF1A1C1F</Color>
 
-    <!-- 标签色板（SOrTag Tone）：半透明同色底 + 亮字 -->
-    <Color x:Key="ColorTagAccentABg">#2E818CF8</Color>
-    <Color x:Key="ColorTagAccentAFg">#C7CFF9</Color>
-    <Color x:Key="ColorTagAccentBBg">#2638BDF8</Color>
-    <Color x:Key="ColorTagAccentBFg">#BAE6FD</Color>
-    <Color x:Key="ColorTagAccentCBg">#28F472B6</Color>
-    <Color x:Key="ColorTagAccentCFg">#F9C9DE</Color>
-    <Color x:Key="ColorTagSuccessBg">#2622C55E</Color>
-    <Color x:Key="ColorTagSuccessFg">#BBF7D0</Color>
-    <Color x:Key="ColorTagWarningBg">#26D97706</Color>
-    <Color x:Key="ColorTagWarningFg">#FDE68A</Color>
-    <Color x:Key="ColorTagDangerBg">#26DC2626</Color>
-    <Color x:Key="ColorTagDangerFg">#F7C1C1</Color>
-    <Color x:Key="ColorTagNeutralBg">#249AA4B2</Color>
-    <Color x:Key="ColorTagNeutralFg">#D3D9E2</Color>
+    <!-- 标签色板（SOrTag Tone）：中性深底亮字 -->
+    <Color x:Key="ColorTagAccentABg">#24262A</Color>
+    <Color x:Key="ColorTagAccentAFg">#E5E7EB</Color>
+    <Color x:Key="ColorTagAccentBBg">#24262A</Color>
+    <Color x:Key="ColorTagAccentBFg">#D1D5DB</Color>
+    <Color x:Key="ColorTagAccentCBg">#24262A</Color>
+    <Color x:Key="ColorTagAccentCFg">#9CA3AF</Color>
+    <Color x:Key="ColorTagSuccessBg">#123024</Color>
+    <Color x:Key="ColorTagSuccessFg">#75E0A7</Color>
+    <Color x:Key="ColorTagWarningBg">#32260B</Color>
+    <Color x:Key="ColorTagWarningFg">#FEC84B</Color>
+    <Color x:Key="ColorTagDangerBg">#33191B</Color>
+    <Color x:Key="ColorTagDangerFg">#FDA29B</Color>
+    <Color x:Key="ColorTagNeutralBg">#24262A</Color>
+    <Color x:Key="ColorTagNeutralFg">#9CA3AF</Color>
 
     <!-- 交互层：悬浮 / 按压覆盖（白色，深色主题） -->
     <Color x:Key="ColorHoverOverlay">#14FFFFFF</Color>
     <Color x:Key="ColorPressOverlay">#24FFFFFF</Color>
 
     <!-- 导航 / 列表选中高亮 -->
-    <Color x:Key="ColorNavActive">#262C4A</Color>
+    <Color x:Key="ColorNavActive">#24262A</Color>
 
     <!-- 滚动条滑块 -->
-    <Color x:Key="ColorScrollThumb">#3A4257</Color>
-    <Color x:Key="ColorScrollThumbHover">#4A5470</Color>
+    <Color x:Key="ColorScrollThumb">#3A3D42</Color>
+    <Color x:Key="ColorScrollThumbHover">#4B4F55</Color>
 
 </ResourceDictionary>

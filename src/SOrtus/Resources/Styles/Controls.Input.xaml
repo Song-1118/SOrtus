@@ -18,7 +18,9 @@
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Padding" Value="11,0,11,0" />
+        <!-- 文本内边距由模板内的 Inset 层统一提供（12,0,12,0）；控件 Padding 置 0，
+             避免 TextBox 内部再叠加一次内边距，导致文字不是从最左侧开始输入 -->
+        <Setter Property="Padding" Value="0" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="SelectionBrush" Value="{DynamicResource PrimaryBrush}" />
@@ -34,42 +36,43 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="{TemplateBinding CornerRadius}"
                             SnapsToDevicePixels="True">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <!-- 前置图标（LeadingIcon 为空时自动折叠） -->
-                            <Path Grid.Column="0"
-                                  Data="{TemplateBinding LeadingIcon}"
-                                  Fill="{DynamicResource TextSecondaryBrush}"
-                                  Width="{TemplateBinding IconSize}"
-                                  Height="{TemplateBinding IconSize}"
-                                  Stretch="Uniform"
-                                  Margin="11,0,0,0"
-                                  VerticalAlignment="Center"
-                                  HorizontalAlignment="Center"
-                                  Visibility="{Binding LeadingIcon, Converter={StaticResource NotNullToVisibilityConverter}, RelativeSource={RelativeSource TemplatedParent}}" />
-                            <!-- 内容宿主（原生约定部件，必须存在） -->
-                            <ScrollViewer x:Name="PART_ContentHost"
-                                          Grid.Column="1"
-                                          Margin="{TemplateBinding Padding}"
-                                          Foreground="{TemplateBinding Foreground}"
-                                          VerticalAlignment="Center"
-                                          HorizontalScrollBarVisibility="Hidden"
-                                          VerticalScrollBarVisibility="Hidden" />
-                            <!-- 占位符：内容为空且未聚焦时显示 -->
-                            <TextBlock x:Name="PART_Placeholder"
-                                       Grid.Column="1"
-                                       Text="{TemplateBinding Placeholder}"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       Opacity="0.85"
-                                       Margin="{TemplateBinding Padding}"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Left"
-                                       IsHitTestVisible="False"
-                                       Visibility="Collapsed" />
-                        </Grid>
+                        <Border x:Name="PART_Inset" Padding="{DynamicResource InputInsetHorizontal}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <!-- 前置图标（LeadingIcon 为空时自动折叠，不占位） -->
+                                <Path Grid.Column="0"
+                                      Data="{TemplateBinding LeadingIcon}"
+                                      Fill="{DynamicResource TextSecondaryBrush}"
+                                      Width="{TemplateBinding IconSize}"
+                                      Height="{TemplateBinding IconSize}"
+                                      Stretch="Uniform"
+                                      Margin="{DynamicResource IconGap}"
+                                      VerticalAlignment="Center"
+                                      HorizontalAlignment="Center"
+                                      Visibility="{Binding LeadingIcon, Converter={StaticResource NotNullToVisibilityConverter}, RelativeSource={RelativeSource TemplatedParent}}" />
+                                <!-- 内容宿主（原生约定部件，必须存在）。不额外加 Margin：
+                                     位置完全由 PART_Inset 的内边距决定 -->
+                                <ScrollViewer x:Name="PART_ContentHost"
+                                              Grid.Column="1"
+                                              Foreground="{TemplateBinding Foreground}"
+                                              VerticalAlignment="Center"
+                                              HorizontalScrollBarVisibility="Hidden"
+                                              VerticalScrollBarVisibility="Hidden" />
+                                <!-- 占位符：与真实文本共用同一列与同一起点，保证左对齐一致 -->
+                                <TextBlock x:Name="PART_Placeholder"
+                                           Grid.Column="1"
+                                           Text="{TemplateBinding Placeholder}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           Opacity="0.85"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Left"
+                                           IsHitTestVisible="False"
+                                           Visibility="Collapsed" />
+                            </Grid>
+                        </Border>
                     </Border>
                     <ControlTemplate.Triggers>
                         <MultiTrigger>
@@ -79,6 +82,13 @@
                             </MultiTrigger.Conditions>
                             <Setter TargetName="PART_Placeholder" Property="Visibility" Value="Visible" />
                         </MultiTrigger>
+                        <!-- 多行输入（简介 / 开发规划 等）：文本与占位符一律左上对齐，并补上下内边距 -->
+                        <Trigger Property="AcceptsReturn" Value="True">
+                            <Setter TargetName="PART_Inset" Property="Padding" Value="{DynamicResource InputInsetMultiline}" />
+                            <Setter TargetName="PART_ContentHost" Property="VerticalAlignment" Value="Stretch" />
+                            <Setter TargetName="PART_Placeholder" Property="VerticalAlignment" Value="Top" />
+                            <Setter Property="VerticalContentAlignment" Value="Top" />
+                        </Trigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
                             <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
                         </Trigger>

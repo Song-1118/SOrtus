@@ -27,7 +27,8 @@
     <!-- ============================ 立项列表 ============================ -->
     <DataTemplate DataType="{x:Type vm:ProjectListViewModel}">
         <local:SOrCard VerticalAlignment="Stretch">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
                 <StackPanel>
                     <!-- 头部：标题 + 统计 + 新建 -->
                     <Grid Margin="0,0,0,14">
@@ -105,7 +106,8 @@
     <!-- ============================ 立项向导（两步） ============================ -->
     <DataTemplate DataType="{x:Type vm:ProjectWizardViewModel}">
         <local:SOrCard VerticalAlignment="Stretch">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
                 <StackPanel MaxWidth="760" Margin="4">
                     <TextBlock Text="{DynamicResource Nav_NewProject}" FontSize="22" FontWeight="Bold" Margin="0,0,0,18" />
 
@@ -191,7 +193,7 @@
                                     <local:SOrButton Variant="Secondary" Content="{Binding Name}"
                                                     IsActive="{Binding IsSelected}"
                                                     FontSize="12" FontWeight="Normal" Padding="12,6"
-                                                    CornerRadius="{DynamicResource CornerRadiusPill}"
+                                                    CornerRadius="{DynamicResource CornerRadiusSmall}"
                                                     Margin="0,0,8,8"
                                                     Command="{Binding DataContext.TogglePresetCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                     CommandParameter="{Binding}" />
@@ -238,13 +240,19 @@
                                           Margin="0,6,0,14" MinWidth="200" />
 
                         <TextBlock Text="{DynamicResource Wizard_Folder}" FontWeight="SemiBold" />
-                        <StackPanel Orientation="Horizontal" Margin="0,6,0,14">
-                            <local:SOrTextBox Text="{Binding FolderPath, UpdateSourceTrigger=PropertyChanged}"
-                                             MinWidth="320" />
-                            <local:SOrButton Command="{Binding BrowseFolderCommand}"
+                        <Grid Margin="0,6,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <local:SOrTextBox Grid.Column="0"
+                                             Text="{Binding FolderPath, UpdateSourceTrigger=PropertyChanged}"
+                                             Placeholder="{DynamicResource Wizard_FolderPlaceholder}" />
+                            <local:SOrButton Grid.Column="1" Command="{Binding BrowseFolderCommand}"
                                             Content="{DynamicResource Wizard_FolderBrowse}"
-                                            Margin="8,0,0,0" Padding="14,9" />
-                        </StackPanel>
+                                            Variant="Secondary" Margin="8,0,0,0"
+                                            Padding="16,0" VerticalAlignment="Stretch" />
+                        </Grid>
 
                         <TextBlock Text="{DynamicResource Wizard_Schedule}" FontWeight="SemiBold" />
                         <StackPanel Orientation="Horizontal" Margin="0,6,0,18">
@@ -273,7 +281,8 @@
     <!-- ============================ 立项详情 ============================ -->
     <DataTemplate DataType="{x:Type vm:ProjectDetailViewModel}">
         <local:SOrCard VerticalAlignment="Stretch">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
                 <StackPanel MaxWidth="760" Margin="4">
                     <!-- 头部：返回 + 标题 + 未保存徽标 -->
                     <Grid Margin="0,0,0,16">
@@ -394,7 +403,8 @@
     <!-- ============================ 设置 ============================ -->
     <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
         <local:SOrCard VerticalAlignment="Stretch">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
                 <StackPanel MaxWidth="560" Margin="4">
                     <TextBlock Text="{DynamicResource Settings_Title}" FontSize="22" FontWeight="Bold" Margin="0,0,0,18" />
 

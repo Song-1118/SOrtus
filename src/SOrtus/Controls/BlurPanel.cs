@@ -42,6 +42,15 @@ public static class BlurPanel
             "Background", typeof(Brush), typeof(BlurPanel),
             new PropertyMetadata(null, OnBackgroundChanged));
 
+    /// <summary>
+    /// 模糊层圆角半径（默认 0）。宿主控件自身是圆角时（如卡片），必须把同一半径传进来，
+    /// 否则模糊层与覆盖层是直角矩形，会在圆角卡片上露出方角。
+    /// </summary>
+    public static readonly DependencyProperty CornerRadiusProperty =
+        DependencyProperty.RegisterAttached(
+            "CornerRadius", typeof(CornerRadius), typeof(BlurPanel),
+            new PropertyMetadata(default(CornerRadius), OnCornerRadiusChanged));
+
     // 内部存储：承载层 Grid 与两个矩形
     private static readonly DependencyProperty LayerGridProperty =
         DependencyProperty.RegisterAttached("LayerGrid", typeof(Grid), typeof(BlurPanel), new PropertyMetadata(null));
@@ -72,6 +81,9 @@ public static class BlurPanel
 
     public static Brush? GetBackground(DependencyObject obj) => (Brush?)obj.GetValue(BackgroundProperty);
     public static void SetBackground(DependencyObject obj, Brush? value) => obj.SetValue(BackgroundProperty, value);
+
+    public static CornerRadius GetCornerRadius(DependencyObject obj) => (CornerRadius)obj.GetValue(CornerRadiusProperty);
+    public static void SetCornerRadius(DependencyObject obj, CornerRadius value) => obj.SetValue(CornerRadiusProperty, value);
 
     private static Grid? GetLayerGrid(DependencyObject obj) => (Grid?)obj.GetValue(LayerGridProperty);
     private static void SetLayerGrid(DependencyObject obj, Grid? value) => obj.SetValue(LayerGridProperty, value);
@@ -133,6 +145,33 @@ public static class BlurPanel
         if (rect is not null)
         {
             rect.Fill = ResolveBackdropFill(fe);
+        }
+    }
+
+    private static void OnCornerRadiusChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is FrameworkElement fe)
+        {
+            ApplyCornerRadius(fe);
+        }
+    }
+
+    /// <summary>把宿主圆角同步到两层矩形：Rectangle 只有单一 RadiusX/RadiusY，取四角最大值即可保证不露直角。</summary>
+    private static void ApplyCornerRadius(FrameworkElement fe)
+    {
+        var radius = GetCornerRadius(fe);
+        var max = Math.Max(Math.Max(radius.TopLeft, radius.TopRight), Math.Max(radius.BottomLeft, radius.BottomRight));
+
+        if (GetBlurRect(fe) is { } blurRect)
+        {
+            blurRect.RadiusX = max;
+            blurRect.RadiusY = max;
+        }
+
+        if (GetOverlayRect(fe) is { } overlay)
+        {
+            overlay.RadiusX = max;
+            overlay.RadiusY = max;
         }
     }
 
@@ -219,6 +258,7 @@ public static class BlurPanel
         SetLayerGrid(fe, grid);
         SetBlurRect(fe, blurRect);
         SetOverlayRect(fe, overlay);
+        ApplyCornerRadius(fe);
 
         InsertLayer(fe, grid);
         fe.SizeChanged += OnSizeChanged;

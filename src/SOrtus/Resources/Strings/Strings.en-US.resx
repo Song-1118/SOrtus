@@ -52,7 +52,7 @@
   <data name="Wizard_SubTypeGame" xml:space="preserve"><value>Game</value></data>
   <data name="Wizard_SubTypeOther" xml:space="preserve"><value>Other</value></data>
   <data name="Wizard_Folder" xml:space="preserve"><value>Linked folder</value></data>
-  <data name="Wizard_FolderBrowse" xml:space="preserve"><value>Browse</value></data>
+  <data name="Wizard_FolderPlaceholder" xml:space="preserve"><value>e.g. D://code//my-project</value></data>/n  <data name="Wizard_FolderBrowse" xml:space="preserve"><value>Browse</value></data>
   <data name="Wizard_Schedule" xml:space="preserve"><value>Schedule</value></data>
   <data name="Wizard_Create" xml:space="preserve"><value>Create</value></data>
   <data name="Wizard_Cancel" xml:space="preserve"><value>Cancel</value></data>

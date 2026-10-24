@@ -18,8 +18,10 @@
     </Window.InputBindings>
 
     <!-- 背景层与内容层分离：PART_Backdrop 是磨砂卡片的模糊取样源（BlurPanel 以它为背景采样，
-         卡片本身不在其视觉树内，避免自引用递归），保证「模糊的是背景、不是内容」。 -->
-    <Grid>
+         卡片本身不在其视觉树内，避免自引用递归），保证「模糊的是背景、不是内容」。
+         文本默认前景色在这里统一下发（TextElement.Foreground 继承），主题切换自动生效；
+         控件内部的局部 Foreground（如主按钮白字、标签色调）优先级更高，会正确覆盖。 -->
+    <Grid TextElement.Foreground="{DynamicResource TextPrimaryBrush}">
         <Border x:Name="PART_Backdrop" Background="{DynamicResource WallpaperBrush}" />
 
         <Grid Margin="22">
@@ -61,9 +63,12 @@
                 </DockPanel>
             </local:SOrCard>
 
-            <!-- 内容区：承载当前视图（视图内部自行使用 SOrCard 磨砂卡片） -->
+            <!-- 内容区：承载当前视图（视图内部自行使用 SOrCard 磨砂卡片）。
+                 与侧边栏同处一行、上下不留额外 margin，保证两张卡片顶边与底边严格对齐。 -->
             <Grid Grid.Column="1">
-                <ContentControl Content="{Binding CurrentView}" Margin="2" />
+                <ContentControl Content="{Binding CurrentView}"
+                                HorizontalContentAlignment="Stretch"
+                                VerticalContentAlignment="Stretch" />
             </Grid>
 
             <!-- 对话框覆盖层（规范 7.7 红线 #5：主窗口内承载，不用全透明窗口） -->

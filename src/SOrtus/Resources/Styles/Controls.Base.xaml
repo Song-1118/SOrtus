@@ -8,11 +8,17 @@
         此处不再定义原生 Button / TextBox 隐式样式，防止两套视觉并存。
     -->
 
-    <!-- 全局文本默认前景色随主题 -->
+    <!--
+        全局文本默认字体。
+        注意：这里**不设置** Foreground —— WPF 中样式 Setter 的优先级高于属性继承，
+        一旦在此写死前景色，按钮（深底白字）、标签（色调色）、对话框等内容文字都会被染成
+        统一的正文色，导致「深底 + 深字」看不见。默认前景改由视觉树根部继承
+        （MainWindow 的 TextElement.Foreground = TextPrimaryBrush），主题切换仍然生效。
+    -->
     <Style TargetType="TextBlock">
-        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="FontFamily" Value="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif" />
-        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        <!-- 不在这里设置 TextTrimming：全局省略号会把「应当换行」的说明文字也截断，
+             需要省略号的场景（列表项名称 / 详情标题）由各自模板显式声明。 -->
     </Style>
 
     <!-- 列表背景透明，避免遮挡磨砂卡片 -->

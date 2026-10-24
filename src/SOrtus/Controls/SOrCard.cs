@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace SOrtus.Controls;
 
@@ -40,9 +41,10 @@ public sealed class SOrCard : ContentControl
     public static readonly DependencyProperty CornerRadiusProperty =
         DependencyProperty.Register(
             nameof(CornerRadius), typeof(CornerRadius), typeof(SOrCard),
-            new PropertyMetadata(new CornerRadius(18)));
+            new PropertyMetadata(new CornerRadius(18), OnCornerRadiusChanged));
 
     private Border? _blurHost;
+    private Border? _root;
 
     static SOrCard()
     {
@@ -77,11 +79,51 @@ public sealed class SOrCard : ContentControl
     {
         base.OnApplyTemplate();
         _blurHost = GetTemplateChild("PART_BlurHost") as Border;
+        _root = GetTemplateChild("PART_Root") as Border;
         ApplyBlur();
+        UpdateClip();
+    }
+
+    protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+    {
+        base.OnRenderSizeChanged(sizeInfo);
+        UpdateClip();
     }
 
     private static void OnBlurPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
         ((SOrCard)d).ApplyBlur();
+
+    private static void OnCornerRadiusChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var card = (SOrCard)d;
+        card.ApplyBlur();
+        card.UpdateClip();
+    }
+
+    /// <summary>
+    /// 圆角裁剪：Border 不会自动裁剪子元素，模糊层/覆盖层又是矩形，不裁剪就会在圆角卡片上露出方角。
+    /// 在尺寸或圆角变化时重建 RectangleGeometry（纯几何，不做动画，性能安全）。
+    /// </summary>
+    private void UpdateClip()
+    {
+        if (_root is null)
+        {
+            return;
+        }
+
+        var radius = CornerRadius;
+        var max = Math.Max(Math.Max(radius.TopLeft, radius.TopRight), Math.Max(radius.BottomLeft, radius.BottomRight));
+        var width = _root.ActualWidth;
+        var height = _root.ActualHeight;
+
+        if (width <= 0 || height <= 0)
+        {
+            _root.Clip = null;
+            return;
+        }
+
+        _root.Clip = new RectangleGeometry(new Rect(0, 0, width, height), max, max);
+    }
 
     private void ApplyBlur()
     {
@@ -91,6 +133,7 @@ public sealed class SOrCard : ContentControl
         }
 
         BlurPanel.SetEnableBlur(_blurHost, EnableBlur);
+        BlurPanel.SetCornerRadius(_blurHost, CornerRadius);
         if (double.IsNaN(BlurRadius))
         {
             // 未显式指定半径时绑定全局强度令牌（DynamicResource，改一处全应用同步更新，规范 7.3 / A16）

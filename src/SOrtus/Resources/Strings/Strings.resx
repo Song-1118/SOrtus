@@ -52,7 +52,7 @@
   <data name="Wizard_SubTypeGame" xml:space="preserve"><value>游戏</value></data>
   <data name="Wizard_SubTypeOther" xml:space="preserve"><value>其他</value></data>
   <data name="Wizard_Folder" xml:space="preserve"><value>关联文件夹</value></data>
-  <data name="Wizard_FolderBrowse" xml:space="preserve"><value>浏览</value></data>
+  <data name="Wizard_FolderPlaceholder" xml:space="preserve"><value>例如 D://code//my-project</value></data>/n  <data name="Wizard_FolderBrowse" xml:space="preserve"><value>浏览</value></data>
   <data name="Wizard_Schedule" xml:space="preserve"><value>开发工期</value></data>
   <data name="Wizard_Create" xml:space="preserve"><value>创建</value></data>
   <data name="Wizard_Cancel" xml:space="preserve"><value>取消</value></data>

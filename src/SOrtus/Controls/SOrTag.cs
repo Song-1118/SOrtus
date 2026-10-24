@@ -40,11 +40,11 @@ public sealed class SOrTag : ContentControl
             nameof(Tone), typeof(SOrTagTone), typeof(SOrTag),
             new PropertyMetadata(SOrTagTone.AccentA));
 
-    /// <summary>圆角半径（缺省 Pill）。</summary>
+    /// <summary>圆角半径（缺省为圆角矩形：8；不使用 Pill，避免胶囊看起来是椭圆形）。</summary>
     public static readonly DependencyProperty CornerRadiusProperty =
         DependencyProperty.Register(
             nameof(CornerRadius), typeof(CornerRadius), typeof(SOrTag),
-            new PropertyMetadata(new CornerRadius(999)));
+            new PropertyMetadata(new CornerRadius(6)));
 
     static SOrTag()
     {

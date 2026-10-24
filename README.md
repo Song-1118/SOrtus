@@ -42,7 +42,7 @@ publish produced by `build/package.ps1`).
 ```bash
 dotnet test                                              # 单元 / 集成测试
 dotnet run --project src/SOrtus/SOrtus.csproj -- --smoke  # 控件与视图模板冒烟自检
-SOrtus.exe --shot resources\screenshots\latest            # 离屏渲染核心界面截图（不碰真实数据库）
+SOrtus.exe --shot resources\screenshots\latest 1180 760   # 离屏渲染核心界面截图（不碰真实数据库）
 ```
 
 ## Project Layout / 目录结构

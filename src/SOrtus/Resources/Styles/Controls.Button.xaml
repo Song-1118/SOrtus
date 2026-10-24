@@ -32,6 +32,7 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="{TemplateBinding CornerRadius}"
+                                Padding="{TemplateBinding Padding}"
                                 SnapsToDevicePixels="True">
                             <Grid>
                                 <!-- 悬浮 / 按压覆盖层：默认透明，触发器以动画驱动 Opacity -->
@@ -45,7 +46,12 @@
                                         Opacity="0"
                                         CornerRadius="{TemplateBinding CornerRadius}"
                                         IsHitTestVisible="False" />
-                                <Grid>
+                                <!-- 图标 + 文字作为一个整体居中：图标不单独占列，间距固定 8px，
+                                     Icon 为空时 Path 折叠不占位（修复 + 号贴左 / 与文字错位） -->
+                                <!-- 图标列自适应、内容列吃满剩余宽度：按钮被拉伸时（如向导三张类型卡）
+                                     内容才能拿到确定的可用宽度并正确换行；按钮自适应宽度时该列等于内容宽度，
+                                     图标与文字仍作为一个整体居中。 -->
+                                <Grid VerticalAlignment="Center">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
@@ -56,14 +62,13 @@
                                           Width="{TemplateBinding IconSize}"
                                           Height="{TemplateBinding IconSize}"
                                           Stretch="Uniform"
-                                          Margin="0,0,8,0"
+                                          Margin="{DynamicResource IconGap}"
                                           VerticalAlignment="Center"
                                           HorizontalAlignment="Center"
                                           Visibility="{Binding Icon, Converter={StaticResource NotNullToVisibilityConverter}, RelativeSource={RelativeSource TemplatedParent}}" />
                                     <ContentPresenter Grid.Column="1"
-                                                      Margin="{TemplateBinding Padding}"
-                                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                      VerticalAlignment="Center" />
+                                                      VerticalAlignment="Center"
+                                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
                                 </Grid>
                             </Grid>
                         </Border>
@@ -195,7 +200,7 @@
                 <Setter Property="Background" Value="{DynamicResource NavActiveBrush}" />
                 <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
-                <Setter Property="BorderThickness" Value="1.5" />
+                <Setter Property="BorderThickness" Value="1" />
             </MultiTrigger>
         </Style.Triggers>
     </Style>

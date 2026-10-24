@@ -36,7 +36,9 @@ public partial class App : Application
         if (e.Args is { Length: > 0 } && e.Args[0] == "--shot")
         {
             var target = e.Args.Length > 1 ? e.Args[1] : System.IO.Path.Combine(System.IO.Path.GetTempPath(), "sortus-shots");
-            await RunShotsAsync(target);
+            var width = e.Args.Length > 2 && double.TryParse(e.Args[2], out var w) ? w : 1180;
+            var height = e.Args.Length > 3 && double.TryParse(e.Args[3], out var h) ? h : 760;
+            await RunShotsAsync(target, width, height);
             Shutdown(0);
             return;
         }
@@ -74,7 +76,7 @@ public partial class App : Application
     /// 截图模式：以离屏窗口渲染核心界面并保存 PNG，供文档与资源库素材使用。
     /// 使用无副作用的桩服务，不读写真实数据库。
     /// </summary>
-    private async Task RunShotsAsync(string targetDir)
+    private async Task RunShotsAsync(string targetDir, double width, double height)
     {
         System.IO.Directory.CreateDirectory(targetDir);
 
@@ -94,8 +96,8 @@ public partial class App : Application
             DataContext = mainViewModel,
             WindowStyle = WindowStyle.None,
             ResizeMode = ResizeMode.NoResize,
-            Width = 1180,
-            Height = 760,
+            Width = width,
+            Height = height,
         };
         window.Show();
         await SettleAsync(window);
@@ -151,6 +153,20 @@ public partial class App : Application
         SaveWindow(window, System.IO.Path.Combine(targetDir, "05-settings.png"));
 
         window.Close();
+    }
+
+    private static IEnumerable<System.Windows.DependencyObject> Descendants(System.Windows.DependencyObject root)
+    {
+        var count = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
+        for (var i = 0; i < count; i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+            yield return child;
+            foreach (var nested in Descendants(child))
+            {
+                yield return nested;
+            }
+        }
     }
 
     private static async Task SettleAsync(Window window)

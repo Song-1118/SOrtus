@@ -100,7 +100,7 @@
   <data name="Settings_DataSoon" xml:space="preserve"><value>Coming soon</value></data>
   <data name="Settings_AboutLocal" xml:space="preserve"><value>A local-first project kickoff manager for programming, clip and todo projects.</value></data>
   <data name="Settings_AboutLicense" xml:space="preserve"><value>MIT License · No network requests · Data stays on this device</value></data>
-  <data name="Settings_AboutDb" xml:space="preserve"><value>Database: %LocalAppData%\SOrtus\</value></data>
+  <data name="Settings_AboutDb" xml:space="preserve"><value>Database: %LocalAppData%\SOrtus\sortus.db (single file, easy to back up)</value></data>
 
   <data name="Common_Confirm" xml:space="preserve"><value>Confirm</value></data>
   <data name="Common_OK" xml:space="preserve"><value>OK</value></data>

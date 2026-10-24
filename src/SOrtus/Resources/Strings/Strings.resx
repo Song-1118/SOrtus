@@ -100,7 +100,7 @@
   <data name="Settings_DataSoon" xml:space="preserve"><value>即将推出</value></data>
   <data name="Settings_AboutLocal" xml:space="preserve"><value>本地优先的立项管理工具，管理编程、剪辑与待办三类项目。</value></data>
   <data name="Settings_AboutLicense" xml:space="preserve"><value>MIT License · 无网络请求 · 数据只留在本机</value></data>
-  <data name="Settings_AboutDb" xml:space="preserve"><value>数据库位置：%LocalAppData%\SOrtus\</value></data>
+  <data name="Settings_AboutDb" xml:space="preserve"><value>数据库位置：%LocalAppData%\SOrtus\sortus.db（单文件，可直接备份）</value></data>
 
   <data name="Common_Confirm" xml:space="preserve"><value>确认</value></data>
   <data name="Common_OK" xml:space="preserve"><value>确定</value></data>

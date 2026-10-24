@@ -17,7 +17,7 @@
     <Style TargetType="local:SOrTag">
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Padding" Value="10,3" />
-        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeCaption}" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
@@ -117,22 +117,22 @@
                                 <!-- 名称 + 更新时间 -->
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
                                     <TextBlock Text="{Binding Project.Name, RelativeSource={RelativeSource TemplatedParent}}"
-                                               FontSize="15" FontWeight="SemiBold"
+                                               FontSize="{DynamicResource FontSizeSection}" FontWeight="SemiBold"
                                                TextTrimming="CharacterEllipsis" />
                                     <TextBlock Text="{Binding Project.UpdatedAt, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource UpdatedAtDisplayConverter}}"
-                                               FontSize="11" Margin="0,2,0,0"
+                                               FontSize="{DynamicResource FontSizeCaption}" Margin="0,2,0,0"
                                                Foreground="{DynamicResource TextSecondaryBrush}" />
                                 </StackPanel>
                                 <!-- 类型 / 状态胶囊 -->
                                 <local:SOrTag Grid.Column="1" Margin="0,0,8,0"
                                               Tone="{Binding Project.Type, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ProjectTypeToToneConverter}}">
                                     <TextBlock Text="{Binding Project.Type, RelativeSource={RelativeSource AncestorType=local:SOrProjectListItem}, Converter={StaticResource ProjectTypeDisplayConverter}}"
-                                               FontSize="12" />
+                                               FontSize="{DynamicResource FontSizeCaption}" />
                                 </local:SOrTag>
                                 <local:SOrTag Grid.Column="2" Margin="0,0,12,0"
                                               Tone="{Binding Project.Status, RelativeSource={RelativeSource AncestorType=local:SOrProjectListItem}, Converter={StaticResource ProjectStatusToToneConverter}}">
                                     <TextBlock Text="{Binding Project.Status, RelativeSource={RelativeSource AncestorType=local:SOrProjectListItem}, Converter={StaticResource ProjectStatusDisplayConverter}}"
-                                               FontSize="12" />
+                                               FontSize="{DynamicResource FontSizeCaption}" />
                                 </local:SOrTag>
                                 <!-- 进度条 -->
                                 <local:SOrProgressBar Grid.Column="3" Width="72" Margin="0,0,14,0" VerticalAlignment="Center"
@@ -147,6 +147,14 @@
                         <!-- 悬浮覆盖层（动画挂点：改 Opacity 即得平滑过渡） -->
                         <Border x:Name="PART_Hover"
                                 Background="{DynamicResource HoverOverlayBrush}"
+                                CornerRadius="{DynamicResource CornerRadiusMedium}"
+                                Opacity="0"
+                                IsHitTestVisible="False" />
+                        <!-- 键盘焦点环（VD-059）：列表项可获焦，Tab 移动时标识当前项；1px FocusRingBrush 内描边 -->
+                        <Border x:Name="PART_FocusRing"
+                                BorderBrush="{DynamicResource FocusRingBrush}"
+                                BorderThickness="1"
+                                Margin="0"
                                 CornerRadius="{DynamicResource CornerRadiusMedium}"
                                 Opacity="0"
                                 IsHitTestVisible="False" />
@@ -171,6 +179,9 @@
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="PART_FocusRing" Property="Opacity" Value="1" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

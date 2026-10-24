@@ -17,7 +17,8 @@
         <Setter Property="Foreground" Value="{DynamicResource TextOnAccentBrush}" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Padding" Value="16,9" />
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+        <!-- 全局默认 SemiBold：主按钮 / 关键操作（VD-002 三档字重中 SemiBold 的许可用途） -->
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -71,10 +72,15 @@
                                 </Grid>
                             </Grid>
                         </Border>
-                        <!-- 聚焦环保留命名但默认不显示：产品要求全局禁用键盘聚焦视觉，点击态用边框表达 -->
+                        <!-- 键盘焦点环（VD-059）：默认透明，仅 IsKeyboardFocusWithin 时显示；
+                             1px FocusRingBrush 内描边（Margin=0，绘制在按钮边界之内，不向外投影），
+                             避免旧版 2px 近白实心外扩环在磨砂卡片上过于抢眼；
+                             鼠标点击不触发（用 IsKeyboardFocusWithin 而非 IsFocus）；
+                             FocusVisualStyle 已置空，系统默认虚线框不显示，焦点视觉由本环接管 -->
                         <Border x:Name="PART_FocusRing"
-                                BorderBrush="{DynamicResource PrimaryBrush}"
+                                BorderBrush="{DynamicResource FocusRingBrush}"
                                 BorderThickness="1"
+                                Margin="0"
                                 CornerRadius="{TemplateBinding CornerRadius}"
                                 Opacity="0"
                                 IsHitTestVisible="False" />
@@ -121,6 +127,10 @@
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
+                        </Trigger>
+                        <!-- 键盘聚焦：焦点环淡入（VD-010）；悬浮 / 按压仍由各自覆盖层表达，互不覆盖 -->
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="PART_FocusRing" Property="Opacity" Value="1" />
                         </Trigger>
                         <!-- 规范调整：全局不显示键盘聚焦框（FocusVisualStyle 亦置空），避免点击后残留描边 -->
                         <Trigger Property="IsEnabled" Value="False">

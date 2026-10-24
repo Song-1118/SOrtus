@@ -52,16 +52,24 @@
   <data name="Wizard_SubTypeGame" xml:space="preserve"><value>Game</value></data>
   <data name="Wizard_SubTypeOther" xml:space="preserve"><value>Other</value></data>
   <data name="Wizard_Folder" xml:space="preserve"><value>Linked folder</value></data>
-  <data name="Wizard_FolderPlaceholder" xml:space="preserve"><value>e.g. D://code//my-project</value></data>/n  <data name="Wizard_FolderBrowse" xml:space="preserve"><value>Browse</value></data>
+  <data name="Wizard_FolderPlaceholder" xml:space="preserve"><value>e.g. D:\code\my-project</value></data>
+  <data name="Wizard_FolderBrowse" xml:space="preserve"><value>Browse</value></data>
   <data name="Wizard_Schedule" xml:space="preserve"><value>Schedule</value></data>
+  <data name="Wizard_DateStart" xml:space="preserve"><value>Start date</value></data>
+  <data name="Wizard_DateEnd" xml:space="preserve"><value>End date</value></data>
   <data name="Wizard_Create" xml:space="preserve"><value>Create</value></data>
   <data name="Wizard_Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Wizard_CreateHint" xml:space="preserve"><value>Only name and tech stack are required; the rest can be filled in later on the detail page</value></data>
   <data name="Wizard_Next" xml:space="preserve"><value>Next</value></data>
   <data name="Wizard_Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Wizard_CardBasic" xml:space="preserve"><value>Basic Information</value></data>
+  <data name="Wizard_CardOwnership" xml:space="preserve"><value>Ownership &amp; Schedule</value></data>
 
   <data name="Detail_Title" xml:space="preserve"><value>Project Details</value></data>
   <data name="Detail_Basic" xml:space="preserve"><value>Basic Info</value></data>
+  <data name="Detail_CardOwnership" xml:space="preserve"><value>Type &amp; Ownership</value></data>
+  <data name="Detail_CardDocuments" xml:space="preserve"><value>Documents</value></data>
+  <data name="Detail_CardPlanning" xml:space="preserve"><value>Planning &amp; Constraints</value></data>
   <data name="Detail_Process" xml:space="preserve"><value>Process</value></data>
   <data name="Detail_DevPlan" xml:space="preserve"><value>Dev Plan</value></data>
   <data name="Detail_Constraints" xml:space="preserve"><value>Constraints</value></data>
@@ -96,11 +104,16 @@
   <data name="Settings_LanguageEn" xml:space="preserve"><value>English</value></data>
   <data name="Settings_LanguageKo" xml:space="preserve"><value>한국어</value></data>
   <data name="Settings_LanguageJa" xml:space="preserve"><value>日本語</value></data>
+  <data name="Settings_LanguageSoonHint" xml:space="preserve"><value>Korean / Japanese support is planned for a future release</value></data>
+  <data name="Settings_UiLanguage" xml:space="preserve"><value>Interface Language</value></data>
+  <data name="Settings_DbPathLabel" xml:space="preserve"><value>Database Location</value></data>
   <data name="Settings_Data" xml:space="preserve"><value>Data</value></data>
   <data name="Settings_DataSoon" xml:space="preserve"><value>Coming soon</value></data>
   <data name="Settings_AboutLocal" xml:space="preserve"><value>A local-first project kickoff manager for programming, clip and todo projects.</value></data>
   <data name="Settings_AboutLicense" xml:space="preserve"><value>MIT License · No network requests · Data stays on this device</value></data>
   <data name="Settings_AboutDb" xml:space="preserve"><value>Database: %LocalAppData%\SOrtus\sortus.db (single file, easy to back up)</value></data>
+  <data name="Settings_DbPath" xml:space="preserve"><value>Database location: {0}</value></data>
+  <data name="Settings_OpenFolder" xml:space="preserve"><value>Open folder</value></data>
 
   <data name="Common_Confirm" xml:space="preserve"><value>Confirm</value></data>
   <data name="Common_OK" xml:space="preserve"><value>OK</value></data>
@@ -110,6 +123,7 @@
   <data name="Common_No" xml:space="preserve"><value>No</value></data>
   <data name="Common_Close" xml:space="preserve"><value>Close</value></data>
   <data name="Common_Saved" xml:space="preserve"><value>Saved</value></data>
+  <data name="Common_Deleted" xml:space="preserve"><value>Deleted</value></data>
   <data name="Common_Unsaved" xml:space="preserve"><value>You have unsaved changes. Leave anyway?</value></data>
   <data name="Common_DeleteConfirm" xml:space="preserve"><value>Delete this project? This cannot be undone.</value></data>
   <data name="Common_Error" xml:space="preserve"><value>Operation failed</value></data>
@@ -146,6 +160,7 @@
   <data name="App_Tagline" xml:space="preserve"><value>SOrtus · Local first</value></data>
   <data name="Common_RequiredClipType" xml:space="preserve"><value>Please choose a clip type</value></data>
   <data name="Common_RequiredDueTime" xml:space="preserve"><value>Please choose a due date</value></data>
+  <data name="Wizard_ErrorSchedule" xml:space="preserve"><value>End date cannot be earlier than start date</value></data>
   <data name="Common_SaveFailed" xml:space="preserve"><value>Save failed: {0}</value></data>
   <data name="Dialog_DeleteTitle" xml:space="preserve"><value>Delete project</value></data>
   <data name="Dialog_DeleteMessage" xml:space="preserve"><value>Delete &quot;{0}&quot;? This action cannot be undone.</value></data>
@@ -218,6 +233,12 @@
   </data>
   <data name="Doc_DeleteMessage" xml:space="preserve">
     <value>Delete "{0}"? This cannot be undone.</value>
+  </data>
+  <data name="Doc_OverwriteTitle" xml:space="preserve">
+    <value>Overwrite existing document?</value>
+  </data>
+  <data name="Doc_OverwriteMessage" xml:space="preserve">
+    <value>"{0}" already exists. Importing will overwrite its content. Continue?</value>
   </data>
   <data name="Doc_AutoSaveHint" xml:space="preserve">
     <value>Checking a to-do saves automatically</value>

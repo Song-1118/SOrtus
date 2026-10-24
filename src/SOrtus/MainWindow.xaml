@@ -47,7 +47,7 @@
             <local:SOrCard Grid.Column="0" Margin="0,0,18,0" VerticalAlignment="Stretch">
                 <DockPanel LastChildFill="True">
                     <TextBlock DockPanel.Dock="Top" Text="{DynamicResource App_Title}"
-                               FontSize="28" FontWeight="Bold" Margin="6,10,6,26" />
+                               FontSize="{DynamicResource FontSizeBrand}" FontWeight="SemiBold" Margin="6,10,6,26" />
 
                     <StackPanel DockPanel.Dock="Top" Orientation="Vertical">
                         <local:SOrButton Command="{Binding NavigateProjectsCommand}"
@@ -71,7 +71,7 @@
                     </StackPanel>
 
                     <TextBlock DockPanel.Dock="Bottom" Text="{DynamicResource App_Tagline}"
-                               FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
+                               FontSize="{DynamicResource FontSizeCaption}" Foreground="{DynamicResource TextSecondaryBrush}"
                                Margin="6,12,6,4" Opacity="0.8" />
                 </DockPanel>
             </local:SOrCard>

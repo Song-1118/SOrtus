@@ -52,16 +52,24 @@
   <data name="Wizard_SubTypeGame" xml:space="preserve"><value>游戏</value></data>
   <data name="Wizard_SubTypeOther" xml:space="preserve"><value>其他</value></data>
   <data name="Wizard_Folder" xml:space="preserve"><value>关联文件夹</value></data>
-  <data name="Wizard_FolderPlaceholder" xml:space="preserve"><value>例如 D://code//my-project</value></data>/n  <data name="Wizard_FolderBrowse" xml:space="preserve"><value>浏览</value></data>
+  <data name="Wizard_FolderPlaceholder" xml:space="preserve"><value>例如 D:\code\my-project</value></data>
+  <data name="Wizard_FolderBrowse" xml:space="preserve"><value>浏览</value></data>
   <data name="Wizard_Schedule" xml:space="preserve"><value>开发工期</value></data>
+  <data name="Wizard_DateStart" xml:space="preserve"><value>开始日期</value></data>
+  <data name="Wizard_DateEnd" xml:space="preserve"><value>结束日期</value></data>
   <data name="Wizard_Create" xml:space="preserve"><value>创建</value></data>
   <data name="Wizard_Cancel" xml:space="preserve"><value>取消</value></data>
   <data name="Wizard_CreateHint" xml:space="preserve"><value>创建只需名称与技术栈，其余信息可在详情页随时补充</value></data>
   <data name="Wizard_Next" xml:space="preserve"><value>下一步</value></data>
   <data name="Wizard_Back" xml:space="preserve"><value>上一步</value></data>
+  <data name="Wizard_CardBasic" xml:space="preserve"><value>基本信息</value></data>
+  <data name="Wizard_CardOwnership" xml:space="preserve"><value>归属与工期</value></data>
 
   <data name="Detail_Title" xml:space="preserve"><value>立项详情</value></data>
   <data name="Detail_Basic" xml:space="preserve"><value>基础信息</value></data>
+  <data name="Detail_CardOwnership" xml:space="preserve"><value>类型与归属</value></data>
+  <data name="Detail_CardDocuments" xml:space="preserve"><value>项目文档</value></data>
+  <data name="Detail_CardPlanning" xml:space="preserve"><value>规划与约束</value></data>
   <data name="Detail_Process" xml:space="preserve"><value>过程管理</value></data>
   <data name="Detail_DevPlan" xml:space="preserve"><value>开发规划</value></data>
   <data name="Detail_Constraints" xml:space="preserve"><value>开发约束</value></data>
@@ -96,11 +104,16 @@
   <data name="Settings_LanguageEn" xml:space="preserve"><value>English</value></data>
   <data name="Settings_LanguageKo" xml:space="preserve"><value>한국어</value></data>
   <data name="Settings_LanguageJa" xml:space="preserve"><value>日本語</value></data>
+  <data name="Settings_LanguageSoonHint" xml:space="preserve"><value>한국어 / 日本語 将在后续版本支持</value></data>
+  <data name="Settings_UiLanguage" xml:space="preserve"><value>界面语言</value></data>
+  <data name="Settings_DbPathLabel" xml:space="preserve"><value>数据库位置</value></data>
   <data name="Settings_Data" xml:space="preserve"><value>数据</value></data>
   <data name="Settings_DataSoon" xml:space="preserve"><value>即将推出</value></data>
   <data name="Settings_AboutLocal" xml:space="preserve"><value>本地优先的立项管理工具，管理编程、剪辑与待办三类项目。</value></data>
   <data name="Settings_AboutLicense" xml:space="preserve"><value>MIT License · 无网络请求 · 数据只留在本机</value></data>
   <data name="Settings_AboutDb" xml:space="preserve"><value>数据库位置：%LocalAppData%\SOrtus\sortus.db（单文件，可直接备份）</value></data>
+  <data name="Settings_DbPath" xml:space="preserve"><value>数据库位置：{0}</value></data>
+  <data name="Settings_OpenFolder" xml:space="preserve"><value>打开所在文件夹</value></data>
 
   <data name="Common_Confirm" xml:space="preserve"><value>确认</value></data>
   <data name="Common_OK" xml:space="preserve"><value>确定</value></data>
@@ -110,6 +123,7 @@
   <data name="Common_No" xml:space="preserve"><value>否</value></data>
   <data name="Common_Close" xml:space="preserve"><value>关闭</value></data>
   <data name="Common_Saved" xml:space="preserve"><value>已保存</value></data>
+  <data name="Common_Deleted" xml:space="preserve"><value>已删除</value></data>
   <data name="Common_Unsaved" xml:space="preserve"><value>有未保存的更改，确定离开？</value></data>
   <data name="Common_DeleteConfirm" xml:space="preserve"><value>确定要删除该立项吗？此操作不可撤销。</value></data>
   <data name="Common_Error" xml:space="preserve"><value>操作失败</value></data>
@@ -146,6 +160,7 @@
   <data name="App_Tagline" xml:space="preserve"><value>SOrtus · 本地优先</value></data>
   <data name="Common_RequiredClipType" xml:space="preserve"><value>请选择剪辑类型</value></data>
   <data name="Common_RequiredDueTime" xml:space="preserve"><value>请选择完成时间</value></data>
+  <data name="Wizard_ErrorSchedule" xml:space="preserve"><value>结束日期不能早于开始日期</value></data>
   <data name="Common_SaveFailed" xml:space="preserve"><value>保存失败：{0}</value></data>
   <data name="Dialog_DeleteTitle" xml:space="preserve"><value>删除立项</value></data>
   <data name="Dialog_DeleteMessage" xml:space="preserve"><value>确定删除「{0}」吗？该操作不可撤销。</value></data>
@@ -218,6 +233,12 @@
   </data>
   <data name="Doc_DeleteMessage" xml:space="preserve">
     <value>确定删除「{0}」？此操作不可撤销。</value>
+  </data>
+  <data name="Doc_OverwriteTitle" xml:space="preserve">
+    <value>覆盖已有文档？</value>
+  </data>
+  <data name="Doc_OverwriteMessage" xml:space="preserve">
+    <value>「{0}」已存在，导入将覆盖其内容。是否继续？</value>
   </data>
   <data name="Doc_AutoSaveHint" xml:space="preserve">
     <value>勾选待办会自动保存</value>

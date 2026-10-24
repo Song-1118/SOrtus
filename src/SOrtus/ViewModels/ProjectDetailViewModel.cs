@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using System.Windows.Threading;
 using SOrtus.Common;
 using SOrtus.Core.Models;
 using SOrtus.Core.Repositories;
@@ -55,6 +56,8 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
     private string _newTechStack = string.Empty;
     private string? _documentError;
     private string? _documentStatus;
+    private string? _statusMessage;
+    private readonly DispatcherTimer _statusTimer;
     private ProjectDocument? _prdDocument;
     private ProjectDocument? _planDocument;
 
@@ -105,6 +108,10 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
         _addTechStackCommand = new AsyncRelayCommand(AddTechStackAsync);
         _removeTechStackCommand = new RelayCommand(RemoveTechStack);
 
+        // 状态提示自动消失定时器（VD-009：保存 / 删除成功反馈展示约 2 秒）
+        _statusTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        _statusTimer.Tick += OnStatusTimerTick;
+
         if (CanUseDocuments())
         {
             _ = LoadDocumentsAsync();
@@ -124,6 +131,12 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
 
     /// <summary>编程类型才展示三分版块。</summary>
     public bool IsProgramming => _project.Type == ProjectType.Programming;
+
+    /// <summary>剪辑类型（详情页按类型派生字段标签：剪辑类型 / 素材文件夹）。</summary>
+    public bool IsClip => _project.Type == ProjectType.Clip;
+
+    /// <summary>待办类型（无子类型选项，界面隐藏该字段）。</summary>
+    public bool IsTodo => _project.Type == ProjectType.Todo;
 
     /// <summary>当前版块标识。</summary>
     public string ActiveSection
@@ -284,6 +297,82 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
     }
 
     public bool HasDocumentStatus => !string.IsNullOrEmpty(_documentStatus);
+
+    /// <summary>
+    /// 保存 / 删除操作的状态提示（VD-009：成功后就近反馈在页脚，约 2 秒后自动消失）。
+    /// </summary>
+    public string? StatusMessage
+    {
+        get => _statusMessage;
+        private set
+        {
+            if (SetProperty(ref _statusMessage, value))
+            {
+                OnPropertyChanged(nameof(HasStatusMessage));
+            }
+        }
+    }
+
+    public bool HasStatusMessage => !string.IsNullOrEmpty(_statusMessage);
+
+    /// <summary>展示状态提示并重置自动消失定时器（VD-009）。</summary>
+    private void ShowStatus(string message)
+    {
+        StatusMessage = message;
+        _statusTimer.Stop();
+        _statusTimer.Start();
+    }
+
+    private void OnStatusTimerTick(object? sender, EventArgs e)
+    {
+        _statusTimer.Stop();
+        StatusMessage = null;
+    }
+
+    /// <summary>
+    /// 子类型下拉选项（VD-019：按项目类型联动，与立项向导保持一致，替代详情页自由文本输入）。
+    /// 待办类型无子类型选项，界面隐藏该字段。
+    /// </summary>
+    public List<string> SubTypeOptions => _project.Type switch
+    {
+        ProjectType.Clip => new List<string>
+        {
+            _localization.GetString("Wizard_ClipVlog"),
+            _localization.GetString("Wizard_ClipTutorial"),
+            _localization.GetString("Wizard_ClipFilm"),
+            _localization.GetString("Wizard_ClipDoc"),
+            _localization.GetString("Wizard_ClipOther"),
+        },
+        ProjectType.Todo => new List<string>(),
+        _ => new List<string>
+        {
+            _localization.GetString("Wizard_SubTypeApp"),
+            _localization.GetString("Wizard_SubTypeLib"),
+            _localization.GetString("Wizard_SubTypeWeb"),
+            _localization.GetString("Wizard_SubTypeGame"),
+            _localization.GetString("Wizard_SubTypeOther"),
+        },
+    };
+
+    /// <summary>当前项目类型是否提供子类型选项（待办为 false，界面隐藏字段）。</summary>
+    public bool HasSubTypeOptions => SubTypeOptions.Count > 0;
+
+    /// <summary>子类型（读写回项目实体，修改即标记未保存）。</summary>
+    public string SubType
+    {
+        get => _project.SubType;
+        set
+        {
+            if (string.Equals(_project.SubType, value, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _project.SubType = value;
+            OnPropertyChanged();
+            IsDirty = true;
+        }
+    }
 
     /// <summary>文档功能是否可用（服务缺失时降级：按钮禁用，不误导用户）。</summary>
     public bool IsDocumentFeatureAvailable => CanUseDocuments();
@@ -479,6 +568,19 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
                 ? null
                 : await _documentRepository!.GetSlotAsync(_project.Id, category);
 
+            // VD-017：PRD / 迭代规划是单槽位，已存在文档时先二次确认，避免无声覆盖；
+            // 其他文档为多份并存，行为不变。
+            if (document is not null)
+            {
+                var overwrite = await _dialogService.ConfirmAsync(
+                    _localization.GetString("Doc_OverwriteTitle"),
+                    string.Format(_localization.GetString("Doc_OverwriteMessage"), document.Title));
+                if (!overwrite)
+                {
+                    return;
+                }
+            }
+
             document ??= new ProjectDocument
             {
                 ProjectId = _project.Id,
@@ -645,6 +747,8 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
             await _service.SaveAsync(_project);
             IsDirty = false;
             OnPropertyChanged(nameof(UpdatedText));
+            // VD-009：保存成功就近反馈（页脚状态行，约 2 秒后自动消失）
+            ShowStatus(_localization.GetString("Common_Saved"));
         });
     }
 
@@ -660,6 +764,10 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
         }
 
         await _service.DeleteAsync(_project.Id);
+
+        // VD-009：先给出「已删除」反馈，停留约 2 秒再关闭，避免用户看不到操作结果
+        ShowStatus(_localization.GetString("Common_Deleted"));
+        await Task.Delay(1500);
         _onClose();
     }
 

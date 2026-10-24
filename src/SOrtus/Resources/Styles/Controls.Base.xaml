@@ -53,6 +53,15 @@
                         <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                           Margin="{TemplateBinding Padding}" />
+                        <!-- 键盘焦点环（VD-059）：Tab 在列表内移动时标识当前项；1px FocusRingBrush 内描边；
+                             选中态另有高亮底，可叠加 -->
+                        <Border x:Name="PART_FocusRing"
+                                BorderBrush="{DynamicResource FocusRingBrush}"
+                                BorderThickness="1"
+                                Margin="0"
+                                CornerRadius="{DynamicResource CornerRadiusMedium}"
+                                Opacity="0"
+                                IsHitTestVisible="False" />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -61,6 +70,9 @@
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="PART_Hover" Property="Background" Value="{DynamicResource NavActiveBrush}" />
                             <Setter TargetName="PART_Hover" Property="Opacity" Value="1" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="PART_FocusRing" Property="Opacity" Value="1" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -134,19 +146,28 @@
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
                     <StackPanel Orientation="Horizontal" Background="Transparent">
-                        <Border x:Name="PART_Box" Width="14" Height="14"
-                                CornerRadius="{DynamicResource CornerRadiusBar}"
-                                Background="{DynamicResource SurfaceBrush}"
-                                BorderBrush="{DynamicResource BorderBrush}"
-                                BorderThickness="1.25"
-                                VerticalAlignment="Center">
-                            <Path x:Name="PART_Check" Width="10" Height="10" Stretch="Uniform"
-                                  Data="M 3,8.5 L 6.5,12 L 13,4"
-                                  Stroke="{DynamicResource PrimaryBrush}"
-                                  StrokeThickness="1.75"
-                                  StrokeStartLineCap="Round"
-                                  StrokeEndLineCap="Round"
-                                  Visibility="Collapsed" />
+                        <!-- 命中区（VD-015）：24×24 透明边框包住 14×14 方框，达到可访问性最小可点尺寸，
+                             点击空白处亦可切换；同时兼任键盘焦点环——获焦时 2px Primary 描边（VD-010），
+                             方框固定 14×14 居中，描边不挤压内容、不产生位移 -->
+                        <Border x:Name="PART_HitArea" MinWidth="24" MinHeight="24"
+                                Background="Transparent" VerticalAlignment="Center"
+                                BorderBrush="{DynamicResource PrimaryBrush}"
+                                BorderThickness="0"
+                                CornerRadius="{DynamicResource CornerRadiusBar}">
+                            <Border x:Name="PART_Box" Width="14" Height="14"
+                                    CornerRadius="{DynamicResource CornerRadiusBar}"
+                                    Background="{DynamicResource SurfaceBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1.25"
+                                    VerticalAlignment="Center">
+                                <Path x:Name="PART_Check" Width="10" Height="10" Stretch="Uniform"
+                                      Data="M 3,8.5 L 6.5,12 L 13,4"
+                                      Stroke="{DynamicResource PrimaryBrush}"
+                                      StrokeThickness="1.75"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      Visibility="Collapsed" />
+                            </Border>
                         </Border>
                         <ContentPresenter Margin="6,0,0,0" VerticalAlignment="Center" RecognizesAccessKey="True" />
                     </StackPanel>
@@ -157,6 +178,10 @@
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="PART_Box" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                        </Trigger>
+                        <!-- 键盘聚焦：命中区描边 2px 形成焦点环（VD-010；方框居中，不位移） -->
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="PART_HitArea" Property="BorderThickness" Value="2" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.5" />
@@ -170,7 +195,7 @@
     <!-- 提示气泡：默认模板是白底黑字，深色主题下同样会「漏白」 -->
     <Style TargetType="ToolTip">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeCaption}" />
         <Setter Property="MaxWidth" Value="360" />
         <Setter Property="Template">
             <Setter.Value>

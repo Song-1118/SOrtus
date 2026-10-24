@@ -160,12 +160,18 @@ public class ViewModelTests
         var created = 0;
         var vm = new ProjectWizardViewModel(service, new StubLocalization(), () => created++);
 
+        // VD-008：校验错误就近落在字段级属性，全局 ErrorMessage 仅留给写库失败
         await ((Common.AsyncRelayCommand)vm.CreateCommand).ExecuteAsync();
-        Assert.Equal("Common_RequiredName", vm.ErrorMessage);
+        Assert.Equal("Common_RequiredName", vm.NameError);
+        Assert.True(vm.HasNameError);
+        Assert.Empty(vm.ErrorMessage);
 
         vm.Name = "新项目";
         await ((Common.AsyncRelayCommand)vm.CreateCommand).ExecuteAsync();
-        Assert.Equal("Common_RequiredTechStack", vm.ErrorMessage);
+        Assert.Equal("Common_RequiredTechStack", vm.TechStackError);
+        Assert.True(vm.HasTechStackError);
+        Assert.Null(vm.NameError);
+        Assert.Empty(vm.ErrorMessage);
         Assert.Empty(service.Items);
         Assert.Equal(0, created);
     }
@@ -211,12 +217,16 @@ public class ViewModelTests
         vm.NextStepCommand.Execute(null);
         vm.Name = "剪辑测试";
 
+        // VD-008：剪辑类型错误就近落在 ClipTypeError
         await ((Common.AsyncRelayCommand)vm.CreateCommand).ExecuteAsync();
-        Assert.Equal("Common_RequiredClipType", vm.ErrorMessage);
+        Assert.Equal("Common_RequiredClipType", vm.ClipTypeError);
+        Assert.True(vm.HasClipTypeError);
+        Assert.Empty(vm.ErrorMessage);
 
         vm.SubType = vm.SubTypeOptions.First();
         await ((Common.AsyncRelayCommand)vm.CreateCommand).ExecuteAsync();
 
+        Assert.Null(vm.ClipTypeError);
         Assert.Empty(vm.ErrorMessage);
         var project = Assert.Single(service.Items);
         Assert.Equal(ProjectType.Clip, project.Type);
@@ -234,13 +244,17 @@ public class ViewModelTests
         vm.Name = "待办测试";
         vm.ScheduleEnd = null;
 
+        // VD-008：待办完成时间错误就近落在 DueTimeError
         await ((Common.AsyncRelayCommand)vm.CreateCommand).ExecuteAsync();
-        Assert.Equal("Common_RequiredDueTime", vm.ErrorMessage);
+        Assert.Equal("Common_RequiredDueTime", vm.DueTimeError);
+        Assert.True(vm.HasDueTimeError);
+        Assert.Empty(vm.ErrorMessage);
         Assert.Empty(service.Items);
 
         vm.ScheduleEnd = new DateTime(2026, 12, 1);
         await ((Common.AsyncRelayCommand)vm.CreateCommand).ExecuteAsync();
 
+        Assert.Null(vm.DueTimeError);
         Assert.Empty(vm.ErrorMessage);
         Assert.Equal(ProjectType.Todo, Assert.Single(service.Items).Type);
     }

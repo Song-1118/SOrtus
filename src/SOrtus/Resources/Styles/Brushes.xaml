@@ -46,6 +46,8 @@
 
     <!-- 语义画刷 -->
     <SolidColorBrush x:Key="PrimaryBrush" Color="{DynamicResource ColorPrimary}" />
+    <!-- 键盘焦点环画刷（VD-059）：全站控件焦点视觉唯一取色处，深浅主题各自中间灰度 -->
+    <SolidColorBrush x:Key="FocusRingBrush" Color="{DynamicResource ColorFocusRing}" />
     <SolidColorBrush x:Key="SurfaceBrush" Color="{DynamicResource ColorSurface}" />
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="{DynamicResource ColorTextPrimary}" />
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="{DynamicResource ColorTextSecondary}" />

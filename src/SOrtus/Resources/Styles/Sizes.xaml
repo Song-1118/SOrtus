@@ -54,4 +54,28 @@
     <!-- 下拉浮层最大高度（超出后内部滚动） -->
     <sys:Double x:Key="DropDownMaxHeight">320</sys:Double>
 
+    <!--
+        字号五档（VD-001）：全站统一引用，禁止页面 / 控件模板内联字面量。
+        档位语义（与 UI 设计方案 2.4 字号阶梯对应，7 档旧字面量收敛为 5 档）：
+          FontSizeTitle    页面标题（旧 22）
+          FontSizeSection  分区标题 / 卡片标题 / 弹窗标题（旧 17 / 15 / 16 / 18）
+          FontSizeBody     正文 / 输入内容（旧 14）
+          FontSizeLabel    字段标签（旧 13，与 14px 输入内容形成 1px 层级差）
+          FontSizeCaption  辅助说明 / 脚注（旧 12 / 11）
+        主题无关，但与全局令牌引用方式一致，一律用 DynamicResource。
+    -->
+    <sys:Double x:Key="FontSizeTitle">22</sys:Double>
+    <sys:Double x:Key="FontSizeSection">16</sys:Double>
+    <sys:Double x:Key="FontSizeBody">14</sys:Double>
+    <sys:Double x:Key="FontSizeLabel">13</sys:Double>
+    <sys:Double x:Key="FontSizeCaption">12</sys:Double>
+
+    <!-- 品牌字号（侧边栏 SOrtus 字样，UI 设计方案 2.4「28=品牌」档，不参与五档收敛） -->
+    <sys:Double x:Key="FontSizeBrand">28</sys:Double>
+
+    <!-- 内容区版心最大宽度（VD-059：全站统一 1120 软上限——窗口小于该宽度时表单完全撑满、
+         无居中窄条观感；仅当窗口超过该宽度时才停在上限，保证超宽窗口下行长仍可扫读。
+         页面引用时不得再加 HorizontalAlignment="Center"，避免退回居中排版） -->
+    <sys:Double x:Key="ContentMaxWidth">1120</sys:Double>
+
 </ResourceDictionary>

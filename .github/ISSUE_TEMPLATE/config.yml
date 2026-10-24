@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: ❓ 我有使用疑问
+    url: https://github.com/Song-1118/SOrtus/discussions/categories/q-a
+    about: 不知道某个功能怎么用、能不能这样操作？来这里提问，可标记答案，方便后来人搜索。
+  - name: 💡 我想聊聊想法
+    url: https://github.com/Song-1118/SOrtus/discussions/categories/ideas
+    about: 想法还不成熟、想先听听大家意见？先在这里讨论，成熟后再正式提功能建议。
+  - name: 📣 查看公告与发布说明
+    url: https://github.com/Song-1118/SOrtus/discussions/categories/announcements
+    about: 版本更新、重要变更、维护计划都会发在这里，提问前不妨先看一眼。

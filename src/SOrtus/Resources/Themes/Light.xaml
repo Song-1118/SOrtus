@@ -4,7 +4,7 @@
     <!--
         浅色主题（中性配色）。资源键与 Dark.xaml 完全一一对应（规范 7.8），仅取值不同。
         设计约束：背景纯白、无渐变、无蓝紫；主色为近黑，靠中性灰阶与细边框表达层次。
-        32 个键不得增减（缺键会导致主题整本替换后解析失败）。
+        资源键与 Dark.xaml 必须一一对应（缺键会导致主题整本替换后解析失败），增删需两本同步。
     -->
 
     <Color x:Key="ColorBackgroundA">#EDF0F4</Color>
@@ -19,6 +19,9 @@
     <Color x:Key="ColorBorder">#E5E7EB</Color>
     <Color x:Key="ColorSurface">#FFFFFF</Color>
     <Color x:Key="ColorPrimary">#111827</Color>
+    <!-- 键盘焦点环专用色（VD-059）：中间灰度，与 Surface(#FFFFFF) 和 Primary 填充(#111827) 均保持可见对比；
+         不用 Primary 本身——主按钮底色即近黑 Primary，同色环在按钮上不可见 -->
+    <Color x:Key="ColorFocusRing">#6B7280</Color>
     <Color x:Key="ColorShadow">#9CA3AF</Color>
 
     <!-- 模糊覆盖层颜色：浅色为纯白覆盖（配合 OverlayOpacity 控制磨砂通透度） -->

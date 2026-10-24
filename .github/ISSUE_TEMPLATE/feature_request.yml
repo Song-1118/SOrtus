@@ -1,0 +1,69 @@
+name: 我要提建议
+description: 提出新功能、改进现有交互或性能
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        欢迎提想法！本项目为个人维护的 MIT 开源软件，维护精力有限。
+        请把**痛点**讲清楚，而不是只给出功能名称——这能大幅提高被采纳的概率。
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 你想解决什么问题？
+      description: 描述你遇到的实际场景和痛点，而不是直接跳到解决方案
+      placeholder: 我不喜欢这个主题，但又不想自己慢慢做
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 你希望的功能
+      description: 具体希望做成什么样？放在哪里？怎么触发？
+      placeholder: 我希望添加一个导入/导出主题功能
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 你考虑过的替代方案
+      description: 有没有其他方式能达到同样效果？为什么它们不够好？
+    validations:
+      required: false
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: 这条建议属于哪类？
+      options:
+        - 新功能
+        - 现有功能的改进
+        - 界面 / 交互体验优化
+        - 性能与资源占用
+        - 无障碍与可访问性
+        - 其他
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: constraint
+    attributes:
+      label: 请确认以下约束
+      description: 本项目是纯本地应用，不承担任何联网、账号、云同步类需求
+      options:
+        - label: 该建议不需要联网、登录或云同步即可实现
+          required: true
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: 参与意愿
+      options:
+        - label: 我愿意提交 Pull Request 实现这个功能
+          required: false
+        - label: 我愿意帮忙测试或提供设计稿 / 原型
+          required: false

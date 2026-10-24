@@ -1,0 +1,80 @@
+name: 我发现了错别字
+description: 界面文案错别字、翻译错误、术语不一致、标点问题
+title: "[Typo]: "
+labels: ["typo", "good first issue"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢帮忙校对！文案问题修复成本很低，通常很快就能合并。
+        如果是**同一处文案在多个界面都错了**，请一并列出位置；若问题较多，也可以直接提 PR 修改语言文件。
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 问题类型
+      options:
+        - 错别字 / 用词错误
+        - 外文翻译错误（译错、译得不通顺）
+        - 术语不一致（同一个东西在两处叫法不同）
+        - 标点、大小写、空格问题
+        - 漏翻译（界面仍是英文原文）
+        - 其他文案问题
+    validations:
+      required: true
+
+  - type: dropdown
+    id: lang
+    attributes:
+      label: 出现的界面语言
+      options:
+        - 简体中文
+        - 繁体中文
+        - English
+        - 日本語
+        - 한국어
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: 出现位置
+      description: 哪个窗口、菜单、按钮或提示？越具体越好
+      placeholder: 新建项目 -> 编程项目
+    validations:
+      required: true
+
+  - type: input
+    id: current
+    attributes:
+      label: 当前文本
+      description: 请原样复制界面上显示的文字，包括标点
+      placeholder: 应用启动是自动运行
+    validations:
+      required: true
+
+  - type: input
+    id: suggested
+    attributes:
+      label: 建议改为
+      description: 如果是外文翻译错误，也欢迎附上你认为更贴切的译法
+      placeholder: 应用启动时自动运行
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: 截图（可选）
+      description: 把截图拖拽到这里，能帮我们快速定位。涉及外文翻译时，请同时圈出对应原文
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: 提交前确认
+      options:
+        - label: 我已确认在最新 Release 版本中该问题仍存在
+          required: false

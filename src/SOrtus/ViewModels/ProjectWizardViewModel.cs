@@ -43,6 +43,11 @@ internal sealed class ProjectWizardViewModel : ViewModelBase
     private DateTime? _scheduleStart = DateTime.Today;
     private DateTime? _scheduleEnd;
     private string _errorMessage = string.Empty;
+    private string? _nameError;
+    private string? _techStackError;
+    private string? _clipTypeError;
+    private string? _dueTimeError;
+    private string? _scheduleError;
     private int _step = 1;
     private ProjectType _selectedType = ProjectType.Programming;
 
@@ -150,13 +155,26 @@ internal sealed class ProjectWizardViewModel : ViewModelBase
     public string Name
     {
         get => _name;
-        set => SetProperty(ref _name, value);
+        set
+        {
+            if (SetProperty(ref _name, value))
+            {
+                // 用户重新编辑即清除该字段错误（VD-008）
+                NameError = null;
+            }
+        }
     }
 
     public string TechStackInput
     {
         get => _techStackInput;
-        set => SetProperty(ref _techStackInput, value);
+        set
+        {
+            if (SetProperty(ref _techStackInput, value))
+            {
+                TechStackError = null;
+            }
+        }
     }
 
     public string Summary
@@ -168,7 +186,13 @@ internal sealed class ProjectWizardViewModel : ViewModelBase
     public string SubType
     {
         get => _subType;
-        set => SetProperty(ref _subType, value);
+        set
+        {
+            if (SetProperty(ref _subType, value))
+            {
+                ClipTypeError = null;
+            }
+        }
     }
 
     public string FolderPath
@@ -186,7 +210,15 @@ internal sealed class ProjectWizardViewModel : ViewModelBase
     public DateTime? ScheduleEnd
     {
         get => _scheduleEnd;
-        set => SetProperty(ref _scheduleEnd, value);
+        set
+        {
+            if (SetProperty(ref _scheduleEnd, value))
+            {
+                // 结束日期同时驱动「必填」与「区间」两类错误，编辑即双双清除（VD-007 / VD-008）
+                DueTimeError = null;
+                ScheduleError = null;
+            }
+        }
     }
 
     public string ErrorMessage
@@ -194,6 +226,81 @@ internal sealed class ProjectWizardViewModel : ViewModelBase
         get => _errorMessage;
         set => SetProperty(ref _errorMessage, value);
     }
+
+    /// <summary>项目名字校验错误（就近展示在字段下方，VD-008；空表示无错误）。</summary>
+    public string? NameError
+    {
+        get => _nameError;
+        private set
+        {
+            if (SetProperty(ref _nameError, value))
+            {
+                OnPropertyChanged(nameof(HasNameError));
+            }
+        }
+    }
+
+    public bool HasNameError => !string.IsNullOrEmpty(_nameError);
+
+    /// <summary>技术栈校验错误（仅编程类，VD-008）。</summary>
+    public string? TechStackError
+    {
+        get => _techStackError;
+        private set
+        {
+            if (SetProperty(ref _techStackError, value))
+            {
+                OnPropertyChanged(nameof(HasTechStackError));
+            }
+        }
+    }
+
+    public bool HasTechStackError => !string.IsNullOrEmpty(_techStackError);
+
+    /// <summary>剪辑类型校验错误（仅剪辑类，VD-008）。</summary>
+    public string? ClipTypeError
+    {
+        get => _clipTypeError;
+        private set
+        {
+            if (SetProperty(ref _clipTypeError, value))
+            {
+                OnPropertyChanged(nameof(HasClipTypeError));
+            }
+        }
+    }
+
+    public bool HasClipTypeError => !string.IsNullOrEmpty(_clipTypeError);
+
+    /// <summary>完成时间校验错误（仅待办类，VD-008）。</summary>
+    public string? DueTimeError
+    {
+        get => _dueTimeError;
+        private set
+        {
+            if (SetProperty(ref _dueTimeError, value))
+            {
+                OnPropertyChanged(nameof(HasDueTimeError));
+            }
+        }
+    }
+
+    public bool HasDueTimeError => !string.IsNullOrEmpty(_dueTimeError);
+
+    /// <summary>开发工期区间校验错误（结束不得早于开始，VD-007 / VD-008）。</summary>
+    public string? ScheduleError
+    {
+        get => _scheduleError;
+        private set
+        {
+            if (SetProperty(ref _scheduleError, value))
+            {
+                OnPropertyChanged(nameof(HasScheduleError));
+            }
+        }
+    }
+
+    public bool HasScheduleError => !string.IsNullOrEmpty(_scheduleError);
 
     public ProjectWizardViewModel(IProjectService service, ILocalizationService localization, Action onCreated)
     {
@@ -275,6 +382,7 @@ internal sealed class ProjectWizardViewModel : ViewModelBase
         }
 
         TechStacks.Add(value);
+        TechStackError = null;
 
         // 与预设同名（忽略大小写）时同步点亮对应 chip，保持两种录入方式状态一致
         var preset = TechStackPresets.FirstOrDefault(
@@ -291,6 +399,8 @@ internal sealed class ProjectWizardViewModel : ViewModelBase
         {
             return;
         }
+
+        TechStackError = null;
 
         var preset = TechStackPresets.FirstOrDefault(
             p => string.Equals(p.Name, value, StringComparison.OrdinalIgnoreCase));
@@ -323,9 +433,11 @@ internal sealed class ProjectWizardViewModel : ViewModelBase
 
     private async Task CreateAsync()
     {
+        // 字段级校验（VD-008）：错误就近展示在对应字段下方，不再只挤在底部操作条。
+        // 全局 ErrorMessage 仅保留给写库失败（Common_SaveFailed）。
         if (string.IsNullOrWhiteSpace(Name))
         {
-            ErrorMessage = _localization.GetString("Common_RequiredName");
+            NameError = _localization.GetString("Common_RequiredName");
             return;
         }
 
@@ -334,24 +446,29 @@ internal sealed class ProjectWizardViewModel : ViewModelBase
         if (IsProgramming && TechStacks.Count == 0)
         {
             // PRD 5.1.1：编程立项的技术栈为必填项
-            ErrorMessage = _localization.GetString("Common_RequiredTechStack");
+            TechStackError = _localization.GetString("Common_RequiredTechStack");
             return;
         }
 
         if (IsClip && string.IsNullOrWhiteSpace(SubType))
         {
-            ErrorMessage = _localization.GetString("Common_RequiredClipType");
+            ClipTypeError = _localization.GetString("Common_RequiredClipType");
             return;
         }
 
         if (IsTodo && ScheduleEnd is null)
         {
             // PRD 5.3.1：待办「完成时间」必填
-            ErrorMessage = _localization.GetString("Common_RequiredDueTime");
+            DueTimeError = _localization.GetString("Common_RequiredDueTime");
             return;
         }
 
-        ErrorMessage = string.Empty;
+        // 工期区间校验（VD-007）：结束日期不得早于开始日期
+        if (ScheduleStart is not null && ScheduleEnd is not null && ScheduleEnd < ScheduleStart)
+        {
+            ScheduleError = _localization.GetString("Wizard_ErrorSchedule");
+            return;
+        }
 
         var project = new Project
         {

@@ -22,7 +22,7 @@
         <!-- 文本内边距由模板内的 Inset 层统一提供（12,0,12,0）；控件 Padding 置 0，
              避免 TextBox 内部再叠加一次内边距，导致文字不是从最左侧开始输入 -->
         <Setter Property="Padding" Value="0" />
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
         <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="SelectionBrush" Value="{DynamicResource PrimaryBrush}" />
         <Setter Property="MinHeight" Value="{DynamicResource ControlHeight}" />
@@ -31,50 +31,61 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SOrTextBox">
-                    <Border x:Name="PART_Root"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{TemplateBinding CornerRadius}"
-                            SnapsToDevicePixels="True">
-                        <Border x:Name="PART_Inset" Padding="{DynamicResource InputInsetHorizontal}">
+                    <Grid>
+                        <Border x:Name="PART_Root"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                SnapsToDevicePixels="True">
                             <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <!-- 前置图标（LeadingIcon 为空时自动折叠，不占位） -->
-                                <Path Grid.Column="0"
-                                      Data="{TemplateBinding LeadingIcon}"
-                                      Fill="{DynamicResource TextSecondaryBrush}"
-                                      Width="{TemplateBinding IconSize}"
-                                      Height="{TemplateBinding IconSize}"
-                                      Stretch="Uniform"
-                                      Margin="{DynamicResource IconGap}"
-                                      VerticalAlignment="Center"
-                                      HorizontalAlignment="Center"
-                                      Visibility="{Binding LeadingIcon, Converter={StaticResource NotNullToVisibilityConverter}, RelativeSource={RelativeSource TemplatedParent}}" />
-                                <!-- 内容宿主（原生约定部件，必须存在）。不额外加 Margin：
-                                     位置完全由 PART_Inset 的内边距决定 -->
-                                <ScrollViewer x:Name="PART_ContentHost"
-                                              Grid.Column="1"
-                                              Foreground="{TemplateBinding Foreground}"
+                                <!-- 悬浮覆盖层（VD-011）：鼠标划过仅叠一层 HoverOverlayBrush 弱底色、不改描边；
+                                     键盘焦点才换 FocusRingBrush 描边（单一焦点信号，VD-059 去掉旧版外扩环） -->
+                                <Border x:Name="PART_Hover"
+                                        Background="{DynamicResource HoverOverlayBrush}"
+                                        Opacity="0"
+                                        CornerRadius="{TemplateBinding CornerRadius}"
+                                        IsHitTestVisible="False" />
+                                <Border x:Name="PART_Inset" Padding="{DynamicResource InputInsetHorizontal}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <!-- 前置图标（LeadingIcon 为空时自动折叠，不占位） -->
+                                        <Path Grid.Column="0"
+                                              Data="{TemplateBinding LeadingIcon}"
+                                              Fill="{DynamicResource TextSecondaryBrush}"
+                                              Width="{TemplateBinding IconSize}"
+                                              Height="{TemplateBinding IconSize}"
+                                              Stretch="Uniform"
+                                              Margin="{DynamicResource IconGap}"
                                               VerticalAlignment="Center"
-                                              HorizontalScrollBarVisibility="Hidden"
-                                              VerticalScrollBarVisibility="Hidden" />
-                                <!-- 占位符：与真实文本共用同一列与同一起点，保证左对齐一致 -->
-                                <TextBlock x:Name="PART_Placeholder"
-                                           Grid.Column="1"
-                                           Text="{TemplateBinding Placeholder}"
-                                           Foreground="{DynamicResource TextSecondaryBrush}"
-                                           Opacity="0.85"
-                                           VerticalAlignment="Center"
-                                           HorizontalAlignment="Left"
-                                           IsHitTestVisible="False"
-                                           Visibility="Collapsed" />
+                                              HorizontalAlignment="Center"
+                                              Visibility="{Binding LeadingIcon, Converter={StaticResource NotNullToVisibilityConverter}, RelativeSource={RelativeSource TemplatedParent}}" />
+                                        <!-- 内容宿主（原生约定部件，必须存在）。不额外加 Margin：
+                                             位置完全由 PART_Inset 的内边距决定 -->
+                                        <ScrollViewer x:Name="PART_ContentHost"
+                                                      Grid.Column="1"
+                                                      Foreground="{TemplateBinding Foreground}"
+                                                      VerticalAlignment="Center"
+                                                      HorizontalScrollBarVisibility="Hidden"
+                                                      VerticalScrollBarVisibility="Hidden" />
+                                        <!-- 占位符：与真实文本共用同一列与同一起点，保证左对齐一致 -->
+                                        <TextBlock x:Name="PART_Placeholder"
+                                                   Grid.Column="1"
+                                                   Text="{TemplateBinding Placeholder}"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   Opacity="0.85"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Left"
+                                                   IsHitTestVisible="False"
+                                                   Visibility="Collapsed" />
+                                    </Grid>
+                                </Border>
                             </Grid>
                         </Border>
-                    </Border>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -90,11 +101,13 @@
                             <Setter TargetName="PART_Placeholder" Property="VerticalAlignment" Value="Top" />
                             <Setter Property="VerticalContentAlignment" Value="Top" />
                         </Trigger>
+                        <!-- 键盘聚焦（VD-059）：唯一焦点信号 = 边框换 FocusRingBrush（旧版「边框染 Primary + 外扩环」
+                             双信号叠加已移除；鼠标点击不触发系统框，FocusVisualStyle 已置空） -->
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                            <Setter TargetName="PART_Hover" Property="Opacity" Value="1" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Root" Property="Opacity" Value="0.55" />
@@ -112,7 +125,7 @@
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
         <Setter Property="Padding" Value="12,0,8,0" />
         <Setter Property="MinHeight" Value="{DynamicResource ControlHeight}" />
         <Setter Property="Cursor" Value="Hand" />
@@ -132,6 +145,14 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
+                                <!-- 悬浮覆盖层（VD-011）：鼠标划过仅叠 HoverOverlayBrush 弱底色，不改描边；
+                                     ColumnSpan=2 铺满输入区，作为首子级位于内容之下 -->
+                                <Border x:Name="PART_Hover"
+                                        Grid.ColumnSpan="2"
+                                        Background="{DynamicResource HoverOverlayBrush}"
+                                        Opacity="0"
+                                        CornerRadius="{TemplateBinding CornerRadius}"
+                                        IsHitTestVisible="False" />
                                 <!-- 选中项内容（SelectionBoxItem 自动遵循 ItemTemplate / DisplayMemberPath） -->
                                 <ContentPresenter x:Name="PART_ContentSite"
                                                   Content="{TemplateBinding SelectionBoxItem}"
@@ -205,10 +226,15 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                            <Setter TargetName="PART_Hover" Property="Opacity" Value="1" />
+                        </Trigger>
+                        <!-- 键盘聚焦 / 展开（VD-059）：唯一焦点信号 = 边框换 FocusRingBrush（旧版外扩环已移除）；
+                             展开态与聚焦态同色——下拉浮层本身已是强信号，边框无需再加重 -->
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
                         </Trigger>
                         <Trigger Property="IsDropDownOpen" Value="True">
-                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
                             <Setter TargetName="PART_Arrow" Property="Data" Value="M 0,6.5 L 5,1.5 L 10,6.5" />
                         </Trigger>
                         <DataTrigger Binding="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}}" Value="{x:Null}">
@@ -267,7 +293,7 @@
         <Setter Property="Margin" Value="1.5" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeLabel}" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
@@ -315,7 +341,7 @@
     <Style x:Key="SOrCalendarButtonStyle" TargetType="CalendarButton">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeLabel}" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
@@ -359,7 +385,7 @@
     <Style x:Key="SOrCalendarNavButtonStyle" TargetType="Button">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeLabel}" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -400,7 +426,7 @@
                     <ControlTemplate.Resources>
                         <DataTemplate x:Key="{ComponentResourceKey ResourceId=DayTitleTemplate, TypeInTargetAssembly={x:Type CalendarItem}}">
                             <TextBlock Text="{Binding}"
-                                       FontSize="11"
+                                       FontSize="{DynamicResource FontSizeCaption}"
                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
@@ -535,7 +561,7 @@
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="Padding" Value="11,0,4,0" />
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
     </Style>
@@ -561,6 +587,14 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
+                                <!-- 悬浮覆盖层（VD-011）：鼠标划过仅叠 HoverOverlayBrush 弱底色，不改描边；
+                                     ColumnSpan=2 铺满输入区，作为首子级位于内容之下 -->
+                                <Border x:Name="PART_Hover"
+                                        Grid.ColumnSpan="2"
+                                        Background="{DynamicResource HoverOverlayBrush}"
+                                        Opacity="0"
+                                        CornerRadius="{TemplateBinding CornerRadius}"
+                                        IsHitTestVisible="False" />
                                 <DatePickerTextBox x:Name="PART_TextBox" Grid.Column="0" />
                                 <!-- 日历图标按钮（真实 Button：代码为其挂 Click 切换下拉） -->
                                 <Button x:Name="PART_Button"
@@ -605,10 +639,14 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                            <Setter TargetName="PART_Hover" Property="Opacity" Value="1" />
+                        </Trigger>
+                        <!-- 键盘聚焦 / 展开（VD-059）：唯一焦点信号 = 边框换 FocusRingBrush（旧版外扩环已移除） -->
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
                         </Trigger>
                         <Trigger Property="IsDropDownOpen" Value="True">
-                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Root" Property="Opacity" Value="0.55" />
@@ -660,8 +698,10 @@
                                 </RepeatButton>
                             </Track.DecreaseRepeatButton>
                             <Track.Thumb>
-                                <!-- 拖块：纯圆环，不加实心内点，避免「中间一个大点、两边细」的观感 -->
-                                <Thumb Focusable="False" Cursor="Hand" Width="14" Height="14">
+                                <!-- 拖块：纯圆环，不加实心内点，避免「中间一个大点、两边细」的观感。
+                                     不再设 Focusable="False"（VD-016）：滑块可经 Tab 获焦，
+                                     方向键 / PageUp / PageDown / Home / End 均可调节（Slider 基座内置键盘处理）。 -->
+                                <Thumb Cursor="Hand" Width="14" Height="14">
                                     <Thumb.Template>
                                         <ControlTemplate TargetType="Thumb">
                                             <Ellipse Fill="{DynamicResource SurfaceBrush}"
@@ -681,7 +721,19 @@
                                 </RepeatButton>
                             </Track.IncreaseRepeatButton>
                         </Track>
+                        <!-- 键盘焦点环（VD-059）：滑块获焦时标识焦点，配合方向键调节；1px FocusRingBrush 内描边 -->
+                        <Border x:Name="PART_FocusRing"
+                                BorderBrush="{DynamicResource FocusRingBrush}"
+                                BorderThickness="1"
+                                CornerRadius="{DynamicResource CornerRadiusBar}"
+                                Opacity="0"
+                                IsHitTestVisible="False" />
                     </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="PART_FocusRing" Property="Opacity" Value="1" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

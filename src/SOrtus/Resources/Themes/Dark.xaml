@@ -18,6 +18,9 @@
     <Color x:Key="ColorBorder">#363B42</Color>
     <Color x:Key="ColorSurface">#23262B</Color>
     <Color x:Key="ColorPrimary">#F3F4F6</Color>
+    <!-- 键盘焦点环专用色（VD-059）：中间灰度，与 Surface(#23262B) 和 Primary 填充(#F3F4F6) 均保持可见对比；
+         不用 Primary 本身——主按钮底色即近白 Primary，同色环在按钮上不可见 -->
+    <Color x:Key="ColorFocusRing">#8E98A8</Color>
     <Color x:Key="ColorShadow">#000000</Color>
 
     <!-- 模糊覆盖层颜色：深色为深灰覆盖（配合 OverlayOpacity 控制磨砂通透度） -->

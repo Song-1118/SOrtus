@@ -1,7 +1,10 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Windows.Input;
 using SOrtus.Common;
 using SOrtus.Core.Services;
+using SOrtus.Repositories;
 
 namespace SOrtus.ViewModels;
 
@@ -22,6 +25,8 @@ internal sealed class SettingsViewModel : ViewModelBase
         _themeService = themeService;
         _localization = localization;
 
+        OpenDatabaseFolderCommand = new RelayCommand(_ => OpenDatabaseFolder());
+
         ThemeOptions = new List<SettingsOption>
         {
             new("Light", localization.GetString("Settings_ThemeLight")),
@@ -38,11 +43,34 @@ internal sealed class SettingsViewModel : ViewModelBase
     public List<SettingsOption> ThemeOptions { get; }
     public List<SettingsOption> LanguageOptions { get; }
 
-    /// <summary>未提供语言包的提示（韩 / 日在后续版本）。</summary>
-    public string LanguageSoonHint => string.Join(" / ",
-        _localization.GetString("Settings_LanguageKo"),
-        _localization.GetString("Settings_LanguageJa"))
-        + " · " + _localization.GetString("List_TypeSoon");
+    /// <summary>
+    /// 未提供语言包的提示（VD-013：单一资源句，不再拼装出「P3 版本提供」的版本计划暴露）。
+    /// </summary>
+    public string LanguageSoonHint => _localization.GetString("Settings_LanguageSoonHint");
+
+    /// <summary>当前实际使用的数据库文件路径（VD-012：展示真实路径，替代 %LocalAppData% 占位符）。</summary>
+    public string DatabasePath => Database.CurrentDbPath;
+
+    /// <summary>数据库位置展示文本（resx：Settings_DbPath = 数据库位置：{0}）。</summary>
+    public string DatabasePathText => string.Format(
+        _localization.GetString("Settings_DbPath"), DatabasePath);
+
+    /// <summary>打开数据库所在文件夹（资源管理器中定位，便于用户备份）。</summary>
+    public ICommand OpenDatabaseFolderCommand { get; }
+
+    private void OpenDatabaseFolder()
+    {
+        var directory = Path.GetDirectoryName(DatabasePath);
+        if (string.IsNullOrEmpty(directory) || !Directory.Exists(directory))
+        {
+            return;
+        }
+
+        Process.Start(new ProcessStartInfo("explorer.exe", directory)
+        {
+            UseShellExecute = true,
+        });
+    }
 
     public string CurrentTheme
     {

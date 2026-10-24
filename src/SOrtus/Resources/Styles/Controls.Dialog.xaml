@@ -1,0 +1,20 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:SOrtus.Controls">
+
+    <!--
+        对话框 / 浮层样式（规范 7.4.1 / 7.7 红线 #5）：
+        主窗口内覆盖层承载对话框（不用 AllowsTransparency 全透明窗口），
+        对话框本体为磨砂卡片（更强模糊）。
+    -->
+
+    <!-- 覆盖层遮罩：压暗整个窗口，突出对话框 -->
+    <SolidColorBrush x:Key="ScrimBrush" Color="#66000000" />
+
+    <!-- 浮层 / 弹窗样式：在磨砂卡片基础上使用更强模糊 -->
+    <Style x:Key="BlurDialogStyle" TargetType="Border" BasedOn="{StaticResource BlurCardStyle}">
+        <Setter Property="local:BlurPanel.BlurRadius" Value="{DynamicResource BlurRadiusStrong}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource CornerRadiusLarge}" />
+    </Style>
+
+</ResourceDictionary>

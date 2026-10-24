@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="App_Title" xml:space="preserve"><value>SOrtus</value></data>
+  <data name="Nav_Projects" xml:space="preserve"><value>立项</value></data>
+  <data name="Nav_NewProject" xml:space="preserve"><value>新建立项</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>设置</value></data>
+
+  <data name="List_SearchPlaceholder" xml:space="preserve"><value>搜索立项名称 / 简介 / 技术栈</value></data>
+  <data name="List_TypeAll" xml:space="preserve"><value>全部类型</value></data>
+  <data name="List_TypeProgramming" xml:space="preserve"><value>编程开发</value></data>
+  <data name="List_TypeClip" xml:space="preserve"><value>剪辑</value></data>
+  <data name="List_TypeTodo" xml:space="preserve"><value>待办</value></data>
+  <data name="List_TypeSoon" xml:space="preserve"><value>P3 版本提供</value></data>
+  <data name="List_StatusAll" xml:space="preserve"><value>全部状态</value></data>
+  <data name="List_StatusPlanning" xml:space="preserve"><value>规划中</value></data>
+  <data name="List_StatusActive" xml:space="preserve"><value>进行中</value></data>
+  <data name="List_StatusCompleted" xml:space="preserve"><value>已完成</value></data>
+  <data name="List_StatusOnHold" xml:space="preserve"><value>已暂停</value></data>
+  <data name="List_StatusArchived" xml:space="preserve"><value>已归档</value></data>
+  <data name="List_Empty" xml:space="preserve"><value>暂无立项，点击「新建立项」开始。</value></data>
+  <data name="List_NoResults" xml:space="preserve"><value>没有匹配的立项，试试调整搜索或筛选条件。</value></data>
+  <data name="List_StatAll" xml:space="preserve"><value>全部</value></data>
+  <data name="List_Subtitle" xml:space="preserve"><value>共 {0} 个立项 · 数据只留在本机</value></data>
+  <data name="List_UpdatedAt" xml:space="preserve"><value>更新于 {0:MM-dd}</value></data>
+  <data name="List_NewButton" xml:space="preserve"><value>新建立项</value></data>
+  <data name="List_Open" xml:space="preserve"><value>打开</value></data>
+  <data name="List_OpenHint" xml:space="preserve"><value>双击查看详情</value></data>
+
+  <data name="Wizard_Title" xml:space="preserve"><value>新建编程开发立项</value></data>
+  <data name="Wizard_StepType" xml:space="preserve"><value>选择立项类型</value></data>
+  <data name="Wizard_StepInfo" xml:space="preserve"><value>填写立项信息</value></data>
+  <data name="Wizard_Step1Hint" xml:space="preserve"><value>三类立项统一管理，先选择要创建的立项类型</value></data>
+  <data name="Wizard_TypeProgrammingDesc" xml:space="preserve"><value>记录技术栈、开发规划、目标与验收标准</value></data>
+  <data name="Wizard_TypeClipDesc" xml:space="preserve"><value>管理拍摄与剪辑进度、素材清单与素材文件夹</value></data>
+  <data name="Wizard_TypeTodoDesc" xml:space="preserve"><value>快速录入待办、设置截止时间与到期提醒</value></data>
+  <data name="Wizard_SelectedType" xml:space="preserve"><value>已选类型</value></data>
+  <data name="Wizard_ChangeType" xml:space="preserve"><value>更改</value></data>
+  <data name="Wizard_Name" xml:space="preserve"><value>项目名字</value></data>
+  <data name="Wizard_NamePlaceholder" xml:space="preserve"><value>请输入项目名称</value></data>
+  <data name="Wizard_TechStack" xml:space="preserve"><value>技术栈</value></data>
+  <data name="Wizard_TechStackPlaceholder" xml:space="preserve"><value>选择或输入后回车添加</value></data>
+  <data name="Wizard_Summary" xml:space="preserve"><value>简介</value></data>
+  <data name="Wizard_SubType" xml:space="preserve"><value>项目类型</value></data>
+  <data name="Wizard_SubTypeApp" xml:space="preserve"><value>桌面应用</value></data>
+  <data name="Wizard_SubTypeLib" xml:space="preserve"><value>类库</value></data>
+  <data name="Wizard_SubTypeWeb" xml:space="preserve"><value>Web</value></data>
+  <data name="Wizard_SubTypeGame" xml:space="preserve"><value>游戏</value></data>
+  <data name="Wizard_SubTypeOther" xml:space="preserve"><value>其他</value></data>
+  <data name="Wizard_Folder" xml:space="preserve"><value>关联文件夹</value></data>
+  <data name="Wizard_FolderBrowse" xml:space="preserve"><value>浏览</value></data>
+  <data name="Wizard_Schedule" xml:space="preserve"><value>开发工期</value></data>
+  <data name="Wizard_Create" xml:space="preserve"><value>创建</value></data>
+  <data name="Wizard_Cancel" xml:space="preserve"><value>取消</value></data>
+  <data name="Wizard_CreateHint" xml:space="preserve"><value>创建只需名称与技术栈，其余信息可在详情页随时补充</value></data>
+  <data name="Wizard_Next" xml:space="preserve"><value>下一步</value></data>
+  <data name="Wizard_Back" xml:space="preserve"><value>上一步</value></data>
+
+  <data name="Detail_Title" xml:space="preserve"><value>立项详情</value></data>
+  <data name="Detail_Basic" xml:space="preserve"><value>基础信息</value></data>
+  <data name="Detail_Process" xml:space="preserve"><value>过程管理</value></data>
+  <data name="Detail_DevPlan" xml:space="preserve"><value>开发规划</value></data>
+  <data name="Detail_Constraints" xml:space="preserve"><value>开发约束</value></data>
+  <data name="Detail_Goals" xml:space="preserve"><value>开发目标</value></data>
+  <data name="Detail_Acceptance" xml:space="preserve"><value>验收标准</value></data>
+  <data name="Detail_Progress" xml:space="preserve"><value>开发进度</value></data>
+  <data name="Detail_ProgressValue" xml:space="preserve"><value>进度 {0}%</value></data>
+  <data name="Detail_UnsavedBadge" xml:space="preserve"><value>有未保存的更改</value></data>
+  <data name="Detail_Save" xml:space="preserve"><value>保存</value></data>
+  <data name="Detail_Delete" xml:space="preserve"><value>删除</value></data>
+  <data name="Detail_Created" xml:space="preserve"><value>创建时间</value></data>
+  <data name="Detail_Updated" xml:space="preserve"><value>更新时间</value></data>
+  <data name="Detail_ScheduleText" xml:space="preserve"><value>{0:yyyy-MM-dd} 至 {1:yyyy-MM-dd}</value></data>
+  <data name="Detail_ScheduleEmpty" xml:space="preserve"><value>未设置</value></data>
+  <data name="Detail_GitPending" xml:space="preserve"><value>1.5 版本提供</value></data>
+
+  <data name="Settings_Title" xml:space="preserve"><value>设置</value></data>
+  <data name="Settings_Appearance" xml:space="preserve"><value>外观</value></data>
+  <data name="Settings_Theme" xml:space="preserve"><value>主题</value></data>
+  <data name="Settings_ThemeLight" xml:space="preserve"><value>浅色</value></data>
+  <data name="Settings_ThemeDark" xml:space="preserve"><value>深色</value></data>
+  <data name="Settings_Blur" xml:space="preserve"><value>高斯模糊强度</value></data>
+  <data name="Settings_BlurNone" xml:space="preserve"><value>关闭</value></data>
+  <data name="Settings_BlurSubtle" xml:space="preserve"><value>轻微</value></data>
+  <data name="Settings_BlurNormal" xml:space="preserve"><value>默认</value></data>
+  <data name="Settings_BlurStrong" xml:space="preserve"><value>强</value></data>
+  <data name="Settings_BlurOverlay" xml:space="preserve"><value>遮罩</value></data>
+  <data name="Settings_BlurCurrent" xml:space="preserve"><value>当前强度：{0}（{1}）</value></data>
+  <data name="Settings_BlurLiveHint" xml:space="preserve"><value>修改后即时生效并持久化，重启后保持</value></data>
+  <data name="Settings_Language" xml:space="preserve"><value>语言</value></data>
+  <data name="Settings_LanguageZh" xml:space="preserve"><value>中文</value></data>
+  <data name="Settings_LanguageEn" xml:space="preserve"><value>English</value></data>
+  <data name="Settings_LanguageKo" xml:space="preserve"><value>한국어</value></data>
+  <data name="Settings_LanguageJa" xml:space="preserve"><value>日本語</value></data>
+  <data name="Settings_Data" xml:space="preserve"><value>数据</value></data>
+  <data name="Settings_DataSoon" xml:space="preserve"><value>即将推出</value></data>
+  <data name="Settings_AboutLocal" xml:space="preserve"><value>本地优先的立项管理工具，管理编程、剪辑与待办三类项目。</value></data>
+  <data name="Settings_AboutLicense" xml:space="preserve"><value>MIT License · 无网络请求 · 数据只留在本机</value></data>
+  <data name="Settings_AboutDb" xml:space="preserve"><value>数据库位置：%LocalAppData%\SOrtus\</value></data>
+
+  <data name="Common_Confirm" xml:space="preserve"><value>确认</value></data>
+  <data name="Common_OK" xml:space="preserve"><value>确定</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>取消</value></data>
+  <data name="Common_Delete" xml:space="preserve"><value>删除</value></data>
+  <data name="Common_Yes" xml:space="preserve"><value>是</value></data>
+  <data name="Common_No" xml:space="preserve"><value>否</value></data>
+  <data name="Common_Close" xml:space="preserve"><value>关闭</value></data>
+  <data name="Common_Saved" xml:space="preserve"><value>已保存</value></data>
+  <data name="Common_Unsaved" xml:space="preserve"><value>有未保存的更改，确定离开？</value></data>
+  <data name="Common_DeleteConfirm" xml:space="preserve"><value>确定要删除该立项吗？此操作不可撤销。</value></data>
+  <data name="Common_Error" xml:space="preserve"><value>操作失败</value></data>
+  <data name="Common_RequiredName" xml:space="preserve"><value>项目名称不能为空</value></data>
+  <data name="Common_RequiredTechStack" xml:space="preserve"><value>请至少选择或输入一项技术栈</value></data>
+  <data name="Wizard_TechStackPresets" xml:space="preserve"><value>常用技术栈（点击选择）</value></data>
+  <data name="Wizard_TechStackCustom" xml:space="preserve"><value>自定义添加</value></data>
+  <data name="Detail_Status" xml:space="preserve"><value>状态</value></data>
+  <data name="Detail_MetaCreated" xml:space="preserve"><value>创建于 {0:yyyy-MM-dd HH:mm}</value></data>
+  <data name="Detail_MetaUpdated" xml:space="preserve"><value>更新于 {0:yyyy-MM-dd HH:mm}</value></data>
+  <data name="Dialog_UnsavedTitle" xml:space="preserve"><value>有未保存的更改</value></data>
+  <data name="Dialog_UnsavedMessage" xml:space="preserve"><value>「{0}」有未保存的更改，离开前是否保存？</value></data>
+  <data name="Dialog_Save" xml:space="preserve"><value>保存</value></data>
+  <data name="Dialog_Discard" xml:space="preserve"><value>不保存</value></data>
+</root>

@@ -1,0 +1,203 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:SOrtus.Controls"
+                    xmlns:conv="clr-namespace:SOrtus.Converters">
+
+    <!--
+        SOrButton 样式（规范 7.1「样式先集中、控件再复用」）。
+        视觉变体 Primary / Secondary / Danger / Ghost / Nav 由 Style 触发器切换背景前景，
+        模板只负责结构：PART_Root（背景）+ PART_Hover（悬浮覆盖）+ PART_Press（按压覆盖）
+        + PART_FocusRing（键盘焦点环）+ 图标 + 内容。
+        后期做空间模糊（对 PART_Root 挂 BlurPanel）与动画（驱动覆盖层 Opacity）均无需改控件代码。
+    -->
+    <conv:NotNullToVisibilityConverter x:Key="NotNullToVisibilityConverter" />
+
+    <Style TargetType="local:SOrButton">
+        <Setter Property="Background" Value="{DynamicResource PrimaryBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextOnAccentBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="16,9" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <!-- 自定义焦点环接管键盘焦点视觉 -->
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:SOrButton">
+                    <Grid>
+                        <Border x:Name="PART_Root"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <!-- 悬浮 / 按压覆盖层：默认透明，触发器以动画驱动 Opacity -->
+                                <Border x:Name="PART_Hover"
+                                        Background="{DynamicResource HoverOverlayBrush}"
+                                        Opacity="0"
+                                        CornerRadius="{TemplateBinding CornerRadius}"
+                                        IsHitTestVisible="False" />
+                                <Border x:Name="PART_Press"
+                                        Background="{DynamicResource PressOverlayBrush}"
+                                        Opacity="0"
+                                        CornerRadius="{TemplateBinding CornerRadius}"
+                                        IsHitTestVisible="False" />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Path Grid.Column="0"
+                                          Data="{TemplateBinding Icon}"
+                                          Fill="{TemplateBinding Foreground}"
+                                          Width="{TemplateBinding IconSize}"
+                                          Height="{TemplateBinding IconSize}"
+                                          Stretch="Uniform"
+                                          Margin="0,0,8,0"
+                                          VerticalAlignment="Center"
+                                          HorizontalAlignment="Center"
+                                          Visibility="{Binding Icon, Converter={StaticResource NotNullToVisibilityConverter}, RelativeSource={RelativeSource TemplatedParent}}" />
+                                    <ContentPresenter Grid.Column="1"
+                                                      Margin="{TemplateBinding Padding}"
+                                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                      VerticalAlignment="Center" />
+                                </Grid>
+                            </Grid>
+                        </Border>
+                        <Border x:Name="PART_FocusRing"
+                                BorderBrush="{DynamicResource PrimaryBrush}"
+                                BorderThickness="2"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                Opacity="0"
+                                Margin="-2"
+                                IsHitTestVisible="False" />
+                    </Grid>
+
+                    <ControlTemplate.Triggers>
+                        <!-- 悬浮：覆盖层淡入淡出（动画挂点示范：后期可替换为模糊扩散等） -->
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="PART_Hover"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="1" Duration="0:0:0.12" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="PART_Hover"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="0" Duration="0:0:0.18" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="PART_Press"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="1" Duration="0:0:0.08" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="PART_Press"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="0" Duration="0:0:0.12" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="PART_FocusRing"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="1" Duration="0:0:0.10" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="PART_FocusRing"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="0" Duration="0:0:0.16" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="PART_Root" Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+
+        <Style.Triggers>
+            <!-- 次要：Surface 底 + 描边 -->
+            <Trigger Property="Variant" Value="Secondary">
+                <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+            </Trigger>
+            <!-- 危险：Danger 底 + 反色字 -->
+            <Trigger Property="Variant" Value="Danger">
+                <Setter Property="Background" Value="{DynamicResource DangerBrush}" />
+                <Setter Property="Foreground" Value="{DynamicResource TextOnAccentBrush}" />
+                <Setter Property="BorderThickness" Value="0" />
+            </Trigger>
+            <!-- 幽灵：透明底，低强调动作 -->
+            <Trigger Property="Variant" Value="Ghost">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Padding" Value="12,8" />
+            </Trigger>
+            <!-- 导航：透明底 + 左对齐 -->
+            <Trigger Property="Variant" Value="Nav">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Padding" Value="14,10" />
+                <Setter Property="HorizontalContentAlignment" Value="Left" />
+                <Setter Property="FontWeight" Value="Medium" />
+            </Trigger>
+            <!-- 导航 + 当前态：高亮底（规范 7.6 导航高亮） -->
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="Variant" Value="Nav" />
+                    <Condition Property="IsActive" Value="True" />
+                </MultiTrigger.Conditions>
+                <Setter Property="Background" Value="{DynamicResource NavActiveBrush}" />
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+            </MultiTrigger>
+            <!-- 其它变体的选中态（类型卡片 / 技术栈预设 chip）：高亮底 + 主色描边 -->
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="Variant" Value="Secondary" />
+                    <Condition Property="IsActive" Value="True" />
+                </MultiTrigger.Conditions>
+                <Setter Property="Background" Value="{DynamicResource NavActiveBrush}" />
+                <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                <Setter Property="BorderThickness" Value="1.5" />
+            </MultiTrigger>
+        </Style.Triggers>
+    </Style>
+
+</ResourceDictionary>

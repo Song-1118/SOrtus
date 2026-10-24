@@ -1,0 +1,26 @@
+# SOrtus Git 属性（规范 2.1）
+* text=auto eol=lf
+
+*.sln text eol=crlf
+*.csproj text eol=crlf
+*.props text eol=crlf
+*.targets text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.gif binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.zip binary
+*.db binary
+*.sqlite binary
+
+# 语言统计：将 .xaml / .resx 视为标记语言
+*.xaml linguist-language=XML
+*.resx linguist-language=XML

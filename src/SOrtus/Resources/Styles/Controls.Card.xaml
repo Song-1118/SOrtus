@@ -1,0 +1,57 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:SOrtus.Controls">
+
+    <!--
+        SOrCard 样式（规范 7.1 / 7.4.1 / 7.5）。
+        模板结构：PART_Root（圆角裁剪 + Surface 底 + 描边）
+                 → PART_BlurHost（专用模糊宿主，控件把 EnableBlur / BlurRadius / OverlayOpacity
+                   转发为 BlurPanel 附加属性；Decorator 分支会替换其 Child 为模糊层宿主 Grid）
+                 → ContentPresenter（内容层永远位于模糊层之上，模糊只作用于背景）。
+        全局模糊强度经 GlobalBlurRadius 令牌联动（设置页调节即时生效）。
+    -->
+    <Style TargetType="local:SOrCard">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="{DynamicResource SpacingLg}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:SOrCard">
+                    <Border x:Name="PART_Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <!-- 模糊宿主：BlurPanel 会把模糊层 + 覆盖层插入到此 Border 的 Child；
+                                 控件根背景透明，磨砂质感完全由模糊层 + 覆盖层提供（规范 7.4.1） -->
+                            <Border x:Name="PART_BlurHost"
+                                    CornerRadius="{TemplateBinding CornerRadius}"
+                                    IsHitTestVisible="False" />
+                            <ContentPresenter Margin="{TemplateBinding Padding}" />
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        磨砂卡片样式（Border 直用版）：页面直接引用此样式即可获得背景模糊 + 覆盖层 + 圆角，
+        无需任何内联 <BlurEffect>。模糊半径绑定全局资源，受设置页调节影响。
+        新建控件场景优先使用 SOrCard；此样式保留给对话框浮层等纯 Border 容器。
+    -->
+    <Style x:Key="BlurCardStyle" TargetType="Border">
+        <Setter Property="local:BlurPanel.EnableBlur" Value="True" />
+        <Setter Property="local:BlurPanel.BlurRadius" Value="{DynamicResource GlobalBlurRadius}" />
+        <Setter Property="local:BlurPanel.OverlayOpacity" Value="0.86" />
+        <Setter Property="CornerRadius" Value="{DynamicResource CornerRadiusLarge}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="{DynamicResource SpacingLg}" />
+    </Style>
+
+</ResourceDictionary>

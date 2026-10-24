@@ -1,0 +1,44 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                      xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!--
+        尺寸与模糊档位（规范 7.3 / 7.6）：模糊半径统一使用命名档位，禁止页面内硬编码数值。
+        GlobalBlurRadius 为全局模糊强度，由 ThemeService 在运行时修改（改一处全应用生效）。
+    -->
+
+    <!-- 模糊半径档位 -->
+    <sys:Double x:Key="BlurRadiusNone">0</sys:Double>
+    <sys:Double x:Key="BlurRadiusSubtle">6</sys:Double>
+    <sys:Double x:Key="BlurRadiusNormal">12</sys:Double>
+    <sys:Double x:Key="BlurRadiusStrong">20</sys:Double>
+    <sys:Double x:Key="BlurRadiusOverlay">30</sys:Double>
+
+    <!-- 全局模糊强度（运行时由 ThemeService 写入：未自定义时取 BlurRadiusNormal 档位，自定义时取用户设置；
+         此处的字面量仅作 XAML 设计期与初始化前的兜底值） -->
+    <sys:Double x:Key="GlobalBlurRadius">12</sys:Double>
+
+    <!-- 圆角半径 -->
+    <CornerRadius x:Key="CornerRadiusSmall">6</CornerRadius>
+    <CornerRadius x:Key="CornerRadiusMedium">12</CornerRadius>
+    <CornerRadius x:Key="CornerRadiusLarge">18</CornerRadius>
+    <CornerRadius x:Key="CornerRadiusPill">999</CornerRadius>
+
+    <!-- 间距（Thickness：用于 Padding / Margin；WPF 不接受 Double） -->
+    <Thickness x:Key="SpacingXs">4</Thickness>
+    <Thickness x:Key="SpacingSm">8</Thickness>
+    <Thickness x:Key="SpacingMd">12</Thickness>
+    <Thickness x:Key="SpacingLg">16</Thickness>
+    <Thickness x:Key="SpacingXl">24</Thickness>
+
+    <!-- 阴影模糊半径（规范 7.6：圆角 + 阴影全局统一） -->
+    <sys:Double x:Key="ShadowBlur">24</sys:Double>
+    <sys:Double x:Key="ShadowOpacity">0.18</sys:Double>
+
+    <!-- 控件基准高度（输入框 / 下拉框 / 日期选择器统一） -->
+    <sys:Double x:Key="ControlHeight">36</sys:Double>
+
+    <!-- 下拉浮层最大高度（超出后内部滚动） -->
+    <sys:Double x:Key="DropDownMaxHeight">320</sys:Double>
+
+</ResourceDictionary>

@@ -1,0 +1,30 @@
+# SOrtus Git 忽略规则（规范 2.1 / 12.3）
+# 编译产物
+bin/
+obj/
+artifacts/
+
+# 包与缓存
+/packages/
+/.nuget/
+_ReSharper.Caches/
+/riderModule.iml
+
+# 本地数据（运行期生成的数据库与配置，不入库）
+*.db
+*.sqlite
+*.sqlite3
+/AppData/
+
+# IDE
+.vs/
+.idea/
+*.DotSettings.user
+
+# 日志
+*.log
+
+# 操作系统
+Thumbs.db
+Desktop.ini
+.DS_Store

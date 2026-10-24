@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="App_Title" xml:space="preserve"><value>SOrtus</value></data>
+  <data name="Nav_Projects" xml:space="preserve"><value>Projects</value></data>
+  <data name="Nav_NewProject" xml:space="preserve"><value>New Project</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>Settings</value></data>
+
+  <data name="List_SearchPlaceholder" xml:space="preserve"><value>Search by name / summary / tech stack</value></data>
+  <data name="List_TypeAll" xml:space="preserve"><value>All types</value></data>
+  <data name="List_TypeProgramming" xml:space="preserve"><value>Programming</value></data>
+  <data name="List_TypeClip" xml:space="preserve"><value>Clip</value></data>
+  <data name="List_TypeTodo" xml:space="preserve"><value>Todo</value></data>
+  <data name="List_TypeSoon" xml:space="preserve"><value>Coming in P3</value></data>
+  <data name="List_StatusAll" xml:space="preserve"><value>All statuses</value></data>
+  <data name="List_StatusPlanning" xml:space="preserve"><value>Planning</value></data>
+  <data name="List_StatusActive" xml:space="preserve"><value>Active</value></data>
+  <data name="List_StatusCompleted" xml:space="preserve"><value>Completed</value></data>
+  <data name="List_StatusOnHold" xml:space="preserve"><value>On Hold</value></data>
+  <data name="List_StatusArchived" xml:space="preserve"><value>Archived</value></data>
+  <data name="List_Empty" xml:space="preserve"><value>No projects yet. Click "New Project" to start.</value></data>
+  <data name="List_NoResults" xml:space="preserve"><value>No matching projects. Try adjusting search or filters.</value></data>
+  <data name="List_StatAll" xml:space="preserve"><value>All</value></data>
+  <data name="List_Subtitle" xml:space="preserve"><value>{0} projects · all data stays on this device</value></data>
+  <data name="List_UpdatedAt" xml:space="preserve"><value>Updated {0:MM-dd}</value></data>
+  <data name="List_NewButton" xml:space="preserve"><value>New Project</value></data>
+  <data name="List_Open" xml:space="preserve"><value>Open</value></data>
+  <data name="List_OpenHint" xml:space="preserve"><value>Double-click to view details</value></data>
+
+  <data name="Wizard_Title" xml:space="preserve"><value>New Programming Project</value></data>
+  <data name="Wizard_StepType" xml:space="preserve"><value>Choose project type</value></data>
+  <data name="Wizard_StepInfo" xml:space="preserve"><value>Fill in details</value></data>
+  <data name="Wizard_Step1Hint" xml:space="preserve"><value>One tool for three project types - pick the type first</value></data>
+  <data name="Wizard_TypeProgrammingDesc" xml:space="preserve"><value>Track tech stack, dev plan, goals and acceptance criteria</value></data>
+  <data name="Wizard_TypeClipDesc" xml:space="preserve"><value>Manage shooting/editing progress, assets and folders</value></data>
+  <data name="Wizard_TypeTodoDesc" xml:space="preserve"><value>Capture todos with due dates and reminders</value></data>
+  <data name="Wizard_SelectedType" xml:space="preserve"><value>Selected type</value></data>
+  <data name="Wizard_ChangeType" xml:space="preserve"><value>Change</value></data>
+  <data name="Wizard_Name" xml:space="preserve"><value>Project name</value></data>
+  <data name="Wizard_NamePlaceholder" xml:space="preserve"><value>Enter project name</value></data>
+  <data name="Wizard_TechStack" xml:space="preserve"><value>Tech stack</value></data>
+  <data name="Wizard_TechStackPlaceholder" xml:space="preserve"><value>Pick or type and press Enter</value></data>
+  <data name="Wizard_Summary" xml:space="preserve"><value>Summary</value></data>
+  <data name="Wizard_SubType" xml:space="preserve"><value>Project type</value></data>
+  <data name="Wizard_SubTypeApp" xml:space="preserve"><value>Desktop app</value></data>
+  <data name="Wizard_SubTypeLib" xml:space="preserve"><value>Library</value></data>
+  <data name="Wizard_SubTypeWeb" xml:space="preserve"><value>Web</value></data>
+  <data name="Wizard_SubTypeGame" xml:space="preserve"><value>Game</value></data>
+  <data name="Wizard_SubTypeOther" xml:space="preserve"><value>Other</value></data>
+  <data name="Wizard_Folder" xml:space="preserve"><value>Linked folder</value></data>
+  <data name="Wizard_FolderBrowse" xml:space="preserve"><value>Browse</value></data>
+  <data name="Wizard_Schedule" xml:space="preserve"><value>Schedule</value></data>
+  <data name="Wizard_Create" xml:space="preserve"><value>Create</value></data>
+  <data name="Wizard_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Wizard_CreateHint" xml:space="preserve"><value>Only name and tech stack are required; the rest can be filled in later on the detail page</value></data>
+  <data name="Wizard_Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Wizard_Back" xml:space="preserve"><value>Back</value></data>
+
+  <data name="Detail_Title" xml:space="preserve"><value>Project Details</value></data>
+  <data name="Detail_Basic" xml:space="preserve"><value>Basic Info</value></data>
+  <data name="Detail_Process" xml:space="preserve"><value>Process</value></data>
+  <data name="Detail_DevPlan" xml:space="preserve"><value>Dev Plan</value></data>
+  <data name="Detail_Constraints" xml:space="preserve"><value>Constraints</value></data>
+  <data name="Detail_Goals" xml:space="preserve"><value>Goals</value></data>
+  <data name="Detail_Acceptance" xml:space="preserve"><value>Acceptance Criteria</value></data>
+  <data name="Detail_Progress" xml:space="preserve"><value>Progress</value></data>
+  <data name="Detail_ProgressValue" xml:space="preserve"><value>Progress {0}%</value></data>
+  <data name="Detail_UnsavedBadge" xml:space="preserve"><value>Unsaved changes</value></data>
+  <data name="Detail_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Detail_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Detail_Created" xml:space="preserve"><value>Created</value></data>
+  <data name="Detail_Updated" xml:space="preserve"><value>Updated</value></data>
+  <data name="Detail_ScheduleText" xml:space="preserve"><value>{0:yyyy-MM-dd} to {1:yyyy-MM-dd}</value></data>
+  <data name="Detail_ScheduleEmpty" xml:space="preserve"><value>Not set</value></data>
+  <data name="Detail_GitPending" xml:space="preserve"><value>Coming in 1.5</value></data>
+
+  <data name="Settings_Title" xml:space="preserve"><value>Settings</value></data>
+  <data name="Settings_Appearance" xml:space="preserve"><value>Appearance</value></data>
+  <data name="Settings_Theme" xml:space="preserve"><value>Theme</value></data>
+  <data name="Settings_ThemeLight" xml:space="preserve"><value>Light</value></data>
+  <data name="Settings_ThemeDark" xml:space="preserve"><value>Dark</value></data>
+  <data name="Settings_Blur" xml:space="preserve"><value>Gaussian Blur Strength</value></data>
+  <data name="Settings_BlurNone" xml:space="preserve"><value>Off</value></data>
+  <data name="Settings_BlurSubtle" xml:space="preserve"><value>Subtle</value></data>
+  <data name="Settings_BlurNormal" xml:space="preserve"><value>Normal</value></data>
+  <data name="Settings_BlurStrong" xml:space="preserve"><value>Strong</value></data>
+  <data name="Settings_BlurOverlay" xml:space="preserve"><value>Overlay</value></data>
+  <data name="Settings_BlurCurrent" xml:space="preserve"><value>Current: {0} ({1})</value></data>
+  <data name="Settings_BlurLiveHint" xml:space="preserve"><value>Applies instantly and persists across restarts</value></data>
+  <data name="Settings_Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Settings_LanguageZh" xml:space="preserve"><value>中文</value></data>
+  <data name="Settings_LanguageEn" xml:space="preserve"><value>English</value></data>
+  <data name="Settings_LanguageKo" xml:space="preserve"><value>한국어</value></data>
+  <data name="Settings_LanguageJa" xml:space="preserve"><value>日本語</value></data>
+  <data name="Settings_Data" xml:space="preserve"><value>Data</value></data>
+  <data name="Settings_DataSoon" xml:space="preserve"><value>Coming soon</value></data>
+  <data name="Settings_AboutLocal" xml:space="preserve"><value>A local-first project kickoff manager for programming, clip and todo projects.</value></data>
+  <data name="Settings_AboutLicense" xml:space="preserve"><value>MIT License · No network requests · Data stays on this device</value></data>
+  <data name="Settings_AboutDb" xml:space="preserve"><value>Database: %LocalAppData%\SOrtus\</value></data>
+
+  <data name="Common_Confirm" xml:space="preserve"><value>Confirm</value></data>
+  <data name="Common_OK" xml:space="preserve"><value>OK</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Common_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Common_Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="Common_No" xml:space="preserve"><value>No</value></data>
+  <data name="Common_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Common_Saved" xml:space="preserve"><value>Saved</value></data>
+  <data name="Common_Unsaved" xml:space="preserve"><value>You have unsaved changes. Leave anyway?</value></data>
+  <data name="Common_DeleteConfirm" xml:space="preserve"><value>Delete this project? This cannot be undone.</value></data>
+  <data name="Common_Error" xml:space="preserve"><value>Operation failed</value></data>
+  <data name="Common_RequiredName" xml:space="preserve"><value>Project name is required</value></data>
+  <data name="Common_RequiredTechStack" xml:space="preserve"><value>Select or enter at least one tech stack</value></data>
+  <data name="Wizard_TechStackPresets" xml:space="preserve"><value>Common stacks (click to select)</value></data>
+  <data name="Wizard_TechStackCustom" xml:space="preserve"><value>Add your own</value></data>
+  <data name="Detail_Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Detail_MetaCreated" xml:space="preserve"><value>Created {0:yyyy-MM-dd HH:mm}</value></data>
+  <data name="Detail_MetaUpdated" xml:space="preserve"><value>Updated {0:yyyy-MM-dd HH:mm}</value></data>
+  <data name="Dialog_UnsavedTitle" xml:space="preserve"><value>Unsaved changes</value></data>
+  <data name="Dialog_UnsavedMessage" xml:space="preserve"><value>Save changes to "{0}" before leaving?</value></data>
+  <data name="Dialog_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Dialog_Discard" xml:space="preserve"><value>Discard</value></data>
+</root>

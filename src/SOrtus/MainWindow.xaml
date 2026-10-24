@@ -1,0 +1,82 @@
+<Window x:Class="SOrtus.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:SOrtus.Controls"
+        xmlns:conv="clr-namespace:SOrtus.Converters"
+        Title="{DynamicResource App_Title}"
+        Height="760" Width="1180"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource WallpaperBrush}">
+
+    <Window.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <conv:StringEqualsConverter x:Key="StringEqualsConverter" />
+    </Window.Resources>
+
+    <Window.InputBindings>
+        <KeyBinding Key="Escape" Command="{Binding CloseDialogCommand}" />
+    </Window.InputBindings>
+
+    <!-- 背景层与内容层分离：PART_Backdrop 是磨砂卡片的模糊取样源（BlurPanel 以它为背景采样，
+         卡片本身不在其视觉树内，避免自引用递归），保证「模糊的是背景、不是内容」。 -->
+    <Grid>
+        <Border x:Name="PART_Backdrop" Background="{DynamicResource WallpaperBrush}" />
+
+        <Grid Margin="22">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="248" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- 侧边栏：磨砂卡片 + 导航（自定义 SOrCard / SOrButton） -->
+            <local:SOrCard Grid.Column="0" Margin="0,0,18,0" VerticalAlignment="Stretch">
+                <DockPanel LastChildFill="True">
+                    <TextBlock DockPanel.Dock="Top" Text="{DynamicResource App_Title}"
+                               FontSize="28" FontWeight="Bold" Margin="6,10,6,26" />
+
+                    <StackPanel DockPanel.Dock="Top" Orientation="Vertical">
+                        <local:SOrButton Command="{Binding NavigateProjectsCommand}"
+                                        Content="{DynamicResource Nav_Projects}"
+                                        Icon="{DynamicResource IconList}"
+                                        Variant="Nav"
+                                        IsActive="{Binding ActiveNav, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Projects}"
+                                        Margin="0,5" />
+                        <local:SOrButton Command="{Binding NavigateNewCommand}"
+                                        Content="{DynamicResource Nav_NewProject}"
+                                        Icon="{DynamicResource IconPlus}"
+                                        Variant="Nav"
+                                        IsActive="{Binding ActiveNav, Converter={StaticResource StringEqualsConverter}, ConverterParameter=New}"
+                                        Margin="0,5" />
+                        <local:SOrButton Command="{Binding NavigateSettingsCommand}"
+                                        Content="{DynamicResource Nav_Settings}"
+                                        Icon="{DynamicResource IconSettings}"
+                                        Variant="Nav"
+                                        IsActive="{Binding ActiveNav, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Settings}"
+                                        Margin="0,5" />
+                    </StackPanel>
+
+                    <TextBlock DockPanel.Dock="Bottom" Text="SOrtus · 本地优先"
+                               FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
+                               Margin="6,12,6,4" Opacity="0.8" />
+                </DockPanel>
+            </local:SOrCard>
+
+            <!-- 内容区：承载当前视图（视图内部自行使用 SOrCard 磨砂卡片） -->
+            <Grid Grid.Column="1">
+                <ContentControl Content="{Binding CurrentView}" Margin="2" />
+            </Grid>
+
+            <!-- 对话框覆盖层（规范 7.7 红线 #5：主窗口内承载，不用全透明窗口） -->
+            <Grid Grid.ColumnSpan="2"
+                  Visibility="{Binding IsDialogOpen, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Border Background="{StaticResource ScrimBrush}">
+                    <Border.InputBindings>
+                        <MouseBinding MouseAction="LeftClick" Command="{Binding CloseDialogCommand}" />
+                    </Border.InputBindings>
+                </Border>
+                <ContentControl Content="{Binding DialogContent}"
+                              HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

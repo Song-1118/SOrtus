@@ -1,0 +1,76 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        画刷层（规范 7.5）：所有主题相关色值一律通过 DynamicResource 引用主题字典，
+        换肤时自动重新解析，无需重启。模糊覆盖层色值、透明度语义随主题变化。
+    -->
+
+    <!-- 背景装饰视觉（acrylic 风格渐变 + 强调色光斑）。x:Shared=False 使每个引用获得独立实例，
+         供 Window 背景与每个 BlurPanel 的模糊层各自渲染，避免共享同一 Visual。 -->
+    <Grid x:Key="BackdropVisual" x:Shared="False">
+        <Grid.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="{DynamicResource ColorBackgroundA}" Offset="0" />
+                <GradientStop Color="{DynamicResource ColorBackgroundB}" Offset="1" />
+            </LinearGradientBrush>
+        </Grid.Background>
+        <Ellipse Width="540" Height="540" Fill="{DynamicResource AccentABrush}" Opacity="0.30"
+                 HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-140,-100,0,0" />
+        <Ellipse Width="440" Height="440" Fill="{DynamicResource AccentBBrush}" Opacity="0.26"
+                 HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-120,-80" />
+        <Ellipse Width="320" Height="320" Fill="{DynamicResource AccentCBrush}" Opacity="0.22"
+                 HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,60,0,0" />
+    </Grid>
+
+    <!-- 应用背景画刷（Window 背景与 BlurPanel 默认模糊层共用，保证卡片呈现磨砂质感）。
+         x:Shared=False：每个引用获得独立实例，避免多个模糊层共享同一 Visual 导致渲染冲突。 -->
+    <VisualBrush x:Key="WallpaperBrush" x:Shared="False"
+                 Visual="{StaticResource BackdropVisual}" Stretch="UniformToFill" />
+
+    <!-- 语义画刷 -->
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{DynamicResource ColorPrimary}" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="{DynamicResource ColorSurface}" />
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{DynamicResource ColorTextPrimary}" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{DynamicResource ColorTextSecondary}" />
+    <SolidColorBrush x:Key="TextOnAccentBrush" Color="{DynamicResource ColorTextOnAccent}" />
+    <SolidColorBrush x:Key="BorderBrush" Color="{DynamicResource ColorBorder}" />
+    <SolidColorBrush x:Key="AccentABrush" Color="{DynamicResource ColorAccentA}" />
+    <SolidColorBrush x:Key="AccentBBrush" Color="{DynamicResource ColorAccentB}" />
+    <SolidColorBrush x:Key="AccentCBrush" Color="{DynamicResource ColorAccentC}" />
+    <SolidColorBrush x:Key="SuccessBrush" Color="{DynamicResource ColorSuccess}" />
+    <SolidColorBrush x:Key="WarningBrush" Color="{DynamicResource ColorWarning}" />
+    <SolidColorBrush x:Key="DangerBrush" Color="{DynamicResource ColorDanger}" />
+    <SolidColorBrush x:Key="ShadowBrush" Color="{DynamicResource ColorShadow}" />
+
+    <!-- 高斯模糊覆盖层画刷：颜色随主题变化（浅色=白覆盖，深色=深色覆盖），键名与两主题一一对应 -->
+    <SolidColorBrush x:Key="BlurOverlayBrush" Color="{DynamicResource BlurOverlayColor}" />
+
+    <!-- SOrTag 色调画刷（Tone → 背景/前景，随主题切换） -->
+    <SolidColorBrush x:Key="TagAccentABgBrush" Color="{DynamicResource ColorTagAccentABg}" />
+    <SolidColorBrush x:Key="TagAccentAFgBrush" Color="{DynamicResource ColorTagAccentAFg}" />
+    <SolidColorBrush x:Key="TagAccentBBgBrush" Color="{DynamicResource ColorTagAccentBBg}" />
+    <SolidColorBrush x:Key="TagAccentBFgBrush" Color="{DynamicResource ColorTagAccentBFg}" />
+    <SolidColorBrush x:Key="TagAccentCBgBrush" Color="{DynamicResource ColorTagAccentCBg}" />
+    <SolidColorBrush x:Key="TagAccentCFgBrush" Color="{DynamicResource ColorTagAccentCFg}" />
+    <SolidColorBrush x:Key="TagSuccessBgBrush" Color="{DynamicResource ColorTagSuccessBg}" />
+    <SolidColorBrush x:Key="TagSuccessFgBrush" Color="{DynamicResource ColorTagSuccessFg}" />
+    <SolidColorBrush x:Key="TagWarningBgBrush" Color="{DynamicResource ColorTagWarningBg}" />
+    <SolidColorBrush x:Key="TagWarningFgBrush" Color="{DynamicResource ColorTagWarningFg}" />
+    <SolidColorBrush x:Key="TagDangerBgBrush" Color="{DynamicResource ColorTagDangerBg}" />
+    <SolidColorBrush x:Key="TagDangerFgBrush" Color="{DynamicResource ColorTagDangerFg}" />
+    <SolidColorBrush x:Key="TagNeutralBgBrush" Color="{DynamicResource ColorTagNeutralBg}" />
+    <SolidColorBrush x:Key="TagNeutralFgBrush" Color="{DynamicResource ColorTagNeutralFg}" />
+
+    <!-- 交互层画刷：悬浮 / 按压（自定义控件统一引用，便于后续挂动画） -->
+    <SolidColorBrush x:Key="HoverOverlayBrush" Color="{DynamicResource ColorHoverOverlay}" />
+    <SolidColorBrush x:Key="PressOverlayBrush" Color="{DynamicResource ColorPressOverlay}" />
+
+    <!-- 导航 / 列表选中高亮画刷 -->
+    <SolidColorBrush x:Key="NavActiveBrush" Color="{DynamicResource ColorNavActive}" />
+
+    <!-- 滚动条滑块画刷 -->
+    <SolidColorBrush x:Key="ScrollThumbBrush" Color="{DynamicResource ColorScrollThumb}" />
+    <SolidColorBrush x:Key="ScrollThumbHoverBrush" Color="{DynamicResource ColorScrollThumbHover}" />
+
+</ResourceDictionary>

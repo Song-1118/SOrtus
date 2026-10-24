@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>SOrtus</RootNamespace>
+    <AssemblyName>SOrtus</AssemblyName>
+    <!-- 规范 9.3：关于页/安装包版本与程序集一致，版本由 Directory.Build.props 统一注入 -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SOrtus.Core\SOrtus.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 本地优先、纯本地：仅引入必要的 SQLite 驱动，无网络/云服务依赖 -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 多语言资源（规范 7 / 4.3）：中性 resx 为权威源（中文），en-US 为卫星程序集 -->
+    <EmbeddedResource Update="Resources\Strings\Strings.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\Strings\Strings.en-US.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 数据库迁移脚本（规范 9.8）：以嵌入资源形式随程序发布，启动时按版本执行 -->
+    <EmbeddedResource Include="Migrations\v0001_CreateProject.sql" />
+  </ItemGroup>
+
+</Project>

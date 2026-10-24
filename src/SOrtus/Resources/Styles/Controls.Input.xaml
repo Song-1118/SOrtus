@@ -1,0 +1,643 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:SOrtus.Controls"
+                    xmlns:conv="clr-namespace:SOrtus.Converters">
+
+    <!--
+        输入类自定义控件样式（规范 7.1）：SOrTextBox / SOrComboBox / SOrDatePicker / SOrSlider。
+        每个控件的视觉树都内置命名层（PART_Root / PART_Hover / PART_FocusRing / PART_Placeholder 等），
+        后期做空间模糊（对 PART_Root 挂 BlurPanel）与动画（驱动覆盖层 Opacity）均无需改控件代码。
+        日期选择器的下拉日历样式（SOrCalendar*）同样在此集中定义。
+    -->
+    <conv:NotNullToVisibilityConverter x:Key="NotNullToVisibilityConverter" />
+    <conv:NotMonthModeConverter x:Key="NotMonthModeConverter" />
+
+    <!-- ============================ SOrTextBox ============================ -->
+    <Style TargetType="local:SOrTextBox">
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="11,0,11,0" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="SelectionBrush" Value="{DynamicResource PrimaryBrush}" />
+        <Setter Property="MinHeight" Value="{DynamicResource ControlHeight}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:SOrTextBox">
+                    <Border x:Name="PART_Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <!-- 前置图标（LeadingIcon 为空时自动折叠） -->
+                            <Path Grid.Column="0"
+                                  Data="{TemplateBinding LeadingIcon}"
+                                  Fill="{DynamicResource TextSecondaryBrush}"
+                                  Width="{TemplateBinding IconSize}"
+                                  Height="{TemplateBinding IconSize}"
+                                  Stretch="Uniform"
+                                  Margin="11,0,0,0"
+                                  VerticalAlignment="Center"
+                                  HorizontalAlignment="Center"
+                                  Visibility="{Binding LeadingIcon, Converter={StaticResource NotNullToVisibilityConverter}, RelativeSource={RelativeSource TemplatedParent}}" />
+                            <!-- 内容宿主（原生约定部件，必须存在） -->
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Grid.Column="1"
+                                          Margin="{TemplateBinding Padding}"
+                                          Foreground="{TemplateBinding Foreground}"
+                                          VerticalAlignment="Center"
+                                          HorizontalScrollBarVisibility="Hidden"
+                                          VerticalScrollBarVisibility="Hidden" />
+                            <!-- 占位符：内容为空且未聚焦时显示 -->
+                            <TextBlock x:Name="PART_Placeholder"
+                                       Grid.Column="1"
+                                       Text="{TemplateBinding Placeholder}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       Opacity="0.85"
+                                       Margin="{TemplateBinding Padding}"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Left"
+                                       IsHitTestVisible="False"
+                                       Visibility="Collapsed" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="Text" Value="" />
+                                <Condition Property="IsKeyboardFocusWithin" Value="False" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="PART_Placeholder" Property="Visibility" Value="Visible" />
+                        </MultiTrigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="PART_Root" Property="Opacity" Value="0.55" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ============================ SOrComboBox ============================ -->
+    <Style TargetType="local:SOrComboBox">
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Padding" Value="12,0,8,0" />
+        <Setter Property="MinHeight" Value="{DynamicResource ControlHeight}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:SOrComboBox">
+                    <Grid>
+                        <Border x:Name="PART_Root"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <!-- 选中项内容（SelectionBoxItem 自动遵循 ItemTemplate / DisplayMemberPath） -->
+                                <ContentPresenter x:Name="PART_ContentSite"
+                                                  Content="{TemplateBinding SelectionBoxItem}"
+                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                  ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                  Margin="{TemplateBinding Padding}"
+                                                  VerticalAlignment="Center"
+                                                  HorizontalAlignment="Left"
+                                                  IsHitTestVisible="False" />
+                                <!-- 无选中项时的占位提示 -->
+                                <TextBlock x:Name="PART_Placeholder"
+                                           Text="{TemplateBinding Placeholder}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           Opacity="0.85"
+                                           Margin="{TemplateBinding Padding}"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Left"
+                                           IsHitTestVisible="False"
+                                           Visibility="Collapsed" />
+                                <!-- 下拉箭头（IsDropDownOpen 时翻转） -->
+                                <Path x:Name="PART_Arrow"
+                                      Grid.Column="1"
+                                      Data="M 0,1.5 L 5,6.5 L 10,1.5"
+                                      Stroke="{DynamicResource TextSecondaryBrush}"
+                                      StrokeThickness="1.6"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      Stretch="Uniform"
+                                      Width="10"
+                                      Height="7"
+                                      Margin="0,0,12,0"
+                                      IsHitTestVisible="False" />
+                                <!-- 整字段可点的开关（IsChecked 与 IsDropDownOpen 双向同步） -->
+                                <ToggleButton x:Name="PART_DropDownToggle"
+                                              Grid.ColumnSpan="2"
+                                              Focusable="False"
+                                              Cursor="Hand"
+                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <ToggleButton.Template>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Border Background="Transparent" />
+                                        </ControlTemplate>
+                                    </ToggleButton.Template>
+                                </ToggleButton>
+                            </Grid>
+                        </Border>
+                        <!-- 下拉浮层（原生约定：Popup 承载 ItemsPresenter） -->
+                        <Popup x:Name="PART_Popup"
+                               Placement="Bottom"
+                               AllowsTransparency="True"
+                               Focusable="False"
+                               StaysOpen="False"
+                               PopupAnimation="Fade"
+                               IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                            <Border Background="{DynamicResource SurfaceBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="{DynamicResource CornerRadiusMedium}"
+                                    Padding="4"
+                                    MinWidth="{Binding ActualWidth, ElementName=PART_Root}"
+                                    MaxHeight="{DynamicResource DropDownMaxHeight}">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="18" ShadowDepth="0"
+                                                      Color="{DynamicResource ColorShadow}" Opacity="0.22" />
+                                </Border.Effect>
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <ItemsPresenter x:Name="ItemsPresenter" Margin="0,0,4,0" />
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsDropDownOpen" Value="True">
+                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                            <Setter TargetName="PART_Arrow" Property="Data" Value="M 0,6.5 L 5,1.5 L 10,6.5" />
+                        </Trigger>
+                        <DataTrigger Binding="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}}" Value="{x:Null}">
+                            <Setter TargetName="PART_Placeholder" Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="PART_Root" Property="Opacity" Value="0.55" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 下拉项容器（自定义胶囊高亮，替代系统蓝） -->
+    <Style TargetType="ComboBoxItem">
+        <Setter Property="Padding" Value="10,7" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBoxItem">
+                    <Grid>
+                        <Border x:Name="PART_Root"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="{DynamicResource CornerRadiusSmall}" />
+                        <ContentPresenter Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center"
+                                          HorizontalAlignment="Left" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="PART_Root" Property="Background" Value="{DynamicResource HoverOverlayBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="PART_Root" Property="Background" Value="{DynamicResource PrimaryBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextOnAccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ============================ SOrDatePicker ============================ -->
+
+    <!-- 日历日按钮（CalendarDayButton 由 CalendarItem 代码创建，样式经 Calendar.CalendarDayButtonStyle 注入） -->
+    <Style x:Key="SOrCalendarDayButtonStyle" TargetType="CalendarDayButton">
+        <Setter Property="MinWidth" Value="32" />
+        <Setter Property="MinHeight" Value="30" />
+        <Setter Property="Margin" Value="1.5" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CalendarDayButton">
+                    <Grid>
+                        <Border x:Name="PART_Root"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="{DynamicResource CornerRadiusSmall}" />
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="PART_Root" Property="Background" Value="{DynamicResource HoverOverlayBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="PART_Root" Property="Background" Value="{DynamicResource PressOverlayBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="PART_Root" Property="Background" Value="{DynamicResource PrimaryBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextOnAccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsInactive" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                            <Setter Property="Opacity" Value="0.55" />
+                        </Trigger>
+                        <Trigger Property="IsBlackedOut" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                            <Setter TargetName="PART_Root" Property="Background" Value="{DynamicResource PressOverlayBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsToday" Value="True">
+                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                            <Setter TargetName="PART_Root" Property="BorderThickness" Value="1.5" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 日历按钮（表头 / 上月 / 下月 / 年视图的月份与年份按钮共用） -->
+    <Style x:Key="SOrCalendarButtonStyle" TargetType="CalendarButton">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CalendarButton">
+                    <Grid>
+                        <Border x:Name="PART_Root"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="{DynamicResource CornerRadiusSmall}" />
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,2" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="PART_Root" Property="Background" Value="{DynamicResource HoverOverlayBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="PART_Root" Property="Background" Value="{DynamicResource PressOverlayBrush}" />
+                        </Trigger>
+                        <Trigger Property="HasSelectedDays" Value="True">
+                            <Setter TargetName="PART_Root" Property="Background" Value="{DynamicResource PrimaryBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextOnAccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsInactive" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                            <Setter Property="Opacity" Value="0.55" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        日历项（CalendarItem）完整自定义模板。
+        部件契约（源码验证）：PART_Root / PART_HeaderButton / PART_PreviousButton / PART_NextButton /
+        PART_MonthView(7列7行：第0行日期标题，1-6行日期) / PART_YearView(4列3行) / PART_DisabledVisual。
+        月/年视图切换：CalendarItem 代码只负责填充内容，网格可见性由本模板按 Calendar.DisplayMode 驱动。
+        DayTitleTemplate 必须位于 ControlTemplate.Resources 中（代码按 ComponentResourceKey 查找，
+        缺失时日期表头为空）；表头文字由代码把「日/一/…」字符串写入各标题单元格的 DataContext。
+    -->
+    <Style x:Key="SOrCalendarItemStyle" TargetType="CalendarItem">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CalendarItem">
+                    <ControlTemplate.Resources>
+                        <DataTemplate x:Key="{ComponentResourceKey ResourceId=DayTitleTemplate, TypeInTargetAssembly={x:Type CalendarItem}}">
+                            <TextBlock Text="{Binding}"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Margin="0,2,0,4" />
+                        </DataTemplate>
+                    </ControlTemplate.Resources>
+                    <Grid x:Name="PART_Root">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <!-- 导航行：上月 / 年月标题（点击切换年视图）/ 下月 -->
+                        <Grid Grid.Row="0" Margin="0,0,0,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="PART_PreviousButton"
+                                    Grid.Column="0"
+                                    Width="28" Height="28"
+                                    Style="{StaticResource SOrCalendarButtonStyle}"
+                                    Cursor="Hand">
+                                <Path Data="M 6,1 L 2,5 L 6,9"
+                                      Stroke="{DynamicResource TextPrimaryBrush}"
+                                      StrokeThickness="1.6"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      Stretch="Uniform"
+                                      Width="8" Height="8" />
+                            </Button>
+                            <Button x:Name="PART_HeaderButton"
+                                    Grid.Column="1"
+                                    Height="28"
+                                    Style="{StaticResource SOrCalendarButtonStyle}"
+                                    FontWeight="SemiBold"
+                                    Cursor="Hand" />
+                            <Button x:Name="PART_NextButton"
+                                    Grid.Column="2"
+                                    Width="28" Height="28"
+                                    Style="{StaticResource SOrCalendarButtonStyle}"
+                                    Cursor="Hand">
+                                <Path Data="M 3,1 L 7,5 L 3,9"
+                                      Stroke="{DynamicResource TextPrimaryBrush}"
+                                      StrokeThickness="1.6"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      Stretch="Uniform"
+                                      Width="8" Height="8" />
+                            </Button>
+                        </Grid>
+                        <!-- 月视图：7 列 × 7 行（第 0 行日期标题） -->
+                        <Grid x:Name="PART_MonthView" Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                        </Grid>
+                        <!-- 年 / 十年视图：4 列 × 3 行（内容由代码填充） -->
+                        <Grid x:Name="PART_YearView" Grid.Row="1" Visibility="Collapsed">
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding DisplayMode, RelativeSource={RelativeSource AncestorType=Calendar}, Converter={StaticResource NotMonthModeConverter}}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                        </Grid>
+                        <!-- 禁用态遮罩 -->
+                        <Rectangle x:Name="PART_DisabledVisual"
+                                   Grid.RowSpan="2"
+                                   Fill="{DynamicResource ScrimBrush}"
+                                   Opacity="0.5"
+                                   Visibility="Collapsed" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="PART_DisabledVisual" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 日历整体（Surface 卡片外观；内部 CalendarItem 由模板挂接 SOrCalendarItemStyle） -->
+    <Style x:Key="SOrCalendarStyle" TargetType="Calendar">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CalendarDayButtonStyle" Value="{StaticResource SOrCalendarDayButtonStyle}" />
+        <Setter Property="CalendarButtonStyle" Value="{StaticResource SOrCalendarButtonStyle}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Calendar">
+                    <Grid x:Name="PART_Root">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{DynamicResource CornerRadiusMedium}" />
+                        <CalendarItem x:Name="PART_CalendarItem"
+                                      Style="{StaticResource SOrCalendarItemStyle}"
+                                      Margin="8,6,8,10" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- DatePicker 内部文本框（仅设属性，保留默认模板的 PART_ContentHost 与水印状态） -->
+    <Style TargetType="DatePickerTextBox">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="Padding" Value="11,0,4,0" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+
+    <Style TargetType="local:SOrDatePicker">
+        <Setter Property="CalendarStyle" Value="{StaticResource SOrCalendarStyle}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="Height" Value="{DynamicResource ControlHeight}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:SOrDatePicker">
+                    <Grid>
+                        <Border x:Name="PART_Root"
+                                Background="{DynamicResource SurfaceBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <DatePickerTextBox x:Name="PART_TextBox" Grid.Column="0" />
+                                <!-- 日历图标按钮（真实 Button：代码为其挂 Click 切换下拉） -->
+                                <Button x:Name="PART_Button"
+                                        Grid.Column="1"
+                                        Width="30"
+                                        Margin="0,0,3,0"
+                                        Cursor="Hand"
+                                        Focusable="False">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="PART_BtnRoot" Background="Transparent" CornerRadius="{DynamicResource CornerRadiusSmall}">
+                                                <Path Data="M 1,2.5 L 1,10.5 L 12.5,10.5 L 12.5,4.5 L 4.5,4.5
+                                                          M 1,2.5 L 4.5,4.5 M 12.5,4.5 L 9.5,2.5 L 6.75,4.5
+                                                          M 4.5,4.5 L 4.5,2.5 M 9.5,4.5 L 9.5,2.5"
+                                                      Stroke="{DynamicResource TextSecondaryBrush}"
+                                                      StrokeThickness="1.2"
+                                                      StrokeStartLineCap="Round"
+                                                      StrokeEndLineCap="Round"
+                                                      Stretch="Uniform"
+                                                      Width="14" Height="14" />
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="PART_BtnRoot" Property="Background" Value="{DynamicResource HoverOverlayBrush}" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </Grid>
+                        </Border>
+                        <!-- 原生约定：Popup 内不写内容，DatePicker 会把内置 Calendar 赋给 Popup.Child -->
+                        <Popup x:Name="PART_Popup"
+                               Placement="Bottom"
+                               AllowsTransparency="True"
+                               Focusable="False"
+                               StaysOpen="False"
+                               PopupAnimation="Fade"
+                               IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsDropDownOpen" Value="True">
+                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="PART_Root" Property="Opacity" Value="0.55" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ============================ SOrSlider ============================ -->
+    <Style TargetType="local:SOrSlider">
+        <Setter Property="Height" Value="20" />
+        <Setter Property="Minimum" Value="0" />
+        <Setter Property="Maximum" Value="100" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:SOrSlider">
+                    <!--
+                        命名层：PART_Root（轨道容器）、PART_Track（原生约定，值/方向由 Track 自动绑定模板父级，
+                        因此 XAML 中不得为 Track 显式设置 Value/Minimum/Maximum/Orientation）。
+                    -->
+                    <Grid x:Name="PART_Root" Background="Transparent" VerticalAlignment="Center">
+                        <Border x:Name="PART_TrackBackground"
+                                Background="{DynamicResource BorderBrush}"
+                                Height="4"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                VerticalAlignment="Center" />
+                        <Track x:Name="PART_Track" VerticalAlignment="Center">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Command="{x:Static Slider.DecreaseLarge}" Focusable="False">
+                                    <RepeatButton.Template>
+                                        <ControlTemplate TargetType="RepeatButton">
+                                            <Border Background="{DynamicResource PrimaryBrush}"
+                                                    Height="4"
+                                                    CornerRadius="{DynamicResource CornerRadiusPill}"
+                                                    VerticalAlignment="Center" />
+                                        </ControlTemplate>
+                                    </RepeatButton.Template>
+                                </RepeatButton>
+                            </Track.DecreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb Focusable="False" Cursor="Hand">
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb">
+                                            <Ellipse Width="14" Height="14"
+                                                     Fill="{DynamicResource PrimaryBrush}"
+                                                     Stroke="{DynamicResource SurfaceBrush}"
+                                                     StrokeThickness="2" />
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Command="{x:Static Slider.IncreaseLarge}" Focusable="False">
+                                    <RepeatButton.Template>
+                                        <ControlTemplate TargetType="RepeatButton">
+                                            <Border Background="Transparent" />
+                                        </ControlTemplate>
+                                    </RepeatButton.Template>
+                                </RepeatButton>
+                            </Track.IncreaseRepeatButton>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

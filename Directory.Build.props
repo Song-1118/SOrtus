@@ -1,0 +1,23 @@
+<Project>
+
+  <!-- 版本单一来源：由 build/version.props 集中管理，禁止在其它位置硬编码版本号 -->
+  <Import Project="build\version.props" />
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- 规范 6.2：公共 API 应有 XML 注释；骨架阶段不把警告当错误，但保持低警告 -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <Authors>SOrtus Contributors</Authors>
+    <Company>SOrtus</Company>
+    <Product>SOrtus</Product>
+    <Copyright>Copyright © 2026 SOrtus Contributors</Copyright>
+    <Description>SOrtus - 本地优先的立项管理桌面工具（.NET 10 / WPF / SQLite）</Description>
+    <RepositoryUrl>https://example.com/soctus</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RootNamespace>SOrtus</RootNamespace>
+  </PropertyGroup>
+
+</Project>

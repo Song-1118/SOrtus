@@ -1,0 +1,39 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        全局样式总入口（规范 7.2 / 验收 A13）：
+        App.xaml 只引入「主题字典 + 本字典」两个入口。
+
+        为什么这样可行（此前平铺的原因）：
+        WPF 的 StaticResource 在**字典加载期**不会跨 MergedDictionaries 的兄弟字典查找。
+        解决办法不是平铺，而是让每个存在跨字典引用的字典**自己声明依赖**：
+          · Blur.xaml              → Sizes.xaml（BlurRadius*）
+          · Controls.Dialog.xaml   → Controls.Card.xaml（BlurCardStyle）
+          · ViewTemplates.xaml     → Controls.Dialog.xaml（BlurDialogStyle）
+        依赖在各自的 MergedDictionaries 里（子作用域可见），因此这里按依赖顺序合并即可。
+        主题相关色值全部走 DynamicResource，运行时整本替换主题仍然生效。
+    -->
+
+    <ResourceDictionary.MergedDictionaries>
+        <!-- 令牌层 -->
+        <ResourceDictionary Source="Colors.xaml" />
+        <ResourceDictionary Source="Brushes.xaml" />
+        <ResourceDictionary Source="Sizes.xaml" />
+        <ResourceDictionary Source="Animations.xaml" />
+        <ResourceDictionary Source="Blur.xaml" />
+        <ResourceDictionary Source="Icons.xaml" />
+
+        <!-- 控件样式层（依赖顺序：Base → Button → Input → Card → Display → Dialog） -->
+        <ResourceDictionary Source="Controls.Base.xaml" />
+        <ResourceDictionary Source="Controls.Button.xaml" />
+        <ResourceDictionary Source="Controls.Input.xaml" />
+        <ResourceDictionary Source="Controls.Card.xaml" />
+        <ResourceDictionary Source="Controls.Display.xaml" />
+        <ResourceDictionary Source="Controls.Dialog.xaml" />
+
+        <!-- 视图模板（依赖上述全部样式与对话框样式） -->
+        <ResourceDictionary Source="../ViewTemplates.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+</ResourceDictionary>

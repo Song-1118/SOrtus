@@ -51,6 +51,10 @@
     <Color x:Key="ColorScrollThumb">#D1D5DB</Color>
     <Color x:Key="ColorScrollThumbHover">#9CA3AF</Color>
 
+    <!-- 背景装饰（仅中性灰阶）：glow=柔光，tint=网格/暗面 -->
+    <Color x:Key="ColorBackdropGlow">#FFFFFFFF</Color>
+    <Color x:Key="ColorBackdropTint">#FFC2C9D4</Color>
+
     <!-- 滑块底轨（比分隔线深一档，避免左右两段因对比差显得粗细不一） -->
     <Color x:Key="ColorSliderTrack">#C6CCD6</Color>
 

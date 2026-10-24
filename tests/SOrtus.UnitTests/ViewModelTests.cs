@@ -190,6 +190,63 @@ public class ViewModelTests
         Assert.Equal(1, created);
     }
 
+    [Fact]
+    public async Task Wizard_CreateClip_RequiresClipType_NotTechStack()
+    {
+        // SO-002 回归：剪辑类型不校验技术栈（界面上没有该字段），但要求选剪辑类型
+        var service = new StubProjectService();
+        var vm = new ProjectWizardViewModel(service, new StubLocalization(), () => { });
+        vm.SelectTypeCommand.Execute(ProjectType.Clip);
+        vm.NextStepCommand.Execute(null);
+        vm.Name = "剪辑测试";
+
+        await ((Common.AsyncRelayCommand)vm.CreateCommand).ExecuteAsync();
+        Assert.Equal("Common_RequiredClipType", vm.ErrorMessage);
+
+        vm.SubType = vm.SubTypeOptions.First();
+        await ((Common.AsyncRelayCommand)vm.CreateCommand).ExecuteAsync();
+
+        Assert.Empty(vm.ErrorMessage);
+        var project = Assert.Single(service.Items);
+        Assert.Equal(ProjectType.Clip, project.Type);
+        Assert.Equal("剪辑测试", project.Name);
+    }
+
+    [Fact]
+    public async Task Wizard_CreateTodo_RequiresDueDate()
+    {
+        // SO-002 + SO-016 回归：待办不校验技术栈，但完成时间必填
+        var service = new StubProjectService();
+        var vm = new ProjectWizardViewModel(service, new StubLocalization(), () => { });
+        vm.SelectTypeCommand.Execute(ProjectType.Todo);
+        vm.NextStepCommand.Execute(null);
+        vm.Name = "待办测试";
+        vm.ScheduleEnd = null;
+
+        await ((Common.AsyncRelayCommand)vm.CreateCommand).ExecuteAsync();
+        Assert.Equal("Common_RequiredDueTime", vm.ErrorMessage);
+        Assert.Empty(service.Items);
+
+        vm.ScheduleEnd = new DateTime(2026, 12, 1);
+        await ((Common.AsyncRelayCommand)vm.CreateCommand).ExecuteAsync();
+
+        Assert.Empty(vm.ErrorMessage);
+        Assert.Equal(ProjectType.Todo, Assert.Single(service.Items).Type);
+    }
+
+    [Fact]
+    public void Wizard_SwitchingType_ResetsSubType()
+    {
+        var vm = new ProjectWizardViewModel(new StubProjectService(), new StubLocalization(), () => { });
+        vm.SelectTypeCommand.Execute(ProjectType.Programming);
+        vm.SubType = "桌面应用";
+        vm.SelectTypeCommand.Execute(ProjectType.Clip);
+
+        Assert.Empty(vm.SubType);
+        Assert.True(vm.IsClip);
+        Assert.False(vm.IsProgramming);
+    }
+
     #endregion
 
     #region 详情（A8 / A12）

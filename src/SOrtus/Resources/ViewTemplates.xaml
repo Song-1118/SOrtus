@@ -4,6 +4,11 @@
                       xmlns:vm="clr-namespace:SOrtus.ViewModels"
                       xmlns:core="clr-namespace:SOrtus.Core.Models;assembly=SOrtus.Core"
                       xmlns:conv="clr-namespace:SOrtus.Converters">
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Styles/Controls.Dialog.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+
 
     <!-- 视图模型 -> 视图 映射（规范：简单内容区切换，DataTemplate 驱动，无重型框架）。 -->
 

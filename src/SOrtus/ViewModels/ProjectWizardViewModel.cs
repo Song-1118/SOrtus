@@ -302,17 +302,22 @@ internal sealed class ProjectWizardViewModel : ViewModelBase
 
     private void BrowseFolder()
     {
-        // WPF 无内置文件夹对话框；通过选择一个文件取其所在目录作为关联文件夹（关联文件夹为选填）。
-        var dialog = new OpenFileDialog
+        // SO-007：直接选文件夹（.NET 8+ 自带 OpenFolderDialog），不再「选一个文件取所在目录」——
+        // 后者选不中空文件夹，用户也很难理解这个操作。
+        var dialog = new Microsoft.Win32.OpenFolderDialog
         {
             Title = _localization.GetString("Wizard_FolderBrowse"),
-            CheckFileExists = false,
-            FileName = "folder",
+            Multiselect = false,
         };
+
+        if (!string.IsNullOrWhiteSpace(FolderPath) && Directory.Exists(FolderPath))
+        {
+            dialog.InitialDirectory = FolderPath;
+        }
 
         if (dialog.ShowDialog() == true)
         {
-            FolderPath = Path.GetDirectoryName(dialog.FileName) ?? FolderPath;
+            FolderPath = dialog.FolderName;
         }
     }
 
@@ -324,10 +329,25 @@ internal sealed class ProjectWizardViewModel : ViewModelBase
             return;
         }
 
-        if (TechStacks.Count == 0)
+        // 必填校验必须按类型分支（SO-002）：编程看技术栈、剪辑看剪辑类型、待办看完成时间（SO-016）。
+        // 否则「界面上没有这个字段，却被这条规则拦住」，形成走不通的死路。
+        if (IsProgramming && TechStacks.Count == 0)
         {
-            // PRD 5.1.1：技术栈为必填项
+            // PRD 5.1.1：编程立项的技术栈为必填项
             ErrorMessage = _localization.GetString("Common_RequiredTechStack");
+            return;
+        }
+
+        if (IsClip && string.IsNullOrWhiteSpace(SubType))
+        {
+            ErrorMessage = _localization.GetString("Common_RequiredClipType");
+            return;
+        }
+
+        if (IsTodo && ScheduleEnd is null)
+        {
+            // PRD 5.3.1：待办「完成时间」必填
+            ErrorMessage = _localization.GetString("Common_RequiredDueTime");
             return;
         }
 
@@ -346,7 +366,17 @@ internal sealed class ProjectWizardViewModel : ViewModelBase
         };
         project.SetTechStack(TechStacks);
 
-        await _service.CreateAsync(project);
+        try
+        {
+            await _service.CreateAsync(project);
+        }
+        catch (Exception ex)
+        {
+            // 写库失败必须让用户看到，不能静默吞掉（SO-010）
+            ErrorMessage = string.Format(_localization.GetString("Common_SaveFailed"), ex.Message);
+            return;
+        }
+
         _onCreated();
     }
 }

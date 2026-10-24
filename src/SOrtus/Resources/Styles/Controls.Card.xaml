@@ -48,7 +48,7 @@
     <Style x:Key="BlurCardStyle" TargetType="Border">
         <Setter Property="local:BlurPanel.EnableBlur" Value="True" />
         <Setter Property="local:BlurPanel.BlurRadius" Value="{DynamicResource GlobalBlurRadius}" />
-        <Setter Property="local:BlurPanel.OverlayOpacity" Value="0.62" />
+        <Setter Property="local:BlurPanel.OverlayOpacity" Value="0.58" />
         <Setter Property="CornerRadius" Value="{DynamicResource CornerRadiusLarge}" />
         <!-- 模糊层跟随 Border 自身圆角，否则覆盖层是直角矩形，会在圆角容器上露出方角 -->
         <Setter Property="local:BlurPanel.CornerRadius"

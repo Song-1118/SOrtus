@@ -179,8 +179,8 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
     private async Task DeleteAsync()
     {
         var confirmed = await _dialogService.ConfirmAsync(
-            _localization.GetString("Common_Delete"),
-            _localization.GetString("Common_DeleteConfirm"));
+            _localization.GetString("Dialog_DeleteTitle"),
+            string.Format(_localization.GetString("Dialog_DeleteMessage"), _project.Name));
 
         if (!confirmed)
         {

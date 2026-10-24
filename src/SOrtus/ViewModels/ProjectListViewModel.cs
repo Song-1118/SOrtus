@@ -108,7 +108,15 @@ internal sealed class ProjectListViewModel : ViewModelBase
         _requestNew = requestNew;
 
         TypeOptions = new ObservableCollection<ProjectType?> { null, ProjectType.Programming, ProjectType.Clip, ProjectType.Todo };
-        StatusOptions = new ObservableCollection<ProjectStatus?> { null, ProjectStatus.Planning, ProjectStatus.Active, ProjectStatus.Completed };
+        StatusOptions = new ObservableCollection<ProjectStatus?>
+        {
+            null,
+            ProjectStatus.Planning,
+            ProjectStatus.Active,
+            ProjectStatus.OnHold,
+            ProjectStatus.Completed,
+            ProjectStatus.Archived,
+        };
 
         NewCommand = new RelayCommand(_ => _requestNew());
         OpenDetailCommand = new RelayCommand(o => { if (o is Project p) _openDetail(p); });

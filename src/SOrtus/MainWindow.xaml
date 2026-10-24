@@ -27,14 +27,14 @@
              模糊半径 0 和 30 的渲染结果几乎一致，调节滑块就像没反应。
              这里只用中性灰阶，几何边缘在卡片内会被模糊、卡片外保持清晰，滑块变化因此可见。 -->
         <Grid x:Name="PART_Backdrop" Background="{DynamicResource WallpaperBrush}" ClipToBounds="True">
-            <Ellipse Width="720" Height="720" Fill="#FFFFFFFF" Opacity="0.60"
+            <Ellipse Width="720" Height="720" Fill="{DynamicResource BackdropGlowBrush}" Opacity="0.60"
                      HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-260,-220,0" />
-            <Ellipse Width="560" Height="560" Fill="{DynamicResource SoftShadowBrush}" Opacity="0.22"
+            <Ellipse Width="560" Height="560" Fill="{DynamicResource BackdropTintBrush}" Opacity="0.55"
                      HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="-200,0,0,-180" />
 
             <!-- 点阵底纹（极淡）：卡片内的点会被模糊成柔和过渡，卡片外保持清晰，
                  拖动「高斯模糊强度」时能明显看出变化。 -->
-            <Rectangle Fill="{DynamicResource DotGridBrush}" Opacity="0.48" />
+            <Rectangle Fill="{DynamicResource DotGridBrush}" Opacity="0.75" />
         </Grid>
 
         <Grid Margin="22">
@@ -70,7 +70,7 @@
                                         Margin="0,5" />
                     </StackPanel>
 
-                    <TextBlock DockPanel.Dock="Bottom" Text="SOrtus · 本地优先"
+                    <TextBlock DockPanel.Dock="Bottom" Text="{DynamicResource App_Tagline}"
                                FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
                                Margin="6,12,6,4" Opacity="0.8" />
                 </DockPanel>

@@ -1,6 +1,11 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:local="clr-namespace:SOrtus.Controls">
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Controls.Card.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+
 
     <!--
         对话框 / 浮层样式（规范 7.4.1 / 7.7 红线 #5）：

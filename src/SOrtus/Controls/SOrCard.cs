@@ -35,7 +35,7 @@ public sealed class SOrCard : ContentControl
     public static readonly DependencyProperty OverlayOpacityProperty =
         DependencyProperty.Register(
             nameof(OverlayOpacity), typeof(double), typeof(SOrCard),
-            new PropertyMetadata(0.62, OnBlurPropertyChanged));
+            new PropertyMetadata(0.58, OnBlurPropertyChanged));
 
     /// <summary>圆角半径（缺省取令牌 CornerRadiusLarge）。</summary>
     public static readonly DependencyProperty CornerRadiusProperty =

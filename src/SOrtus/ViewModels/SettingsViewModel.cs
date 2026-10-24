@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows.Input;
 using SOrtus.Common;
 using SOrtus.Core.Services;
@@ -28,14 +30,7 @@ internal sealed class SettingsViewModel : ViewModelBase
             new("Dark", localization.GetString("Settings_ThemeDark")),
         };
 
-        BlurOptions = new List<SettingsOption>
-        {
-            new("0", localization.GetString("Settings_BlurNone")),
-            new("6", localization.GetString("Settings_BlurSubtle")),
-            new("12", localization.GetString("Settings_BlurNormal")),
-            new("20", localization.GetString("Settings_BlurStrong")),
-            new("30", localization.GetString("Settings_BlurOverlay")),
-        };
+        RebuildBlurOptions();
 
         LanguageOptions = new List<SettingsOption>
         {
@@ -45,7 +40,37 @@ internal sealed class SettingsViewModel : ViewModelBase
     }
 
     public List<SettingsOption> ThemeOptions { get; }
-    public List<SettingsOption> BlurOptions { get; }
+    /// <summary>模糊档位（滑块拖到非档位值时会动态补一条「自定义（N）」，避免下拉显示空白 —— SO-003）。</summary>
+    public ObservableCollection<SettingsOption> BlurOptions { get; } = new();
+
+    private static readonly double[] BlurPresets = { 0, 6, 12, 20, 30 };
+
+    private void RebuildBlurOptions()
+    {
+        var current = (int)Math.Round(_themeService.GlobalBlurRadius);
+        BlurOptions.Clear();
+        foreach (var preset in BlurPresets)
+        {
+            var value = (int)preset;
+            BlurOptions.Add(new SettingsOption(
+                value.ToString(CultureInfo.InvariantCulture),
+                _localization.GetString(value switch
+                {
+                    0 => "Settings_BlurNone",
+                    6 => "Settings_BlurSubtle",
+                    12 => "Settings_BlurNormal",
+                    20 => "Settings_BlurStrong",
+                    _ => "Settings_BlurOverlay",
+                })));
+        }
+
+        if (!BlurPresets.Any(p => Math.Abs(p - current) < 0.5))
+        {
+            BlurOptions.Add(new SettingsOption(
+                current.ToString(CultureInfo.InvariantCulture),
+                string.Format(_localization.GetString("Settings_BlurCustom"), current)));
+        }
+    }
     public List<SettingsOption> LanguageOptions { get; }
 
     /// <summary>未提供语言包的提示（韩 / 日在后续版本）。</summary>
@@ -89,9 +114,11 @@ internal sealed class SettingsViewModel : ViewModelBase
             if (double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var radius))
             {
                 _themeService.SetBlurStrength(radius);
+                RebuildBlurOptions();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(BlurRadius));
                 OnPropertyChanged(nameof(BlurSummary));
+                OnPropertyChanged(nameof(SelectedBlurValue));
             }
         }
     }
@@ -106,6 +133,7 @@ internal sealed class SettingsViewModel : ViewModelBase
             if (!snapped.Equals(_themeService.GlobalBlurRadius))
             {
                 _themeService.SetBlurStrength(snapped);
+                RebuildBlurOptions();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(SelectedBlurValue));
                 OnPropertyChanged(nameof(BlurSummary));

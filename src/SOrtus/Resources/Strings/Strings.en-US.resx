@@ -143,4 +143,11 @@
   <data name="Wizard_TodoFeat1" xml:space="preserve"><value>One task per project</value></data>
   <data name="Wizard_TodoFeat2" xml:space="preserve"><value>Due time and completion</value></data>
   <data name="Wizard_TodoFeat3" xml:space="preserve"><value>Reminders so nothing slips</value></data>
+  <data name="App_Tagline" xml:space="preserve"><value>SOrtus · Local first</value></data>
+  <data name="Common_RequiredClipType" xml:space="preserve"><value>Please choose a clip type</value></data>
+  <data name="Common_RequiredDueTime" xml:space="preserve"><value>Please choose a due date</value></data>
+  <data name="Common_SaveFailed" xml:space="preserve"><value>Save failed: {0}</value></data>
+  <data name="Dialog_DeleteTitle" xml:space="preserve"><value>Delete project</value></data>
+  <data name="Dialog_DeleteMessage" xml:space="preserve"><value>Delete &quot;{0}&quot;? This action cannot be undone.</value></data>
+  <data name="Settings_BlurCustom" xml:space="preserve"><value>Custom ({0})</value></data>
 </root>

@@ -26,7 +26,7 @@
                   Viewport="0,0,64,64" ViewportUnits="Absolute"
                   Stretch="None">
         <DrawingBrush.Drawing>
-            <GeometryDrawing Brush="{DynamicResource SoftShadowBrush}">
+            <GeometryDrawing Brush="{DynamicResource BackdropTintBrush}">
                 <GeometryDrawing.Geometry>
                     <GeometryGroup>
                         <RectangleGeometry Rect="0,0,64,2" />
@@ -36,6 +36,10 @@
             </GeometryDrawing>
         </DrawingBrush.Drawing>
     </DrawingBrush>
+
+    <!-- 背景装饰画刷（跟随主题：浅色为白/浅灰，深色为略亮于底色的中性灰） -->
+    <SolidColorBrush x:Key="BackdropGlowBrush" x:Shared="False" Color="{DynamicResource ColorBackdropGlow}" />
+    <SolidColorBrush x:Key="BackdropTintBrush" x:Shared="False" Color="{DynamicResource ColorBackdropTint}" />
 
     <!-- 背景柔光用的中性灰（无彩色） -->
     <SolidColorBrush x:Key="SoftShadowBrush" x:Shared="False" Color="{DynamicResource ColorShadow}" />

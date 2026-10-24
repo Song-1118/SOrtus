@@ -124,4 +124,23 @@
   <data name="Dialog_UnsavedMessage" xml:space="preserve"><value>Save changes to "{0}" before leaving?</value></data>
   <data name="Dialog_Save" xml:space="preserve"><value>Save</value></data>
   <data name="Dialog_Discard" xml:space="preserve"><value>Discard</value></data>
+  <data name="Wizard_Step2Subtitle" xml:space="preserve"><value>Step 2 · Fill in details</value></data>
+  <data name="Wizard_ClipType" xml:space="preserve"><value>Clip type</value></data>
+  <data name="Wizard_ClipVlog" xml:space="preserve"><value>Vlog</value></data>
+  <data name="Wizard_ClipTutorial" xml:space="preserve"><value>Tutorial</value></data>
+  <data name="Wizard_ClipFilm" xml:space="preserve"><value>Short film</value></data>
+  <data name="Wizard_ClipDoc" xml:space="preserve"><value>Documentary</value></data>
+  <data name="Wizard_ClipOther" xml:space="preserve"><value>Other</value></data>
+  <data name="Wizard_MaterialFolder" xml:space="preserve"><value>Material folder</value></data>
+  <data name="Wizard_TaskDesc" xml:space="preserve"><value>Task description</value></data>
+  <data name="Wizard_DueTime" xml:space="preserve"><value>Due</value></data>
+  <data name="Wizard_ProgFeat1" xml:space="preserve"><value>Tech stack and dev plan</value></data>
+  <data name="Wizard_ProgFeat2" xml:space="preserve"><value>Goals, constraints, acceptance</value></data>
+  <data name="Wizard_ProgFeat3" xml:space="preserve"><value>Progress and version history</value></data>
+  <data name="Wizard_ClipFeat1" xml:space="preserve"><value>Theme, type and schedule</value></data>
+  <data name="Wizard_ClipFeat2" xml:space="preserve"><value>Shooting and editing progress</value></data>
+  <data name="Wizard_ClipFeat3" xml:space="preserve"><value>Material list and folder</value></data>
+  <data name="Wizard_TodoFeat1" xml:space="preserve"><value>One task per project</value></data>
+  <data name="Wizard_TodoFeat2" xml:space="preserve"><value>Due time and completion</value></data>
+  <data name="Wizard_TodoFeat3" xml:space="preserve"><value>Reminders so nothing slips</value></data>
 </root>

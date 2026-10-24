@@ -7,13 +7,38 @@
         设计约束：不使用任何渐变与装饰光斑——背景为纯色，层次靠 Surface 底 + 1px Border 表达。
     -->
 
-    <!-- 应用背景画刷（Window 背景、PART_Backdrop 与 BlurPanel 取样共用）。
-         纯色，无渐变、无色球。x:Shared=False：每个引用获得独立实例。 -->
+    <!--
+        应用背景画刷：中性底色（Window 兜底背景）。真正的背景柔光由 MainWindow 的
+        PART_Backdrop 图层承载——BlurPanel 直接对该图层做 1:1 取样，不经过 VisualBrush 缩放。
+        颜色一律为中性灰阶，无任何彩色（禁用蓝紫渐变）。
+    -->
     <SolidColorBrush x:Key="WallpaperBrush" x:Shared="False" Color="{DynamicResource ColorBackgroundA}" />
 
-    <!-- 兼容保留：早期版本用作「渐变 + 光斑」装饰视觉的宿主，现为纯色容器。
-         BlurPanel 找不到 PART_Backdrop 时用它作为兜底取样源，键不可删。 -->
+    <!-- 兼容保留：早期版本用作装饰视觉宿主；BlurPanel 找不到 PART_Backdrop 时的兜底取样源 -->
     <Grid x:Key="BackdropVisual" x:Shared="False" Background="{DynamicResource WallpaperBrush}" />
+
+    <!--
+        细网格底纹：2px 中性灰线、64px 网格（尺度做粗，保证 0→30 的每一档都能看出差别）。
+        作用：给磨砂卡片提供**硬边缘**细节——模糊半径变大时网格会整体糊成柔和过渡，
+        拖动「高斯模糊强度」时肉眼可见；圆点/色块要么太弱要么太抢，网格属于「有意的画布纹理」。
+    -->
+    <DrawingBrush x:Key="DotGridBrush" TileMode="Tile"
+                  Viewport="0,0,64,64" ViewportUnits="Absolute"
+                  Stretch="None">
+        <DrawingBrush.Drawing>
+            <GeometryDrawing Brush="{DynamicResource SoftShadowBrush}">
+                <GeometryDrawing.Geometry>
+                    <GeometryGroup>
+                        <RectangleGeometry Rect="0,0,64,2" />
+                        <RectangleGeometry Rect="0,0,2,64" />
+                    </GeometryGroup>
+                </GeometryDrawing.Geometry>
+            </GeometryDrawing>
+        </DrawingBrush.Drawing>
+    </DrawingBrush>
+
+    <!-- 背景柔光用的中性灰（无彩色） -->
+    <SolidColorBrush x:Key="SoftShadowBrush" x:Shared="False" Color="{DynamicResource ColorShadow}" />
 
     <!-- 语义画刷 -->
     <SolidColorBrush x:Key="PrimaryBrush" Color="{DynamicResource ColorPrimary}" />
@@ -55,6 +80,9 @@
 
     <!-- 导航 / 列表选中高亮画刷 -->
     <SolidColorBrush x:Key="NavActiveBrush" Color="{DynamicResource ColorNavActive}" />
+
+    <!-- 滑块底轨画刷：比「填充色」浅但比分隔线深，保证左右两段视觉粗细一致 -->
+    <SolidColorBrush x:Key="SliderTrackBrush" Color="{DynamicResource ColorSliderTrack}" />
 
     <!-- 滚动条滑块画刷 -->
     <SolidColorBrush x:Key="ScrollThumbBrush" Color="{DynamicResource ColorScrollThumb}" />

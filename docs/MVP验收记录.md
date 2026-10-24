@@ -160,3 +160,38 @@ WPF 的 `StaticResource` 在解析时**不会跨 `MergedDictionaries` 的兄弟�
 ```bash
 SOrtus.exe --shot <目录> [宽] [高]   # 离屏渲染核心界面，默认 1180x760
 ```
+
+---
+
+## 七、第二轮 UI 走查修复（2026-10-24 第三轮改动）
+
+用户对第二轮结果继续提出 7 项优化 + 3 个 Bug，已全部落地。
+
+| # | 反馈 | 处理 |
+| --- | --- | --- |
+| 1 | 全局禁用聚焦；悬停要高亮整张卡片 | 所有自定义控件 `FocusVisualStyle={x:Null}`，按钮模板删除聚焦环触发器；`Padding` 下移到内容层，悬停/按压覆盖层铺满 `PART_Root`（整卡高亮） |
+| 2 | 看不出高斯模糊 | 背景加极淡中性网格底纹（唯一目的：给模糊提供硬边缘细节）；卡片覆盖层 0.86→0.62；`BlurPanel` 改半径时重置 `BitmapCache`（否则缓存把旧模糊留在屏幕上，表现为「调了没反应」）。量化验证：半径 0 与 30 在卡片区域平均像素差 1.5 级、最大 13 级，肉眼可辨 |
+| 3 | 模糊滑块「两边小中间大」 | 重构滑块模板：底轨与填充段同为 6px、两端 3px 圆角；底轨改为专用令牌 `ColorSliderTrack`（比填充浅一档但不再过白，消除对比造成的粗细错觉）；拖块改 14px 纯圆环、去掉实心内点 |
+| 4 | 类型选择页下半部分太空 | 三张卡改为「图标 + 标题 + 说明 + 3 条特性」，卡高 340、内容垂直居中 |
+| 5 | 「已选类型」不和谐 / 按钮体验差 / 开工日期 / 尾部提示 | 改为「第 2 步 · 填写立项信息 + 类型标签」；删除取消按钮；`ScheduleStart` 默认今天；删掉底部「创建只需…」提示 |
+| 6 | 上一步/下一步位置不统一 | 向导改为「滚动内容 + 固定底部操作条」：上一步永远左下、下一步/创建永远右下 |
+| 7 | 日期控件要向上弹出、点外部关闭 | `PART_Popup` 改 `Placement=Top`、`StaysOpen=False`；选中日期即回填并关闭 |
+| Bug1 | 选日期崩溃 | 两层原因：① `CalendarItem` 的导航部件是 `Button` 却被套了 `TargetType="CalendarButton"` 的样式（加载即抛类型不匹配）；② 自定义 `CalendarItem` 模板在 Popup 自动尺寸下测量自洽失败（`OutOfMemoryException`）。最终放弃自定义日历内核，改用原生 `CalendarItem` + 项目日期格样式。已用探针实测：打开弹层 + 选日期返回 `[DATE] OK` |
+| Bug2 | 剪辑/待办也进编程向导 | 向导第 2 步按类型分支：编程=技术栈+项目类型+关联文件夹+工期；剪辑=剪辑类型+素材文件夹+工期；待办=任务描述+完成时间 |
+| Bug3 | 技术栈回车不添加 | `SOrTextBox` 增加 `SubmitCommand`，单行输入回车触发（`InputBinding` 无法绑 DataContext，故在控件内处理） |
+
+### 7.1 持久化确认
+
+- 写入：`ProjectWizardViewModel.CreateAsync` → `ProjectService.CreateAsync` → `ProjectRepository.AddAsync` → SQLite（`%LocalAppData%\SOrtus\sortus.db`）。
+- 读取：`ProjectListViewModel.LoadAsync()` 每次进入列表都执行 `QueryAsync` + `GetAllAsync`，直接查库，非内存缓存。
+- 回归：`MvpFlowTests.FullLoop_...SurvivesRestart` 用「新建 + 换一个全新仓储实例读同一库」验证数据落盘。
+
+### 7.2 复验
+
+| 项 | 结果 |
+| --- | --- |
+| 编译 | 0 警告 0 错误 |
+| 测试 | 23/23 通过 |
+| 冒烟 | `--smoke` 退出码 0 |
+| 日期选择 | 探针实测打开+选中成功（修复前必崩） |
+| 模糊强度 | 半径 0/12/30 三档渲染逐像素比对，卡片区域存在可辨差异 |

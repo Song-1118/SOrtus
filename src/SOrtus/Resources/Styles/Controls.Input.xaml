@@ -14,6 +14,7 @@
 
     <!-- ============================ SOrTextBox ============================ -->
     <Style TargetType="local:SOrTextBox">
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
@@ -106,6 +107,7 @@
 
     <!-- ============================ SOrComboBox ============================ -->
     <Style TargetType="local:SOrComboBox">
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
@@ -350,6 +352,40 @@
     </Style>
 
     <!--
+        日历导航按钮（CalendarItem 的 PART_PreviousButton / PART_HeaderButton / PART_NextButton）。
+        注意：这三个部件在 WPF 源码里是普通 Button，不是 CalendarButton——
+        套用 TargetType="CalendarButton" 的样式会在加载模板时抛类型不匹配异常（历史崩溃根因）。
+    -->
+    <Style x:Key="SOrCalendarNavButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid>
+                        <Border x:Name="PART_Root"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="{DynamicResource CornerRadiusSmall}" />
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,2" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="PART_Root" Property="Background" Value="{DynamicResource HoverOverlayBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="PART_Root" Property="Background" Value="{DynamicResource PressOverlayBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
         日历项（CalendarItem）完整自定义模板。
         部件契约（源码验证）：PART_Root / PART_HeaderButton / PART_PreviousButton / PART_NextButton /
         PART_MonthView(7列7行：第0行日期标题，1-6行日期) / PART_YearView(4列3行) / PART_DisabledVisual。
@@ -386,7 +422,7 @@
                             <Button x:Name="PART_PreviousButton"
                                     Grid.Column="0"
                                     Width="28" Height="28"
-                                    Style="{StaticResource SOrCalendarButtonStyle}"
+                                    Style="{StaticResource SOrCalendarNavButtonStyle}"
                                     Cursor="Hand">
                                 <Path Data="M 6,1 L 2,5 L 6,9"
                                       Stroke="{DynamicResource TextPrimaryBrush}"
@@ -399,13 +435,13 @@
                             <Button x:Name="PART_HeaderButton"
                                     Grid.Column="1"
                                     Height="28"
-                                    Style="{StaticResource SOrCalendarButtonStyle}"
+                                    Style="{StaticResource SOrCalendarNavButtonStyle}"
                                     FontWeight="SemiBold"
                                     Cursor="Hand" />
                             <Button x:Name="PART_NextButton"
                                     Grid.Column="2"
                                     Width="28" Height="28"
-                                    Style="{StaticResource SOrCalendarButtonStyle}"
+                                    Style="{StaticResource SOrCalendarNavButtonStyle}"
                                     Cursor="Hand">
                                 <Path Data="M 3,1 L 7,5 L 3,9"
                                       Stroke="{DynamicResource TextPrimaryBrush}"
@@ -477,30 +513,20 @@
         </Setter>
     </Style>
 
-    <!-- 日历整体（Surface 卡片外观；内部 CalendarItem 由模板挂接 SOrCalendarItemStyle） -->
+    <!--
+        日历整体：保留配色与日期格样式，但**不再自定义 Calendar / CalendarItem 模板**。
+        原因：自定义 CalendarItem 模板在 Popup 的自动尺寸约束下测量自洽失败
+        （打开日历即抛 OutOfMemoryException，就是「选日期崩溃」的根因）。
+        改用 WPF 原生 CalendarItem 内核，只把日期格换成项目样式，功能优先、视觉跟随主题。
+    -->
     <Style x:Key="SOrCalendarStyle" TargetType="Calendar">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
-        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderThickness" Value="0" />
         <Setter Property="CalendarDayButtonStyle" Value="{StaticResource SOrCalendarDayButtonStyle}" />
-        <Setter Property="CalendarButtonStyle" Value="{StaticResource SOrCalendarButtonStyle}" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Calendar">
-                    <Grid x:Name="PART_Root">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{DynamicResource CornerRadiusMedium}" />
-                        <CalendarItem x:Name="PART_CalendarItem"
-                                      Style="{StaticResource SOrCalendarItemStyle}"
-                                      Margin="8,6,8,10" />
-                    </Grid>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
     </Style>
 
     <!-- DatePicker 内部文本框（仅设属性，保留默认模板的 PART_ContentHost 与水印状态） -->
@@ -515,6 +541,7 @@
     </Style>
 
     <Style TargetType="local:SOrDatePicker">
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="CalendarStyle" Value="{StaticResource SOrCalendarStyle}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="Height" Value="{DynamicResource ControlHeight}" />
@@ -566,8 +593,10 @@
                             </Grid>
                         </Border>
                         <!-- 原生约定：Popup 内不写内容，DatePicker 会把内置 Calendar 赋给 Popup.Child -->
+                        <!-- 日历弹在输入框上方；StaysOpen=False → 点击日历外部任意位置自动关闭 -->
                         <Popup x:Name="PART_Popup"
-                               Placement="Bottom"
+                               Placement="Top"
+                               VerticalOffset="-6"
                                AllowsTransparency="True"
                                Focusable="False"
                                StaysOpen="False"
@@ -591,11 +620,17 @@
     </Style>
 
     <!-- ============================ SOrSlider ============================ -->
+    <!--
+        统一粗细的单条轨道：底轨与已填充段同为 6px 圆头，视觉上是一整条（两段圆），
+        中间圆形拖块可拖动，填充长度跟随拖块（Track 的 DecreaseRepeatButton 自动改变宽度）。
+        左右两端都用 Pill 圆角，填充段右端为直角，避免拖块处出现第二次圆头。
+    -->
     <Style TargetType="local:SOrSlider">
-        <Setter Property="Height" Value="20" />
+        <Setter Property="Height" Value="22" />
         <Setter Property="Minimum" Value="0" />
         <Setter Property="Maximum" Value="100" />
         <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SOrSlider">
@@ -604,32 +639,34 @@
                         因此 XAML 中不得为 Track 显式设置 Value/Minimum/Maximum/Orientation）。
                     -->
                     <Grid x:Name="PART_Root" Background="Transparent" VerticalAlignment="Center">
-                        <Border x:Name="PART_TrackBackground"
-                                Background="{DynamicResource BorderBrush}"
-                                Height="4"
-                                CornerRadius="{TemplateBinding CornerRadius}"
+                        <!-- 底轨：整条 6px、两端圆头。颜色刻意比填充色浅一档（不是更浅），
+                             否则深色填充在视觉上更「重」，会让人误以为两边比中间细。 -->
+                        <Border Background="{DynamicResource SliderTrackBrush}"
+                                Height="6"
+                                CornerRadius="3"
                                 VerticalAlignment="Center" />
                         <Track x:Name="PART_Track" VerticalAlignment="Center">
                             <Track.DecreaseRepeatButton>
                                 <RepeatButton Command="{x:Static Slider.DecreaseLarge}" Focusable="False">
                                     <RepeatButton.Template>
                                         <ControlTemplate TargetType="RepeatButton">
+                                            <!-- 已填充段：与底轨同高同圆角，左端圆头、右端直角，与拖块无缝衔接 -->
                                             <Border Background="{DynamicResource PrimaryBrush}"
-                                                    Height="4"
-                                                    CornerRadius="{DynamicResource CornerRadiusPill}"
+                                                    Height="6"
+                                                    CornerRadius="3,0,0,3"
                                                     VerticalAlignment="Center" />
                                         </ControlTemplate>
                                     </RepeatButton.Template>
                                 </RepeatButton>
                             </Track.DecreaseRepeatButton>
                             <Track.Thumb>
-                                <Thumb Focusable="False" Cursor="Hand">
+                                <!-- 拖块：纯圆环，不加实心内点，避免「中间一个大点、两边细」的观感 -->
+                                <Thumb Focusable="False" Cursor="Hand" Width="14" Height="14">
                                     <Thumb.Template>
                                         <ControlTemplate TargetType="Thumb">
-                                            <Ellipse Width="14" Height="14"
-                                                     Fill="{DynamicResource PrimaryBrush}"
-                                                     Stroke="{DynamicResource SurfaceBrush}"
-                                                     StrokeThickness="2" />
+                                            <Ellipse Fill="{DynamicResource SurfaceBrush}"
+                                                     Stroke="{DynamicResource PrimaryBrush}"
+                                                     StrokeThickness="1.5" />
                                         </ControlTemplate>
                                     </Thumb.Template>
                                 </Thumb>

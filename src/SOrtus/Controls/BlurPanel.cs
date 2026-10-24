@@ -119,9 +119,19 @@ public static class BlurPanel
     private static void OnBlurRadiusChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var rect = GetBlurRect(d);
-        if (rect?.Effect is BlurEffect effect)
+        if (rect?.Effect is not BlurEffect effect)
         {
-            effect.Radius = (double)e.NewValue;
+            return;
+        }
+
+        effect.Radius = (double)e.NewValue;
+
+        // 模糊层挂了 BitmapCache（性能要求）：缓存会把旧的模糊结果留在屏幕上，
+        // 只改 Effect.Radius 不一定触发重绘 → 表现为「设置里调模糊没反应」。
+        // 这里换一个新的缓存实例强制失效；该分支只在用户拖动滑块时执行，不影响常态性能。
+        if (rect.CacheMode is not null)
+        {
+            rect.CacheMode = new BitmapCache();
         }
     }
 

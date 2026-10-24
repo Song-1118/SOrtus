@@ -7,8 +7,8 @@
         32 个键不得增减（缺键会导致主题整本替换后解析失败）。
     -->
 
-    <Color x:Key="ColorBackgroundA">#FFFFFF</Color>
-    <Color x:Key="ColorBackgroundB">#FFFFFF</Color>
+    <Color x:Key="ColorBackgroundA">#EDF0F4</Color>
+    <Color x:Key="ColorBackgroundB">#E1E5EB</Color>
     <Color x:Key="ColorAccentA">#111827</Color>
     <Color x:Key="ColorAccentB">#6B7280</Color>
     <Color x:Key="ColorAccentC">#9CA3AF</Color>
@@ -50,5 +50,8 @@
     <!-- 滚动条滑块 -->
     <Color x:Key="ColorScrollThumb">#D1D5DB</Color>
     <Color x:Key="ColorScrollThumbHover">#9CA3AF</Color>
+
+    <!-- 滑块底轨（比分隔线深一档，避免左右两段因对比差显得粗细不一） -->
+    <Color x:Key="ColorSliderTrack">#C6CCD6</Color>
 
 </ResourceDictionary>

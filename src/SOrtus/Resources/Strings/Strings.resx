@@ -124,4 +124,23 @@
   <data name="Dialog_UnsavedMessage" xml:space="preserve"><value>「{0}」有未保存的更改，离开前是否保存？</value></data>
   <data name="Dialog_Save" xml:space="preserve"><value>保存</value></data>
   <data name="Dialog_Discard" xml:space="preserve"><value>不保存</value></data>
+  <data name="Wizard_Step2Subtitle" xml:space="preserve"><value>第 2 步 · 填写立项信息</value></data>
+  <data name="Wizard_ClipType" xml:space="preserve"><value>剪辑类型</value></data>
+  <data name="Wizard_ClipVlog" xml:space="preserve"><value>Vlog</value></data>
+  <data name="Wizard_ClipTutorial" xml:space="preserve"><value>教程</value></data>
+  <data name="Wizard_ClipFilm" xml:space="preserve"><value>微电影</value></data>
+  <data name="Wizard_ClipDoc" xml:space="preserve"><value>纪录片</value></data>
+  <data name="Wizard_ClipOther" xml:space="preserve"><value>其他</value></data>
+  <data name="Wizard_MaterialFolder" xml:space="preserve"><value>素材文件夹</value></data>
+  <data name="Wizard_TaskDesc" xml:space="preserve"><value>任务描述</value></data>
+  <data name="Wizard_DueTime" xml:space="preserve"><value>完成时间</value></data>
+  <data name="Wizard_ProgFeat1" xml:space="preserve"><value>记录技术栈与开发规划</value></data>
+  <data name="Wizard_ProgFeat2" xml:space="preserve"><value>开发目标、约束与验收标准</value></data>
+  <data name="Wizard_ProgFeat3" xml:space="preserve"><value>进度跟踪与版本沉淀</value></data>
+  <data name="Wizard_ClipFeat1" xml:space="preserve"><value>主题、类型与目标工期</value></data>
+  <data name="Wizard_ClipFeat2" xml:space="preserve"><value>拍摄与剪辑双进度</value></data>
+  <data name="Wizard_ClipFeat3" xml:space="preserve"><value>素材清单与素材文件夹</value></data>
+  <data name="Wizard_TodoFeat1" xml:space="preserve"><value>一条任务一个立项</value></data>
+  <data name="Wizard_TodoFeat2" xml:space="preserve"><value>完成时间与完成状态</value></data>
+  <data name="Wizard_TodoFeat3" xml:space="preserve"><value>到点提醒，不遗漏</value></data>
 </root>

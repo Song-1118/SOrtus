@@ -34,6 +34,12 @@ public sealed class SOrTextBox : System.Windows.Controls.TextBox
             nameof(CornerRadius), typeof(System.Windows.CornerRadius), typeof(SOrTextBox),
             new System.Windows.PropertyMetadata(new System.Windows.CornerRadius(6)));
 
+    /// <summary>回车提交命令（单行输入框按 Enter 时执行，例如「添加技术栈」）。多行输入不触发。</summary>
+    public static readonly System.Windows.DependencyProperty SubmitCommandProperty =
+        System.Windows.DependencyProperty.Register(
+            nameof(SubmitCommand), typeof(System.Windows.Input.ICommand), typeof(SOrTextBox),
+            new System.Windows.PropertyMetadata(null));
+
     static SOrTextBox()
     {
         System.Windows.Controls.TextBox.DefaultStyleKeyProperty.OverrideMetadata(
@@ -63,5 +69,31 @@ public sealed class SOrTextBox : System.Windows.Controls.TextBox
     {
         get => (System.Windows.CornerRadius)GetValue(CornerRadiusProperty);
         set => SetValue(CornerRadiusProperty, value);
+    }
+
+    public System.Windows.Input.ICommand? SubmitCommand
+    {
+        get => (System.Windows.Input.ICommand?)GetValue(SubmitCommandProperty);
+        set => SetValue(SubmitCommandProperty, value);
+    }
+
+    /// <summary>
+    /// 单行输入框回车触发 <see cref="SubmitCommand"/>。
+    /// 说明：InputBinding 绑不到 DataContext（不在可视树内），所以回车提交在控件内部处理。
+    /// </summary>
+    protected override void OnKeyDown(System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Enter && !AcceptsReturn)
+        {
+            var command = SubmitCommand;
+            if (command is not null && command.CanExecute(null))
+            {
+                command.Execute(null);
+                e.Handled = true;
+                return;
+            }
+        }
+
+        base.OnKeyDown(e);
     }
 }

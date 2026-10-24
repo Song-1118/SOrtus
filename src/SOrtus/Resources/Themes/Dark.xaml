@@ -6,8 +6,8 @@
         设计约束：纯中性深色底、无渐变、无蓝紫；主色为近白，靠灰阶与细边框表达层次。
     -->
 
-    <Color x:Key="ColorBackgroundA">#141618</Color>
-    <Color x:Key="ColorBackgroundB">#141618</Color>
+    <Color x:Key="ColorBackgroundA">#17191C</Color>
+    <Color x:Key="ColorBackgroundB">#0F1113</Color>
     <Color x:Key="ColorAccentA">#F3F4F6</Color>
     <Color x:Key="ColorAccentB">#9CA3AF</Color>
     <Color x:Key="ColorAccentC">#6B7280</Color>
@@ -49,5 +49,8 @@
     <!-- 滚动条滑块 -->
     <Color x:Key="ColorScrollThumb">#3A3D42</Color>
     <Color x:Key="ColorScrollThumbHover">#4B4F55</Color>
+
+    <!-- 滑块底轨（比分隔线亮一档，避免左右两段因对比差显得粗细不一） -->
+    <Color x:Key="ColorSliderTrack">#454A52</Color>
 
 </ResourceDictionary>

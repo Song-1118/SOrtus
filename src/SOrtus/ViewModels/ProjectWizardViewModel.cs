@@ -40,7 +40,7 @@ internal sealed class ProjectWizardViewModel : ViewModelBase
     private string _summary = string.Empty;
     private string _subType = string.Empty;
     private string _folderPath = string.Empty;
-    private DateTime? _scheduleStart;
+    private DateTime? _scheduleStart = DateTime.Today;
     private DateTime? _scheduleEnd;
     private string _errorMessage = string.Empty;
     private int _step = 1;
@@ -64,8 +64,27 @@ internal sealed class ProjectWizardViewModel : ViewModelBase
     /// <summary>第 1 步可选的立项类型。</summary>
     public List<ProjectType> TypeOptions { get; } = new() { ProjectType.Programming, ProjectType.Clip, ProjectType.Todo };
 
-    /// <summary>项目子类型选项（本地化，构造时取值；切换语言后重新进入向导即刷新）。</summary>
-    public List<string> SubTypeOptions { get; }
+    /// <summary>子类型选项：编程=桌面/库/Web/游戏/其他；剪辑=Vlog/教程/微电影/纪录片/其他；待办无。</summary>
+    public List<string> SubTypeOptions => _selectedType switch
+    {
+        ProjectType.Clip => new List<string>
+        {
+            _localization.GetString("Wizard_ClipVlog"),
+            _localization.GetString("Wizard_ClipTutorial"),
+            _localization.GetString("Wizard_ClipFilm"),
+            _localization.GetString("Wizard_ClipDoc"),
+            _localization.GetString("Wizard_ClipOther"),
+        },
+        ProjectType.Todo => new List<string>(),
+        _ => new List<string>
+        {
+            _localization.GetString("Wizard_SubTypeApp"),
+            _localization.GetString("Wizard_SubTypeLib"),
+            _localization.GetString("Wizard_SubTypeWeb"),
+            _localization.GetString("Wizard_SubTypeGame"),
+            _localization.GetString("Wizard_SubTypeOther"),
+        },
+    };
 
     /// <summary>当前步骤（1 = 选择类型，2 = 填写信息）。</summary>
     public int Step
@@ -93,9 +112,31 @@ internal sealed class ProjectWizardViewModel : ViewModelBase
             if (SetProperty(ref _selectedType, value))
             {
                 OnPropertyChanged(nameof(SelectedTypeName));
+                OnPropertyChanged(nameof(IsProgramming));
+                OnPropertyChanged(nameof(IsClip));
+                OnPropertyChanged(nameof(IsTodo));
+                OnPropertyChanged(nameof(SubTypeOptions));
+                OnPropertyChanged(nameof(SubTypeLabelKey));
+                OnPropertyChanged(nameof(FolderLabelKey));
+                SubType = string.Empty;
             }
         }
     }
+
+    /// <summary>当前是否编程类立项（决定第 2 步展示哪些字段）。</summary>
+    public bool IsProgramming => _selectedType == ProjectType.Programming;
+
+    /// <summary>当前是否剪辑类立项。</summary>
+    public bool IsClip => _selectedType == ProjectType.Clip;
+
+    /// <summary>当前是否待办类立项。</summary>
+    public bool IsTodo => _selectedType == ProjectType.Todo;
+
+    /// <summary>「类型」字段的文案资源键（编程=项目类型 / 剪辑=剪辑类型 / 待办不展示）。</summary>
+    public string SubTypeLabelKey => IsClip ? "Wizard_ClipType" : "Wizard_SubType";
+
+    /// <summary>「文件夹」字段的文案资源键（剪辑为素材文件夹）。</summary>
+    public string FolderLabelKey => IsClip ? "Wizard_MaterialFolder" : "Wizard_Folder";
 
     /// <summary>已选类型的本地化名称（向导第 2 步头部展示）。</summary>
     public string SelectedTypeName => _localization.GetString(_selectedType switch
@@ -159,15 +200,6 @@ internal sealed class ProjectWizardViewModel : ViewModelBase
         _service = service;
         _localization = localization;
         _onCreated = onCreated;
-
-        SubTypeOptions = new List<string>
-        {
-            localization.GetString("Wizard_SubTypeApp"),
-            localization.GetString("Wizard_SubTypeLib"),
-            localization.GetString("Wizard_SubTypeWeb"),
-            localization.GetString("Wizard_SubTypeGame"),
-            localization.GetString("Wizard_SubTypeOther"),
-        };
 
         AddTechStackCommand = new RelayCommand(_ => AddTechStack());
         RemoveTechStackCommand = new RelayCommand(o => RemoveTechStack(o as string));

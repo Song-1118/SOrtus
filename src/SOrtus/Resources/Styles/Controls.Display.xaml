@@ -15,6 +15,7 @@
 
     <!-- ============================ SOrTag ============================ -->
     <Style TargetType="local:SOrTag">
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Padding" Value="10,3" />
         <Setter Property="FontSize" Value="12" />
         <Setter Property="VerticalAlignment" Value="Center" />

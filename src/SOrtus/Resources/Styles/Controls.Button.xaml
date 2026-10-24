@@ -32,7 +32,6 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="{TemplateBinding CornerRadius}"
-                                Padding="{TemplateBinding Padding}"
                                 SnapsToDevicePixels="True">
                             <Grid>
                                 <!-- 悬浮 / 按压覆盖层：默认透明，触发器以动画驱动 Opacity -->
@@ -51,7 +50,7 @@
                                 <!-- 图标列自适应、内容列吃满剩余宽度：按钮被拉伸时（如向导三张类型卡）
                                      内容才能拿到确定的可用宽度并正确换行；按钮自适应宽度时该列等于内容宽度，
                                      图标与文字仍作为一个整体居中。 -->
-                                <Grid VerticalAlignment="Center">
+                                <Grid VerticalAlignment="Center" Margin="{TemplateBinding Padding}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
@@ -72,12 +71,12 @@
                                 </Grid>
                             </Grid>
                         </Border>
+                        <!-- 聚焦环保留命名但默认不显示：产品要求全局禁用键盘聚焦视觉，点击态用边框表达 -->
                         <Border x:Name="PART_FocusRing"
                                 BorderBrush="{DynamicResource PrimaryBrush}"
-                                BorderThickness="2"
+                                BorderThickness="1"
                                 CornerRadius="{TemplateBinding CornerRadius}"
                                 Opacity="0"
-                                Margin="-2"
                                 IsHitTestVisible="False" />
                     </Grid>
 
@@ -123,26 +122,7 @@
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
                         </Trigger>
-                        <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="PART_FocusRing"
-                                                         Storyboard.TargetProperty="Opacity"
-                                                         To="1" Duration="0:0:0.10" />
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="PART_FocusRing"
-                                                         Storyboard.TargetProperty="Opacity"
-                                                         To="0" Duration="0:0:0.16" />
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.ExitActions>
-                        </Trigger>
+                        <!-- 规范调整：全局不显示键盘聚焦框（FocusVisualStyle 亦置空），避免点击后残留描边 -->
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Root" Property="Opacity" Value="0.45" />
                         </Trigger>

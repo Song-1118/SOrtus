@@ -17,6 +17,12 @@ public enum SOrButtonVariant
 
     /// <summary>导航项：透明底 + 左对齐，IsActive 时高亮。</summary>
     Nav,
+
+    /// <summary>可选卡片（向导类型卡）：低一阶底色 + 明确边框，IsActive 时 2px 主色环 + 右上角对勾。</summary>
+    Card,
+
+    /// <summary>版块 tab：次要色文字，IsActive 时主色文字 + 底部 2px 指示条。</summary>
+    Tab,
 }
 
 /// <summary>

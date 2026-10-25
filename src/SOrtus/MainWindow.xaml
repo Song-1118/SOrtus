@@ -159,7 +159,28 @@
                                         Margin="0,5" />
                     </StackPanel>
 
-                    <TextBlock DockPanel.Dock="Bottom" Text="{DynamicResource App_Tagline}"
+                    <!-- 最近立项（VD-082）：248×760 的侧边栏此前只有 3 个链接、其余全是空白。
+                         这里补最近更新的 4 条，既是快捷入口，也让侧边栏承担信息而不只是导航。
+                         标语已移到设置页「数据」分组，不再占这块最贵的面积。 -->
+                    <StackPanel DockPanel.Dock="Top" Margin="0,22,0,0"
+                                Visibility="{Binding HasRecentProjects, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{DynamicResource Nav_Recent}" Margin="6,0,0,8"
+                                   FontSize="{DynamicResource FontSizeCaption}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                        <ItemsControl ItemsSource="{Binding RecentProjects}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <local:SOrButton Variant="Nav" Padding="10,7" Margin="0,2"
+                                                    HorizontalContentAlignment="Left"
+                                                    Content="{Binding Name}"
+                                                    Command="{Binding DataContext.OpenRecentCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <TextBlock DockPanel.Dock="Bottom" Text="{Binding VersionLine}"
                                FontSize="{DynamicResource FontSizeCaption}" Foreground="{DynamicResource TextSecondaryBrush}"
                                Margin="6,12,6,4" Opacity="0.8" />
                 </DockPanel>
@@ -168,7 +189,8 @@
             <!-- 内容区：承载当前视图（视图内部自行使用 SOrCard 磨砂卡片）。
                  与侧边栏同处一行、上下不留额外 margin，保证两张卡片顶边与底边严格对齐。 -->
             <Grid Grid.Column="1">
-                <ContentControl Content="{Binding CurrentView}"
+                <ContentControl x:Name="PART_ContentHost"
+                                Content="{Binding CurrentView}"
                                 HorizontalContentAlignment="Stretch"
                                 VerticalContentAlignment="Stretch" />
 
@@ -270,14 +292,20 @@
 
             <Border Background="{StaticResource ScrimBrush}">
                 <Border.InputBindings>
-                    <MouseBinding MouseAction="LeftClick" Command="{Binding CloseDialogCommand}" />
+                    <!-- VD-083：遮罩点击走独立命令——有输入的配置类弹窗不响应（误点即丢） -->
+                    <MouseBinding MouseAction="LeftClick" Command="{Binding ScrimCloseCommand}" />
                 </Border.InputBindings>
             </Border>
 
-            <!-- 内容层：每次打开弹入（240ms + 0.96→1），不是「啪」地出现（VD-063） -->
-            <ContentControl Content="{Binding DialogContent}"
+            <!-- 内容层：每次打开弹入（240ms + 0.96→1），不是「啪」地出现（VD-063）
+                 VD-081：焦点陷阱——Tab / 方向键在弹窗内部循环，不再「穿过」遮罩跑到背后的导航上 -->
+            <ContentControl x:Name="PART_DialogHost"
+                            Content="{Binding DialogContent}"
                             HorizontalAlignment="Center" VerticalAlignment="Center"
-                            RenderTransformOrigin="0.5,0.5">
+                            RenderTransformOrigin="0.5,0.5"
+                            KeyboardNavigation.TabNavigation="Cycle"
+                            KeyboardNavigation.DirectionalNavigation="Cycle"
+                            KeyboardNavigation.ControlTabNavigation="Cycle">
                 <ContentControl.Style>
                     <Style TargetType="ContentControl">
                         <Setter Property="Opacity" Value="1" />

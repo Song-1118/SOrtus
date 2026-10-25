@@ -81,6 +81,24 @@
                          To="0" Duration="0:0:0" />
     </Storyboard>
 
+    <!-- ===== 版块 tab 指示条（VD-100）：200ms 从中间展开，离开 100ms 收起 ===== -->
+    <Storyboard x:Key="TabIndicatorInStoryboard">
+        <DoubleAnimation Storyboard.TargetName="PART_TabIndicator"
+                         Storyboard.TargetProperty="Opacity"
+                         To="1" Duration="0:0:0.20"
+                         EasingFunction="{StaticResource CubicEaseOut}" />
+        <DoubleAnimation Storyboard.TargetName="PART_TabIndicator"
+                         Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                         From="0.6" To="1" Duration="0:0:0.20"
+                         EasingFunction="{StaticResource CubicEaseOut}" />
+    </Storyboard>
+
+    <Storyboard x:Key="TabIndicatorOutStoryboard">
+        <DoubleAnimation Storyboard.TargetName="PART_TabIndicator"
+                         Storyboard.TargetProperty="Opacity"
+                         To="0" Duration="0:0:0.10" />
+    </Storyboard>
+
     <!-- ===== 页面入场：淡入 + 8px 上移（VD-063） ===== -->
     <Storyboard x:Key="FadeInStoryboard">
         <DoubleAnimation Storyboard.TargetProperty="Opacity"

@@ -1,4 +1,5 @@
-﻿using SOrtus.Core.Models;
+﻿using System.Globalization;
+using SOrtus.Core.Models;
 using SOrtus.Navigation;
 using SOrtus.Core.Services;
 using SOrtus.Services;
@@ -161,18 +162,18 @@ public class ViewModelTests
         var created = 0;
         var vm = new ProjectWizardViewModel(service, new StubLocalization(), () => created++);
 
-        // VD-008：校验错误就近落在字段级属性，全局 ErrorMessage 仅留给写库失败
+        // VD-008：校验错误就近落在字段级属性；VD-091：页脚另给一句汇总（不再静默 return）
         await ((Common.AsyncRelayCommand)vm.CreateCommand).ExecuteAsync();
         Assert.Equal("Common_RequiredName", vm.NameError);
         Assert.True(vm.HasNameError);
-        Assert.Empty(vm.ErrorMessage);
+        Assert.NotEmpty(vm.ErrorMessage);
 
         vm.Name = "新项目";
         await ((Common.AsyncRelayCommand)vm.CreateCommand).ExecuteAsync();
         Assert.Equal("Common_RequiredTechStack", vm.TechStackError);
         Assert.True(vm.HasTechStackError);
         Assert.Null(vm.NameError);
-        Assert.Empty(vm.ErrorMessage);
+        Assert.NotEmpty(vm.ErrorMessage);
         Assert.Empty(service.Items);
         Assert.Equal(0, created);
     }
@@ -222,7 +223,7 @@ public class ViewModelTests
         await ((Common.AsyncRelayCommand)vm.CreateCommand).ExecuteAsync();
         Assert.Equal("Common_RequiredClipType", vm.ClipTypeError);
         Assert.True(vm.HasClipTypeError);
-        Assert.Empty(vm.ErrorMessage);
+        Assert.NotEmpty(vm.ErrorMessage);
 
         vm.SubType = vm.SubTypeOptions.First();
         await ((Common.AsyncRelayCommand)vm.CreateCommand).ExecuteAsync();
@@ -249,7 +250,7 @@ public class ViewModelTests
         await ((Common.AsyncRelayCommand)vm.CreateCommand).ExecuteAsync();
         Assert.Equal("Common_RequiredDueTime", vm.DueTimeError);
         Assert.True(vm.HasDueTimeError);
-        Assert.Empty(vm.ErrorMessage);
+        Assert.NotEmpty(vm.ErrorMessage);
         Assert.Empty(service.Items);
 
         vm.ScheduleEnd = new DateTime(2026, 12, 1);
@@ -418,6 +419,145 @@ public class ViewModelTests
 
         await vm.ShowProjectsAsync();
         Assert.Same(listBefore, vm.CurrentView);
+    }
+
+    #endregion
+
+    #region VD-085 / VD-090 / VD-091 / VD-092（本轮新增行为）
+
+    [Fact]
+    public async Task Wizard_ConfirmLeave_OnlyAsksWhenDirty()
+    {
+        var dialog = new StubDialogService { ConfirmResult = false };
+        var vm = new ProjectWizardViewModel(new StubProjectService(), new StubLocalization(), () => { }, dialog);
+
+        // 没有任何输入：直接放行，不打扰用户
+        Assert.False(vm.IsDirty);
+        Assert.True(await vm.ConfirmLeaveAsync());
+
+        // 填了名字：必须问一次；用户选「否」则不允许离开
+        vm.Name = "半成品";
+        Assert.True(vm.IsDirty);
+        Assert.False(await vm.ConfirmLeaveAsync());
+
+        dialog.ConfirmResult = true;
+        Assert.True(await vm.ConfirmLeaveAsync());
+    }
+
+    [Fact]
+    public async Task Wizard_Validation_RequestsFocusOnFirstErrorField()
+    {
+        var vm = new ProjectWizardViewModel(new StubProjectService(), new StubLocalization(), () => { });
+        string? requested = null;
+        vm.FocusRequested += anchor => requested = anchor;
+
+        await ((Common.AsyncRelayCommand)vm.CreateCommand).ExecuteAsync();
+        Assert.Equal("Name", requested);
+
+        // 名称补上后，第一个错误变成技术栈
+        requested = null;
+        vm.Name = "有名字没技术栈";
+        await ((Common.AsyncRelayCommand)vm.CreateCommand).ExecuteAsync();
+        Assert.Equal("TechStack", requested);
+    }
+
+    [Fact]
+    public void List_ClearSearchCommand_ClearsKeyword()
+    {
+        var vm = new ProjectListViewModel(new StubProjectService(), new StubLocalization(), _ => { }, () => { });
+        vm.SearchText = "剪辑";
+        Assert.True(vm.IsSearchActive);
+
+        vm.ClearSearchCommand.Execute(null);
+
+        Assert.Equal(string.Empty, vm.SearchText);
+        Assert.False(vm.IsSearchActive);
+    }
+
+    [Fact]
+    public void UpdatedAtConverter_ShowsYearOnlyWhenCrossYear()
+    {
+        var converter = new Converters.UpdatedAtDisplayConverter();
+
+        var sameYear = converter.Convert(new DateTime(DateTime.Now.Year, 3, 4), typeof(string), null, CultureInfo.InvariantCulture);
+        var lastYear = converter.Convert(new DateTime(DateTime.Now.Year - 1, 3, 4), typeof(string), null, CultureInfo.InvariantCulture);
+
+        // 无资源宿主时回落到内置格式串，关键差异是「跨年必须带年份」
+        Assert.DoesNotContain((DateTime.Now.Year - 1).ToString(), sameYear!.ToString()!.Replace($"{DateTime.Now.Year - 1}", ""));
+        Assert.Contains((DateTime.Now.Year - 1).ToString(), lastYear!.ToString());
+    }
+
+    [Fact]
+    public async Task List_SearchDebounce_CollapsesRapidKeystrokes()
+    {
+        var service = new CountingProjectService();
+        var vm = new ProjectListViewModel(service, new StubLocalization(), _ => { }, () => { });
+        await vm.LoadAsync();
+        var baseline = service.QueryCount;
+
+        // 模拟输入法组字：连续三次 PropertyChanged 应只触发一次查询（VD-086）
+        vm.SearchText = "剪";
+        vm.SearchText = "剪辑";
+        vm.SearchText = "剪辑项";
+
+        await Task.Delay(ProjectListViewModel.SearchDebounceMs + 250);
+
+        Assert.Equal(baseline + 1, service.QueryCount);
+    }
+
+    [Fact]
+    public void AddRemoteDialog_EscNeedsTwoPressesWhenDirty()
+    {
+        var vm = new AddRemoteDialogViewModel(
+            new SmokeGitServiceForDialog(),
+            ".",
+            "origin",
+            "https://example.com/repo.git",
+            new StubLocalization());
+
+        // 第一次 Esc：拦下并给出提示
+        Assert.False(vm.ConfirmEsc());
+        Assert.True(vm.ShowEscHint);
+
+        // 第二次 Esc：真正放行
+        Assert.True(vm.ConfirmEsc());
+    }
+
+    /// <summary>统计查询次数的最小桩（VD-086）。</summary>
+    private sealed class CountingProjectService : IProjectService
+    {
+        public int QueryCount { get; private set; }
+
+        public Task<IReadOnlyList<Project>> GetAllAsync() =>
+            Task.FromResult<IReadOnlyList<Project>>(new List<Project>());
+
+        public Task<IReadOnlyList<Project>> QueryAsync(ProjectType? type, ProjectStatus? status, string? keyword)
+        {
+            QueryCount++;
+            return Task.FromResult<IReadOnlyList<Project>>(new List<Project>());
+        }
+
+        public Task<Project?> GetByIdAsync(int id) => Task.FromResult<Project?>(null);
+
+        public Task<Project> CreateAsync(Project project) => Task.FromResult(project);
+
+        public Task<Project> SaveAsync(Project project) => Task.FromResult(project);
+
+        public Task DeleteAsync(int id) => Task.CompletedTask;
+    }
+
+    /// <summary>配置远端弹窗只需要一个满足签名的 Git 桩。</summary>
+    private sealed class SmokeGitServiceForDialog : IGitService
+    {
+        public Task<GitRepositoryInfo> InspectAsync(string folderPath, int commitCount = 30) =>
+            Task.FromResult(new GitRepositoryInfo(false, folderPath, string.Empty, false, false, 0, 0,
+                new List<GitBranchInfo>(), new List<GitCommitInfo>(), new List<GitRemoteInfo>()));
+
+        public Task<GitOperationResult> AddOrSetRemoteAsync(string folderPath, string name, string url) =>
+            Task.FromResult(GitOperationResult.Ok());
+
+        public Task<GitOperationResult> PushAsync(string folderPath, string branch, string remote, bool setUpstream) =>
+            Task.FromResult(GitOperationResult.Ok());
     }
 
     #endregion

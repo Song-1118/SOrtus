@@ -188,6 +188,16 @@ public partial class App : Application
         await SettleAsync(window);
         SaveWindow(window, System.IO.Path.Combine(targetDir, "01-list-empty.png"));
 
+        // VD-088 回归：列表项进度条右侧补了百分比读数，需要有几行真实数据才看得到
+        projectService.Add(MakeSampleProject(1, "SOrtus 桌面端", ProjectType.Programming, ProjectStatus.Active, 65, DateTime.Today.AddDays(-1)));
+        projectService.Add(MakeSampleProject(2, "产品宣传片 · 秋季版", ProjectType.Clip, ProjectStatus.OnHold, 40, DateTime.Today.AddDays(-3)));
+        projectService.Add(MakeSampleProject(3, "整理 Q4 读书清单", ProjectType.Todo, ProjectStatus.Planning, 10, DateTime.Today.AddYears(-1)));
+
+        // 走一次真实导航：列表重取数据 + 侧边栏「最近立项」刷新（VD-082）
+        await mainViewModel.ShowProjectsAsync();
+        await SettleAsync(window);
+        SaveWindow(window, System.IO.Path.Combine(targetDir, "01b-list-with-items.png"));
+
         await mainViewModel.ShowNewProjectAsync();
         await SettleAsync(window);
         SaveWindow(window, System.IO.Path.Combine(targetDir, "02-wizard-step1.png"));
@@ -208,6 +218,11 @@ public partial class App : Application
 
         await SettleAsync(window);
         SaveWindow(window, System.IO.Path.Combine(targetDir, "03-wizard-step2.png"));
+
+        // VD-095 回归：把向导滚到底，核对两个日期框是否等分铺满、中间有「至」连字符
+        ScrollContentToEnd(window);
+        await SettleAsync(window);
+        SaveWindow(window, System.IO.Path.Combine(targetDir, "03b-wizard-step2-bottom.png"));
 
         var sample = new Project
         {
@@ -233,6 +248,19 @@ public partial class App : Application
         await SettleAsync(window);
         SaveWindow(window, System.IO.Path.Combine(targetDir, "04-detail-basic.png"));
 
+        // VD-099 回归：先把「基础信息」滚到底，再切「开发管理」——新版应回到顶部，
+        // 旧版会沿用滚动偏移，新内容的标题与第一个字段直接落在视口外。
+        ScrollContentToEnd(window);
+        await SettleAsync(window);
+        SaveWindow(window, System.IO.Path.Combine(targetDir, "04b-detail-basic-bottom.png"));
+
+        if (navigation.Current is ProjectDetailViewModel scrolled)
+        {
+            scrolled.SelectSectionCommand.Execute(ProjectDetailViewModel.SectionDev);
+            await SettleAsync(window);
+            SaveWindow(window, System.IO.Path.Combine(targetDir, "04c-detail-dev-after-scrolled-basic.png"));
+        }
+
         if (navigation.Current is ProjectDetailViewModel detail)
         {
             detail.SelectSectionCommand.Execute(ProjectDetailViewModel.SectionDev);
@@ -252,9 +280,27 @@ public partial class App : Application
                 detail.OpenDocumentCommand.Execute(document);
                 await SettleAsync(window);
                 SaveWindow(window, System.IO.Path.Combine(targetDir, "07-document-dialog.png"));
+
+                // VD-081 自检：弹窗打开后，键盘焦点必须落在弹窗内部（而不是背后的页面上）
+                ReportDialogFocus(window, "07-document-dialog");
+
                 mainViewModel.CloseDialogCommand.Execute(null);
                 await SettleAsync(window);
             }
+        }
+
+        // VD-091 回归：名称留空直接点「创建」——应把焦点搬到第一个错误字段，
+        // 页脚给出「还有 N 项必填未完成」，字段边框转成危险色。
+        await mainViewModel.ShowNewProjectAsync();
+        if (navigation.Current is ProjectWizardViewModel failingWizard)
+        {
+            failingWizard.SelectTypeCommand.Execute(ProjectType.Programming);
+            failingWizard.NextStepCommand.Execute(null);
+            await SettleAsync(window);
+            await ((Common.AsyncRelayCommand)failingWizard.CreateCommand).ExecuteAsync();
+            await SettleAsync(window);
+            SaveWindow(window, System.IO.Path.Combine(targetDir, "05b-wizard-validation-error.png"));
+            ReportFieldFocus(window, "05b-wizard-validation-error");
         }
 
         await mainViewModel.ShowSettingsAsync();
@@ -314,6 +360,77 @@ public partial class App : Application
                 yield return nested;
             }
         }
+    }
+
+    /// <summary>截图用示例立项（不落库）。</summary>
+    private static Project MakeSampleProject(
+        int id,
+        string name,
+        ProjectType type,
+        ProjectStatus status,
+        int progress,
+        DateTime updatedAt) => new()
+    {
+        Id = id,
+        Name = name,
+        Type = type,
+        Status = status,
+        ProgressPercent = progress,
+        Summary = "截图示例数据",
+        CreatedAt = DateTime.Today.AddDays(-30),
+        UpdatedAt = updatedAt,
+    };
+
+    /// <summary>VD-081 自检：打印焦点是否落在对话框覆盖层内部。</summary>
+    private static void ReportDialogFocus(Window window, string tag)
+    {
+        var host = window.FindName("PART_DialogHost") as DependencyObject;
+        var focused = System.Windows.Input.Keyboard.FocusedElement as DependencyObject;
+        var inside = host is not null && focused is not null && IsDescendantOf(focused, host);
+        System.Console.WriteLine($"[FOCUS] {tag} dialogFocused={inside} element={focused?.GetType().Name ?? "null"}");
+    }
+
+    /// <summary>VD-091 自检：打印焦点所在控件的字段锚点（应为第一个校验失败的字段）。</summary>
+    private static void ReportFieldFocus(Window window, string tag)
+    {
+        var focused = System.Windows.Input.Keyboard.FocusedElement as DependencyObject;
+        var anchor = focused is null ? null : Controls.FormField.GetAnchor(focused);
+
+        // 焦点可能落在控件内部的原生部件上，向上找带锚点的祖先
+        var cursor = focused;
+        while (anchor is null && cursor is not null && !ReferenceEquals(cursor, window))
+        {
+            cursor = System.Windows.Media.VisualTreeHelper.GetParent(cursor);
+            anchor = cursor is null ? null : Controls.FormField.GetAnchor(cursor);
+        }
+
+        System.Console.WriteLine($"[FOCUS] {tag} fieldAnchor={anchor ?? "null"} element={focused?.GetType().Name ?? "null"}");
+    }
+
+    private static bool IsDescendantOf(DependencyObject node, DependencyObject ancestor)
+    {
+        var cursor = node;
+        while (cursor is not null)
+        {
+            if (ReferenceEquals(cursor, ancestor))
+            {
+                return true;
+            }
+
+            cursor = System.Windows.Media.VisualTreeHelper.GetParent(cursor);
+        }
+
+        return false;
+    }
+
+    /// <summary>把当前页面滚动到底（截图核对页面下半部分用）。</summary>
+    private static void ScrollContentToEnd(Window window)    {
+        if (window.FindName("PART_ContentHost") is not DependencyObject host)
+        {
+            return;
+        }
+
+        Descendants(host).OfType<System.Windows.Controls.ScrollViewer>().FirstOrDefault()?.ScrollToEnd();
     }
 
     private static async Task SettleAsync(Window window)
@@ -478,9 +595,20 @@ public partial class App : Application
 /// <summary>冒烟桩：不访问数据库的项目服务实现。</summary>
 internal sealed class SmokeProjectService : IProjectService
 {
-    public Task<IReadOnlyList<Project>> GetAllAsync() => Task.FromResult<IReadOnlyList<Project>>(new List<Project>());
+    /// <summary>截图用的示例数据（不读写数据库）。</summary>
+    private readonly List<Project> _items = new();
+
+    public void Add(Project project) => _items.Add(project);
+
+    public Task<IReadOnlyList<Project>> GetAllAsync() =>
+        Task.FromResult<IReadOnlyList<Project>>(_items.ToList());
+
     public Task<IReadOnlyList<Project>> QueryAsync(ProjectType? type, ProjectStatus? status, string? keyword) =>
-        Task.FromResult<IReadOnlyList<Project>>(new List<Project>());
+        Task.FromResult<IReadOnlyList<Project>>(_items
+            .Where(p => type is null || p.Type == type)
+            .Where(p => status is null || p.Status == status)
+            .Where(p => string.IsNullOrWhiteSpace(keyword) || p.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+            .ToList());
     public Task<Project?> GetByIdAsync(int id) => Task.FromResult<Project?>(null);
     public Task<Project> CreateAsync(Project project) => Task.FromResult(project);
     public Task<Project> SaveAsync(Project project) => Task.FromResult(project);

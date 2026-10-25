@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Threading;
 using System.Windows;
 using System.Windows.Input;
 using SOrtus.Common;
@@ -24,6 +25,12 @@ internal sealed class ProjectListViewModel : ViewModelBase
     private ProjectStatus? _filterStatus;
     private Project? _selectedProject;
     private int _totalCount;
+    private bool _totalDirty = true;
+    private CancellationTokenSource? _searchCts;
+    private int _loadVersion;
+
+    /// <summary>搜索防抖窗口（VD-086：中文输入法一个词会连发 4~6 次 PropertyChanged）。</summary>
+    internal const int SearchDebounceMs = 250;
 
     public ObservableCollection<Project> Projects { get; } = new();
 
@@ -79,8 +86,9 @@ internal sealed class ProjectListViewModel : ViewModelBase
         OnPropertyChanged(nameof(FilterType));
         OnPropertyChanged(nameof(FilterStatus));
         OnPropertyChanged(nameof(HasFilter));
+        OnPropertyChanged(nameof(IsSearchActive));
 
-        _ = LoadAsync();
+        _ = ReloadNowAsync();
     }
 
     public string SearchText
@@ -91,10 +99,17 @@ internal sealed class ProjectListViewModel : ViewModelBase
             if (SetProperty(ref _searchText, value))
             {
                 OnPropertyChanged(nameof(HasFilter));
-                _ = ReloadAsync();
+                OnPropertyChanged(nameof(IsSearchActive));
+                ScheduleSearchReload();
             }
         }
     }
+
+    /// <summary>搜索框是否有内容（VD-085：有内容时显示清除 ×）。</summary>
+    public bool IsSearchActive => !string.IsNullOrWhiteSpace(_searchText);
+
+    /// <summary>清空搜索词（搜索框内的 ×）。</summary>
+    public ICommand ClearSearchCommand { get; }
 
     public ProjectType? FilterType
     {
@@ -104,7 +119,7 @@ internal sealed class ProjectListViewModel : ViewModelBase
             if (SetProperty(ref _filterType, value))
             {
                 OnPropertyChanged(nameof(HasFilter));
-                _ = ReloadAsync();
+                _ = ReloadNowAsync();
             }
         }
     }
@@ -117,7 +132,7 @@ internal sealed class ProjectListViewModel : ViewModelBase
             if (SetProperty(ref _filterStatus, value))
             {
                 OnPropertyChanged(nameof(HasFilter));
-                _ = ReloadAsync();
+                _ = ReloadNowAsync();
             }
         }
     }
@@ -154,22 +169,80 @@ internal sealed class ProjectListViewModel : ViewModelBase
 
         NewCommand = new RelayCommand(_ => _requestNew());
         OpenDetailCommand = new RelayCommand(o => { if (o is Project p) _openDetail(p); });
-        RefreshCommand = new AsyncRelayCommand(LoadAsync);
+        RefreshCommand = new AsyncRelayCommand(() => LoadAsync());
         ClearFiltersCommand = new RelayCommand(_ => ClearFilters());
+        ClearSearchCommand = new RelayCommand(_ => SearchText = string.Empty);
 
         _ = LoadAsync();
     }
 
-    private async Task ReloadAsync() => await LoadAsync();
+    /// <summary>总数需要重取（新建 / 删除后由主视图模型调用，VD-086）。</summary>
+    public void MarkTotalDirty() => _totalDirty = true;
+
+    /// <summary>立即加载（筛选条件变化、手动刷新、清除筛选）：作废尚未触发的防抖。</summary>
+    private async Task ReloadNowAsync()
+    {
+        _searchCts?.Cancel();
+        await LoadAsync();
+    }
+
+    /// <summary>搜索防抖（VD-086）：250ms 内的连续击键只查最后一次。</summary>
+    private void ScheduleSearchReload()
+    {
+        _searchCts?.Cancel();
+        var cts = new CancellationTokenSource();
+        _searchCts = cts;
+        _ = DebouncedReloadAsync(cts.Token);
+    }
+
+    private async Task DebouncedReloadAsync(CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(SearchDebounceMs, token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        await LoadAsync(token);
+    }
 
     /// <summary>加载 / 刷新列表（筛选条件变化与外部刷新共用；测试可直接 await）。</summary>
-    public async Task LoadAsync()
+    public async Task LoadAsync(CancellationToken token = default)
     {
+        var version = ++_loadVersion;
+
         await RunBusyAsync(async () =>
         {
             var keyword = string.IsNullOrWhiteSpace(_searchText) ? null : _searchText;
             var items = await _service.QueryAsync(_filterType, _filterStatus, keyword);
-            var all = await _service.GetAllAsync();
+
+            // 过期结果直接丢弃：连续输入时后到的旧结果会把新结果盖掉，列表看起来在闪跳
+            if (token.IsCancellationRequested || version != _loadVersion)
+            {
+                return;
+            }
+
+            // TotalCount 只在必要时取（VD-086）：无筛选时查询结果本身就是全集，
+            // 有筛选时用缓存，只有新建 / 删除后（MarkTotalDirty）才重取一次。
+            int total;
+            if (!HasFilter)
+            {
+                total = items.Count;
+                _totalDirty = false;
+            }
+            else if (_totalDirty || _totalCount == 0)
+            {
+                var all = await _service.GetAllAsync();
+                total = all.Count;
+                _totalDirty = false;
+            }
+            else
+            {
+                total = _totalCount;
+            }
 
             void Apply()
             {
@@ -179,7 +252,7 @@ internal sealed class ProjectListViewModel : ViewModelBase
                     Projects.Add(project);
                 }
 
-                TotalCount = all.Count;
+                TotalCount = total;
                 OnPropertyChanged(nameof(IsEmpty));
                 OnPropertyChanged(nameof(HasFilter));
                 OnPropertyChanged(nameof(HasNoResults));

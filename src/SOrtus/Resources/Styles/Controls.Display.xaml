@@ -117,12 +117,8 @@
                                 BorderThickness="1"
                                 CornerRadius="{DynamicResource CornerRadiusMedium}"
                                 Padding="14,10"
-                                Cursor="Hand">
-                            <Border.InputBindings>
-                                <MouseBinding Gesture="LeftDoubleClick"
-                                              Command="{Binding OpenCommand, RelativeSource={RelativeSource TemplatedParent}}"
-                                              CommandParameter="{Binding Project, RelativeSource={RelativeSource TemplatedParent}}" />
-                            </Border.InputBindings>
+                                Cursor="Hand"
+                                ToolTip="{DynamicResource List_OpenHint}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
@@ -151,9 +147,18 @@
                                     <TextBlock Text="{Binding Project.Status, RelativeSource={RelativeSource AncestorType=local:SOrProjectListItem}, Converter={StaticResource ProjectStatusDisplayConverter}}"
                                                FontSize="{DynamicResource FontSizeCaption}" />
                                 </local:SOrTag>
-                                <!-- 进度条 -->
-                                <local:SOrProgressBar Grid.Column="3" Width="72" Margin="0,0,14,0" VerticalAlignment="Center"
-                                                      Value="{Binding Project.ProgressPercent, RelativeSource={RelativeSource TemplatedParent}}" />
+                                <!-- 进度条 + 百分比（VD-088）：72px 细条在 8 档之间的长度差只有 9px，
+                                     没有数字只能靠猜；补一个 12px 的读数，与详情页的「65%」同精度 -->
+                                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center"
+                                            Margin="0,0,14,0">
+                                    <local:SOrProgressBar Width="72" VerticalAlignment="Center"
+                                                          Value="{Binding Project.ProgressPercent, RelativeSource={RelativeSource TemplatedParent}}" />
+                                    <TextBlock Width="38" Margin="8,0,0,0" VerticalAlignment="Center"
+                                               TextAlignment="Right"
+                                               FontSize="{DynamicResource FontSizeCaption}"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               Text="{Binding Project.ProgressPercent, RelativeSource={RelativeSource TemplatedParent}, StringFormat={}{0:0}%}" />
+                                </StackPanel>
                                 <!-- 打开按钮 -->
                                 <local:SOrButton Grid.Column="4" Variant="Secondary"
                                                  Content="{DynamicResource List_Open}"

@@ -22,6 +22,12 @@ public sealed class SOrComboBox : System.Windows.Controls.ComboBox
             nameof(CornerRadius), typeof(System.Windows.CornerRadius), typeof(SOrComboBox),
             new System.Windows.PropertyMetadata(new System.Windows.CornerRadius(6)));
 
+    /// <summary>字段校验失败态（VD-091）：边框换语义危险色。</summary>
+    public static readonly System.Windows.DependencyProperty IsInvalidProperty =
+        System.Windows.DependencyProperty.Register(
+            nameof(IsInvalid), typeof(bool), typeof(SOrComboBox),
+            new System.Windows.PropertyMetadata(false));
+
     static SOrComboBox()
     {
         System.Windows.Controls.ComboBox.DefaultStyleKeyProperty.OverrideMetadata(
@@ -39,5 +45,11 @@ public sealed class SOrComboBox : System.Windows.Controls.ComboBox
     {
         get => (System.Windows.CornerRadius)GetValue(CornerRadiusProperty);
         set => SetValue(CornerRadiusProperty, value);
+    }
+
+    public bool IsInvalid
+    {
+        get => (bool)GetValue(IsInvalidProperty);
+        set => SetValue(IsInvalidProperty, value);
     }
 }

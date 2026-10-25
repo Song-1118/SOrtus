@@ -165,15 +165,26 @@ public sealed class NotMonthModeConverter : IValueConverter
         throw new NotSupportedException();
 }
 
-/// <summary>更新时间 → 「更新于 MM-dd」（resx：List_UpdatedAt）。</summary>
+/// <summary>
+/// 更新时间 → 「更新于 MM-dd」/「更新于 yyyy-MM-dd」（resx：List_UpdatedAt / List_UpdatedAtCrossYear）。
+/// VD-090：旧版永远只显示月日，跨年项目（2025-10-25 与 2026-10-25）在列表里看起来是同一天；
+/// 同一份数据在详情页页脚却带年份。这里按是否跨年切换格式，保住列表的行高不变。
+/// </summary>
 public sealed class UpdatedAtDisplayConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        var format = ConverterHelpers.Lookup("List_UpdatedAt") ?? "Updated {0:MM-dd}";
-        return value is DateTime dt
-            ? string.Format(CultureInfo.CurrentCulture, format, dt)
-            : string.Empty;
+        if (value is not DateTime dt)
+        {
+            return string.Empty;
+        }
+
+        var local = dt.Kind == DateTimeKind.Utc ? dt.ToLocalTime() : dt;
+        var sameYear = local.Year == DateTime.Now.Year;
+        var key = sameYear ? "List_UpdatedAt" : "List_UpdatedAtCrossYear";
+        var format = ConverterHelpers.Lookup(key) ?? (sameYear ? "Updated {0:MM-dd}" : "Updated {0:yyyy-MM-dd}");
+
+        return string.Format(CultureInfo.CurrentCulture, format, local);
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>

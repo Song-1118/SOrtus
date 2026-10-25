@@ -29,15 +29,15 @@
   <data name="List_UpdatedAt" xml:space="preserve"><value>Updated {0:MM-dd}</value></data>
   <data name="List_NewButton" xml:space="preserve"><value>New Project</value></data>
   <data name="List_Open" xml:space="preserve"><value>Open</value></data>
-  <data name="List_OpenHint" xml:space="preserve"><value>Double-click to view details</value></data>
+  <data name="List_OpenHint" xml:space="preserve"><value>Click to open</value></data>
 
   <data name="Wizard_Title" xml:space="preserve"><value>New Programming Project</value></data>
   <data name="Wizard_StepType" xml:space="preserve"><value>Choose project type</value></data>
   <data name="Wizard_StepInfo" xml:space="preserve"><value>Fill in details</value></data>
   <data name="Wizard_Step1Hint" xml:space="preserve"><value>One tool for three project types - pick the type first</value></data>
   <data name="Wizard_TypeProgrammingDesc" xml:space="preserve"><value>Track tech stack, dev plan, goals and acceptance criteria</value></data>
-  <data name="Wizard_TypeClipDesc" xml:space="preserve"><value>Manage shooting/editing progress, assets and folders</value></data>
-  <data name="Wizard_TypeTodoDesc" xml:space="preserve"><value>Capture todos with due dates and reminders</value></data>
+  <data name="Wizard_TypeClipDesc" xml:space="preserve"><value>Track edit type, material folder and schedule</value></data>
+  <data name="Wizard_TypeTodoDesc" xml:space="preserve"><value>Capture a to-do with due date and status</value></data>
   <data name="Wizard_SelectedType" xml:space="preserve"><value>Selected type</value></data>
   <data name="Wizard_ChangeType" xml:space="preserve"><value>Change</value></data>
   <data name="Wizard_Name" xml:space="preserve"><value>Project name</value></data>
@@ -66,7 +66,7 @@
   <data name="Wizard_CardOwnership" xml:space="preserve"><value>Ownership &amp; Schedule</value></data>
 
   <data name="Detail_Title" xml:space="preserve"><value>Project Details</value></data>
-  <data name="Detail_Basic" xml:space="preserve"><value>Basic Info</value></data>
+  <data name="Detail_Basic" xml:space="preserve"><value>Project fields</value></data>
   <data name="Detail_CardOwnership" xml:space="preserve"><value>Type &amp; Ownership</value></data>
   <data name="Detail_CardDocuments" xml:space="preserve"><value>Documents</value></data>
   <data name="Detail_CardPlanning" xml:space="preserve"><value>Planning &amp; Constraints</value></data>
@@ -180,11 +180,11 @@
   <data name="Wizard_ProgFeat2" xml:space="preserve"><value>Goals, constraints, acceptance</value></data>
   <data name="Wizard_ProgFeat3" xml:space="preserve"><value>Progress and version history</value></data>
   <data name="Wizard_ClipFeat1" xml:space="preserve"><value>Theme, type and schedule</value></data>
-  <data name="Wizard_ClipFeat2" xml:space="preserve"><value>Shooting and editing progress</value></data>
-  <data name="Wizard_ClipFeat3" xml:space="preserve"><value>Material list and folder</value></data>
+  <data name="Wizard_ClipFeat2" xml:space="preserve"><value>Material folder and edit type</value></data>
+  <data name="Wizard_ClipFeat3" xml:space="preserve"><value>Single progress track</value></data>
   <data name="Wizard_TodoFeat1" xml:space="preserve"><value>One task per project</value></data>
   <data name="Wizard_TodoFeat2" xml:space="preserve"><value>Due time and completion</value></data>
-  <data name="Wizard_TodoFeat3" xml:space="preserve"><value>Reminders so nothing slips</value></data>
+  <data name="Wizard_TodoFeat3" xml:space="preserve"><value>Progress and status editable anytime</value></data>
   <data name="App_Tagline" xml:space="preserve"><value>SOrtus · Local first</value></data>
   <data name="Common_RequiredClipType" xml:space="preserve"><value>Please choose a clip type</value></data>
   <data name="Common_RequiredDueTime" xml:space="preserve"><value>Please choose a due date</value></data>
@@ -414,5 +414,44 @@
   </data>
   <data name="Wizard_TitleStepInfo" xml:space="preserve">
     <value>New project · 2/2 Fill in details</value>
+  </data>
+  <data name="Common_Clear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="List_UpdatedAtCrossYear" xml:space="preserve">
+    <value>Updated {0:yyyy-MM-dd}</value>
+  </data>
+  <data name="Nav_Recent" xml:space="preserve">
+    <value>Recent</value>
+  </data>
+  <data name="App_VersionLine" xml:space="preserve">
+    <value>v{0} · data stays on this machine</value>
+  </data>
+  <data name="Wizard_Step2Hint" xml:space="preserve">
+    <value>Name and tech stack are required; the rest can be filled in later</value>
+  </data>
+  <data name="Wizard_DateTo" xml:space="preserve">
+    <value>to</value>
+  </data>
+  <data name="Wizard_TechStackAdd" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Wizard_TechStackSelected" xml:space="preserve">
+    <value>{0} selected</value>
+  </data>
+  <data name="Wizard_ErrorSummary" xml:space="preserve">
+    <value>{0} required field(s) still missing</value>
+  </data>
+  <data name="Dialog_DiscardWizardTitle" xml:space="preserve">
+    <value>Discard what you have filled in?</value>
+  </data>
+  <data name="Dialog_DiscardWizardMessage" xml:space="preserve">
+    <value>This project has not been created yet; you will need to fill it in again.</value>
+  </data>
+  <data name="Dialog_EscDiscardHint" xml:space="preserve">
+    <value>Press Esc again to discard what you have filled in</value>
+  </data>
+  <data name="Wizard_Step2HintNoStack" xml:space="preserve">
+    <value>Name is required; the rest can be filled in later</value>
   </data>
 </root>

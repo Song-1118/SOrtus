@@ -5,8 +5,20 @@ using System.Windows.Input;
 using SOrtus.Common;
 using SOrtus.Core.Models;
 using SOrtus.Core.Services;
+using SOrtus.Services;
 
 namespace SOrtus.ViewModels;
+
+/// <summary>
+/// 需要把某个字段滚动进视野并聚焦的视图（VD-091）。
+/// 视图模型只发锚点名，具体「找到哪个控件、怎么滚、怎么抖」由宿主窗口处理——
+/// 向导挂在 DataTemplate 里，没有代码后置，无法直接操作命名元素。
+/// </summary>
+public interface IFieldFocusSource
+{
+    /// <summary>请求把锚点为 <c>anchor</c> 的字段滚进视野并聚焦。</summary>
+    event Action<string>? FocusRequested;
+}
 
 /// <summary>技术栈预设项（向导「预设多选 chips」，规范 A6）：选中即加入技术栈，取消即移出。</summary>
 internal sealed class TechStackPreset : ViewModelBase
@@ -29,10 +41,11 @@ internal sealed class TechStackPreset : ViewModelBase
 /// 第 1 步选择立项类型（编程 / 剪辑 / 待办），第 2 步填写立项信息。
 /// 项目名字（必填）、技术栈（预设多选 + 自定义输入，可多选）、简介、子类型、关联文件夹、开发工期。
 /// </summary>
-internal sealed class ProjectWizardViewModel : ViewModelBase
+internal sealed class ProjectWizardViewModel : ViewModelBase, IFieldFocusSource
 {
     private readonly IProjectService _service;
     private readonly ILocalizationService _localization;
+    private readonly IDialogService? _dialogService;
     private readonly Action _onCreated;
 
     private string _name = string.Empty;
@@ -303,17 +316,27 @@ internal sealed class ProjectWizardViewModel : ViewModelBase
     public bool HasScheduleError => !string.IsNullOrEmpty(_scheduleError);
 
     public ProjectWizardViewModel(IProjectService service, ILocalizationService localization, Action onCreated)
+        : this(service, localization, onCreated, null)
+    {
+    }
+
+    public ProjectWizardViewModel(
+        IProjectService service,
+        ILocalizationService localization,
+        Action onCreated,
+        IDialogService? dialogService)
     {
         _service = service;
         _localization = localization;
         _onCreated = onCreated;
+        _dialogService = dialogService;
 
         AddTechStackCommand = new RelayCommand(_ => AddTechStack());
         RemoveTechStackCommand = new RelayCommand(o => RemoveTechStack(o as string));
         TogglePresetCommand = new RelayCommand(o => TogglePreset(o as TechStackPreset));
         BrowseFolderCommand = new RelayCommand(_ => BrowseFolder());
         CreateCommand = new AsyncRelayCommand(CreateAsync, () => !IsBusy);
-        CancelCommand = new RelayCommand(_ => _onCreated());
+        CancelCommand = new AsyncRelayCommand(CancelAsync);
         NextStepCommand = new RelayCommand(_ => Step = 2);
         PreviousStepCommand = new RelayCommand(_ => Step = 1);
         SelectTypeCommand = new RelayCommand(o =>
@@ -325,7 +348,53 @@ internal sealed class ProjectWizardViewModel : ViewModelBase
         });
 
         InitializePresets();
+
+        // VD-094：「已选 N 项」小标题随技术栈增删刷新
+        TechStacks.CollectionChanged += (_, _) => OnPropertyChanged(nameof(SelectedTechStackCountText));
     }
+
+    /// <summary>
+    /// 向导是否有用户输入（VD-092）。任一字段被填写即视为有内容——
+    /// 只要有输入，离开就必须先问一句，否则误点侧边栏等于清空重填。
+    /// </summary>
+    public bool IsDirty =>
+        !string.IsNullOrWhiteSpace(_name)
+        || !string.IsNullOrWhiteSpace(_summary)
+        || !string.IsNullOrWhiteSpace(_subType)
+        || !string.IsNullOrWhiteSpace(_folderPath)
+        || _scheduleEnd is not null
+        || TechStacks.Count > 0;
+
+    /// <summary>离开向导前的守卫（导航 / 关闭窗口共用）：有输入时先确认放弃。</summary>
+    public async Task<bool> ConfirmLeaveAsync()
+    {
+        if (!IsDirty || _dialogService is null)
+        {
+            return true;
+        }
+
+        // 向导没有「保存草稿」这一动作，因此用两选一确认（放弃 / 继续填写），
+        // 而不是详情页那个三选一的「保存 / 不保存 / 取消」。
+        return await _dialogService.ConfirmAsync(
+            _localization.GetString("Dialog_DiscardWizardTitle"),
+            _localization.GetString("Dialog_DiscardWizardMessage"));
+    }
+
+    /// <summary>页脚「取消」（VD-092）：等同放弃并返回列表，有输入时先确认。</summary>
+    private async Task CancelAsync()
+    {
+        if (await ConfirmLeaveAsync())
+        {
+            _onCreated();
+        }
+    }
+
+    /// <summary>「已选 N 项」标题（VD-094：把预设区与已选区在视觉上串起来）。</summary>
+    public string SelectedTechStackCountText =>
+        string.Format(_localization.GetString("Wizard_TechStackSelected"), TechStacks.Count);
+
+    /// <summary>字段级校验失败时请求宿主滚动并聚焦（VD-091）。</summary>
+    public event Action<string>? FocusRequested;
 
     /// <summary>技术栈预设（常用项；顺序即展示顺序）。</summary>
     private static readonly string[] DefaultPresets =
@@ -433,42 +502,53 @@ internal sealed class ProjectWizardViewModel : ViewModelBase
 
     private async Task CreateAsync()
     {
-        // 字段级校验（VD-008）：错误就近展示在对应字段下方，不再只挤在底部操作条。
-        // 全局 ErrorMessage 仅保留给写库失败（Common_SaveFailed）。
+        // VD-091：校验不再「遇到第一条就 return」——一次把全部必填项查完，
+        // 页脚给一句汇总，并把第一个出错的字段滚进视野 + 聚焦 + 边框标红。
+        // 旧行为下错误红字出现在视口外，用户只看到「点了创建没反应」。
+        var failures = new List<string>();
+
+        ClearFieldErrors();
+
         if (string.IsNullOrWhiteSpace(Name))
         {
             NameError = _localization.GetString("Common_RequiredName");
-            return;
+            failures.Add("Name");
         }
 
         // 必填校验必须按类型分支（SO-002）：编程看技术栈、剪辑看剪辑类型、待办看完成时间（SO-016）。
-        // 否则「界面上没有这个字段，却被这条规则拦住」，形成走不通的死路。
         if (IsProgramming && TechStacks.Count == 0)
         {
-            // PRD 5.1.1：编程立项的技术栈为必填项
             TechStackError = _localization.GetString("Common_RequiredTechStack");
-            return;
+            failures.Add("TechStack");
         }
 
         if (IsClip && string.IsNullOrWhiteSpace(SubType))
         {
             ClipTypeError = _localization.GetString("Common_RequiredClipType");
-            return;
+            failures.Add("SubType");
         }
 
         if (IsTodo && ScheduleEnd is null)
         {
-            // PRD 5.3.1：待办「完成时间」必填
             DueTimeError = _localization.GetString("Common_RequiredDueTime");
-            return;
+            failures.Add("ScheduleEnd");
         }
 
         // 工期区间校验（VD-007）：结束日期不得早于开始日期
         if (ScheduleStart is not null && ScheduleEnd is not null && ScheduleEnd < ScheduleStart)
         {
             ScheduleError = _localization.GetString("Wizard_ErrorSchedule");
+            failures.Add("Schedule");
+        }
+
+        if (failures.Count > 0)
+        {
+            ErrorMessage = string.Format(_localization.GetString("Wizard_ErrorSummary"), failures.Count);
+            FocusRequested?.Invoke(failures[0]);
             return;
         }
+
+        ErrorMessage = string.Empty;
 
         var project = new Project
         {
@@ -495,5 +575,15 @@ internal sealed class ProjectWizardViewModel : ViewModelBase
         }
 
         _onCreated();
+    }
+
+    /// <summary>清空全部字段级错误（每次提交前先复位，避免上一次的红字残留）。</summary>
+    private void ClearFieldErrors()
+    {
+        NameError = null;
+        TechStackError = null;
+        ClipTypeError = null;
+        DueTimeError = null;
+        ScheduleError = null;
     }
 }

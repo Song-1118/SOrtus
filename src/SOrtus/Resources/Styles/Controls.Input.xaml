@@ -60,6 +60,7 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <!-- 前置图标（LeadingIcon 为空时自动折叠，不占位） -->
                                         <Path Grid.Column="0"
@@ -90,6 +91,19 @@
                                                    HorizontalAlignment="Left"
                                                    IsHitTestVisible="False"
                                                    Visibility="Collapsed" />
+                                        <!-- 清除按钮（VD-085）：搜索框有内容时出现，一键清空而不是逐字删。
+                                             多行输入不显示（有换行需求，误清代价高）。 -->
+                                        <local:SOrButton x:Name="PART_Clear"
+                                                         Grid.Column="2"
+                                                         Variant="Ghost"
+                                                         Icon="{DynamicResource IconClose}"
+                                                         IconSize="9"
+                                                         Padding="6"
+                                                         Margin="4,0,0,0"
+                                                         VerticalAlignment="Center"
+                                                         ToolTip="{DynamicResource Common_Clear}"
+                                                         Command="{TemplateBinding ClearCommand}"
+                                                         Visibility="Collapsed" />
                                     </Grid>
                                 </Border>
                             </Grid>
@@ -122,6 +136,27 @@
                             <Setter Property="VerticalContentAlignment" Value="Top" />
                             <Setter Property="MinHeight" Value="{DynamicResource MultilineMinHeight}" />
                             <Setter Property="MaxHeight" Value="{DynamicResource MultilineMaxHeight}" />
+                        </Trigger>
+                        <!-- 清除按钮可见性：默认折叠 → 可清除时显示 → 内容为空或多行时再折回
+                             （触发器按声明顺序生效，后声明的覆盖先声明的，因此「为空」必须写在最后） -->
+                        <DataTrigger Binding="{Binding IsClearable, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
+                            <Setter TargetName="PART_Clear" Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding IsClearable, RelativeSource={RelativeSource TemplatedParent}}" Value="True" />
+                                <Condition Binding="{Binding Text, RelativeSource={RelativeSource TemplatedParent}}" Value="" />
+                            </MultiDataTrigger.Conditions>
+                            <Setter TargetName="PART_Clear" Property="Visibility" Value="Collapsed" />
+                        </MultiDataTrigger>
+                        <Trigger Property="AcceptsReturn" Value="True">
+                            <Setter TargetName="PART_Clear" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <!-- 校验失败（VD-091）：边框换语义危险色，焦点环同色，
+                             与字段下方红字形成「同一件事」的视觉组 -->
+                        <Trigger Property="IsInvalid" Value="True">
+                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
+                            <Setter TargetName="PART_FocusRing" Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
                             <Trigger.EnterActions>
@@ -314,6 +349,11 @@
                         <DataTrigger Binding="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}}" Value="{x:Null}">
                             <Setter TargetName="PART_Placeholder" Property="Visibility" Value="Visible" />
                         </DataTrigger>
+                        <!-- 校验失败态（VD-091）：边框与焦点环同用语义危险色 -->
+                        <Trigger Property="IsInvalid" Value="True">
+                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
+                            <Setter TargetName="PART_FocusRing" Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
+                        </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Root" Property="Opacity" Value="0.55" />
                         </Trigger>
@@ -739,6 +779,11 @@
                         </Trigger>
                         <Trigger Property="IsDropDownOpen" Value="True">
                             <Setter TargetName="PART_FocusRing" Property="Opacity" Value="1" />
+                        </Trigger>
+                        <!-- 校验失败态（VD-091）：边框与焦点环同用语义危险色 -->
+                        <Trigger Property="IsInvalid" Value="True">
+                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
+                            <Setter TargetName="PART_FocusRing" Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Root" Property="Opacity" Value="0.55" />

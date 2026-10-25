@@ -29,15 +29,15 @@
   <data name="List_UpdatedAt" xml:space="preserve"><value>更新于 {0:MM-dd}</value></data>
   <data name="List_NewButton" xml:space="preserve"><value>新建立项</value></data>
   <data name="List_Open" xml:space="preserve"><value>打开</value></data>
-  <data name="List_OpenHint" xml:space="preserve"><value>双击查看详情</value></data>
+  <data name="List_OpenHint" xml:space="preserve"><value>单击打开详情</value></data>
 
   <data name="Wizard_Title" xml:space="preserve"><value>新建编程开发立项</value></data>
   <data name="Wizard_StepType" xml:space="preserve"><value>选择立项类型</value></data>
   <data name="Wizard_StepInfo" xml:space="preserve"><value>填写立项信息</value></data>
   <data name="Wizard_Step1Hint" xml:space="preserve"><value>三类立项统一管理，先选择要创建的立项类型</value></data>
   <data name="Wizard_TypeProgrammingDesc" xml:space="preserve"><value>记录技术栈、开发规划、目标与验收标准</value></data>
-  <data name="Wizard_TypeClipDesc" xml:space="preserve"><value>管理拍摄与剪辑进度、素材清单与素材文件夹</value></data>
-  <data name="Wizard_TypeTodoDesc" xml:space="preserve"><value>快速录入待办、设置截止时间与到期提醒</value></data>
+  <data name="Wizard_TypeClipDesc" xml:space="preserve"><value>管理剪辑类型、素材文件夹与目标工期</value></data>
+  <data name="Wizard_TypeTodoDesc" xml:space="preserve"><value>快速录入待办、设置完成时间与状态</value></data>
   <data name="Wizard_SelectedType" xml:space="preserve"><value>已选类型</value></data>
   <data name="Wizard_ChangeType" xml:space="preserve"><value>更改</value></data>
   <data name="Wizard_Name" xml:space="preserve"><value>项目名字</value></data>
@@ -66,7 +66,7 @@
   <data name="Wizard_CardOwnership" xml:space="preserve"><value>归属与工期</value></data>
 
   <data name="Detail_Title" xml:space="preserve"><value>立项详情</value></data>
-  <data name="Detail_Basic" xml:space="preserve"><value>基础信息</value></data>
+  <data name="Detail_Basic" xml:space="preserve"><value>项目字段</value></data>
   <data name="Detail_CardOwnership" xml:space="preserve"><value>类型与归属</value></data>
   <data name="Detail_CardDocuments" xml:space="preserve"><value>项目文档</value></data>
   <data name="Detail_CardPlanning" xml:space="preserve"><value>规划与约束</value></data>
@@ -180,11 +180,11 @@
   <data name="Wizard_ProgFeat2" xml:space="preserve"><value>开发目标、约束与验收标准</value></data>
   <data name="Wizard_ProgFeat3" xml:space="preserve"><value>进度跟踪与版本沉淀</value></data>
   <data name="Wizard_ClipFeat1" xml:space="preserve"><value>主题、类型与目标工期</value></data>
-  <data name="Wizard_ClipFeat2" xml:space="preserve"><value>拍摄与剪辑双进度</value></data>
-  <data name="Wizard_ClipFeat3" xml:space="preserve"><value>素材清单与素材文件夹</value></data>
+  <data name="Wizard_ClipFeat2" xml:space="preserve"><value>素材文件夹与剪辑类型</value></data>
+  <data name="Wizard_ClipFeat3" xml:space="preserve"><value>单一进度跟踪</value></data>
   <data name="Wizard_TodoFeat1" xml:space="preserve"><value>一条任务一个立项</value></data>
   <data name="Wizard_TodoFeat2" xml:space="preserve"><value>完成时间与完成状态</value></data>
-  <data name="Wizard_TodoFeat3" xml:space="preserve"><value>到点提醒，不遗漏</value></data>
+  <data name="Wizard_TodoFeat3" xml:space="preserve"><value>进度与状态可随时改</value></data>
   <data name="App_Tagline" xml:space="preserve"><value>SOrtus · 本地优先</value></data>
   <data name="Common_RequiredClipType" xml:space="preserve"><value>请选择剪辑类型</value></data>
   <data name="Common_RequiredDueTime" xml:space="preserve"><value>请选择完成时间</value></data>
@@ -414,5 +414,44 @@
   </data>
   <data name="Wizard_TitleStepInfo" xml:space="preserve">
     <value>新立项 · 2/2 填写信息</value>
+  </data>
+  <data name="Common_Clear" xml:space="preserve">
+    <value>清除</value>
+  </data>
+  <data name="List_UpdatedAtCrossYear" xml:space="preserve">
+    <value>更新于 {0:yyyy-MM-dd}</value>
+  </data>
+  <data name="Nav_Recent" xml:space="preserve">
+    <value>最近立项</value>
+  </data>
+  <data name="App_VersionLine" xml:space="preserve">
+    <value>v{0} · 数据留在本机</value>
+  </data>
+  <data name="Wizard_Step2Hint" xml:space="preserve">
+    <value>名称与技术栈必填，其余可稍后在详情页补</value>
+  </data>
+  <data name="Wizard_DateTo" xml:space="preserve">
+    <value>至</value>
+  </data>
+  <data name="Wizard_TechStackAdd" xml:space="preserve">
+    <value>添加</value>
+  </data>
+  <data name="Wizard_TechStackSelected" xml:space="preserve">
+    <value>已选 {0} 项</value>
+  </data>
+  <data name="Wizard_ErrorSummary" xml:space="preserve">
+    <value>还有 {0} 项必填未完成</value>
+  </data>
+  <data name="Dialog_DiscardWizardTitle" xml:space="preserve">
+    <value>放弃已填写的内容？</value>
+  </data>
+  <data name="Dialog_DiscardWizardMessage" xml:space="preserve">
+    <value>这个立项还没创建，离开后需要重新填写。</value>
+  </data>
+  <data name="Dialog_EscDiscardHint" xml:space="preserve">
+    <value>再按一次 Esc 放弃已填写的内容</value>
+  </data>
+  <data name="Wizard_Step2HintNoStack" xml:space="preserve">
+    <value>名称必填，其余可稍后在详情页补</value>
   </data>
 </root>

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using System.Windows.Threading;
 using SOrtus.Common;
 using SOrtus.Controls;
 using SOrtus.Core.Models;
@@ -427,6 +428,61 @@ internal sealed class AddRemoteDialogViewModel : ViewModelBase, IClosableOverlay
     }
 
     public bool HasError => !string.IsNullOrEmpty(_errorMessage);
+
+    /// <summary>
+    /// VD-083：配置远端弹窗不响应「点遮罩关闭」。
+    /// 遮罩点击与 Esc 共用同一入口时，用户在输入框里打字误点到外面就会丢掉整段 URL，
+    /// 且没有草稿可恢复——这类有输入的弹窗只保留 Esc（带确认）与「取消」按钮。
+    /// </summary>
+    public bool AllowScrimClose => false;
+
+    /// <summary>是否已有输入（Esc 关闭前据此决定要不要二次确认）。</summary>
+    public bool HasInput =>
+        !string.IsNullOrWhiteSpace(_url) || !string.Equals(_name, "origin", StringComparison.Ordinal);
+
+    /// <summary>Esc 拦截提示是否可见（第一次按 Esc 时出现，3 秒后自动收起）。</summary>
+    public bool ShowEscHint
+    {
+        get => _showEscHint;
+        private set => SetProperty(ref _showEscHint, value);
+    }
+
+    private bool _showEscHint;
+    private bool _escArmed;
+    private DispatcherTimer? _escTimer;
+
+    /// <summary>
+    /// Esc 处理（VD-083）：有输入时第一次只拦下并提示「再按一次放弃」，第二次才允许关闭。
+    /// 之所以不弹二次确认框：确认框会替换掉覆盖层里的当前弹窗（同一时刻只有一个活动对话框），
+    /// 关掉确认框时这个弹窗也会一起消失，用户输入照样丢。
+    /// </summary>
+    public bool ConfirmEsc()
+    {
+        if (!HasInput || _escArmed)
+        {
+            _escArmed = false;
+            ShowEscHint = false;
+            return true;
+        }
+
+        _escArmed = true;
+        ShowEscHint = true;
+
+        _escTimer ??= new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        _escTimer.Stop();
+        _escTimer.Tick -= OnEscTimerTick;
+        _escTimer.Tick += OnEscTimerTick;
+        _escTimer.Start();
+
+        return false;
+    }
+
+    private void OnEscTimerTick(object? sender, EventArgs e)
+    {
+        _escTimer?.Stop();
+        _escArmed = false;
+        ShowEscHint = false;
+    }
 
     public GitRemoteInfo? Result { get; private set; }
 

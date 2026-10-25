@@ -28,6 +28,7 @@
         <!-- 全局默认 SemiBold：主按钮 / 关键操作（VD-002 三档字重中 SemiBold 的许可用途） -->
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <!-- 自定义焦点环接管键盘焦点视觉 -->
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -64,7 +65,7 @@
                                 <!-- 图标列自适应、内容列吃满剩余宽度：按钮被拉伸时（如向导三张类型卡）
                                      内容才能拿到确定的可用宽度并正确换行；按钮自适应宽度时该列等于内容宽度，
                                      图标与文字仍作为一个整体居中。 -->
-                                <Grid VerticalAlignment="Center" Margin="{TemplateBinding Padding}">
+                                <Grid VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Margin="{TemplateBinding Padding}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
@@ -97,6 +98,37 @@
                                 CornerRadius="{TemplateBinding CornerRadius}"
                                 Opacity="0"
                                 IsHitTestVisible="False" />
+                        <!-- 类型卡选中环（VD-093）：2px 主色描边单独一层，避免把 BorderThickness
+                             从 1 改到 2 时内容整体位移 1px -->
+                        <Border x:Name="PART_ActiveRing"
+                                BorderBrush="{DynamicResource PrimaryBrush}"
+                                BorderThickness="2"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                Opacity="0"
+                                IsHitTestVisible="False" />
+                        <!-- 类型卡选中角标（VD-093）：右上角对勾，选中不再只靠边框深浅 -->
+                        <Border x:Name="PART_Check"
+                                Width="18" Height="18" CornerRadius="9"
+                                Background="{DynamicResource PrimaryBrush}"
+                                HorizontalAlignment="Right" VerticalAlignment="Top"
+                                Margin="0,9,9,0" Opacity="0" IsHitTestVisible="False">
+                            <Path Data="{DynamicResource IconCheck}"
+                                  Fill="{DynamicResource TextOnAccentBrush}"
+                                  Width="9" Height="9" Stretch="Uniform" />
+                        </Border>
+                        <!-- 版块 tab 指示条（VD-100）：底部 2px，200ms 从中间展开 -->
+                        <Border x:Name="PART_TabIndicator"
+                                Height="2"
+                                VerticalAlignment="Bottom"
+                                HorizontalAlignment="Stretch"
+                                Background="{DynamicResource PrimaryBrush}"
+                                RenderTransformOrigin="0.5,0.5"
+                                Opacity="0"
+                                IsHitTestVisible="False">
+                            <Border.RenderTransform>
+                                <ScaleTransform ScaleX="0.6" ScaleY="1" />
+                            </Border.RenderTransform>
+                        </Border>
                     </Grid>
 
                     <ControlTemplate.Triggers>
@@ -132,6 +164,28 @@
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Root" Property="Opacity" Value="0.45" />
                         </Trigger>
+                        <!-- 类型卡选中（VD-093）：2px 主色环 + 右上角对勾 -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="Variant" Value="Card" />
+                                <Condition Property="IsActive" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="PART_ActiveRing" Property="Opacity" Value="1" />
+                            <Setter TargetName="PART_Check" Property="Opacity" Value="1" />
+                        </MultiTrigger>
+                        <!-- 版块 tab 选中（VD-100）：底部 2px 指示条 200ms 展开 -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="Variant" Value="Tab" />
+                                <Condition Property="IsActive" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <MultiTrigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource TabIndicatorInStoryboard}" />
+                            </MultiTrigger.EnterActions>
+                            <MultiTrigger.ExitActions>
+                                <BeginStoryboard Storyboard="{StaticResource TabIndicatorOutStoryboard}" />
+                            </MultiTrigger.ExitActions>
+                        </MultiTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
@@ -193,6 +247,56 @@
                 <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
                 <Setter Property="BorderThickness" Value="1" />
+            </MultiTrigger>
+
+            <!--
+                类型卡（VD-093）：向导第 1 步的三张卡。
+                旧版用 Secondary，未选中时与背景几乎同色（只有 1px 浅边），选中只是把边变白一点，
+                三张卡看起来像「一张有框、两张没框」。这里：未选中 = 低一阶底色 + 明确边框，
+                选中 = 2px 主色环 + 右上角对勾 + 底色提亮（环与角标由模板里的命名层表达）。
+            -->
+            <Trigger Property="Variant" Value="Card">
+                <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}" />
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Padding" Value="18" />
+                <Setter Property="FontWeight" Value="Normal" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            </Trigger>
+
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="Variant" Value="Card" />
+                    <Condition Property="IsActive" Value="True" />
+                </MultiTrigger.Conditions>
+                <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            </MultiTrigger>
+
+            <!--
+                版块 tab（VD-100）：详情页「基础/开发/GIT」三个切换。
+                旧版直接用 Nav 变体——未选中无边框无下划线、选中是灰底块，看起来是三个标签而不是可切换 tab。
+                现在：未选中次要色文字 + hover 浅底，选中主色文字 + 底部 2px 指示条（200ms 展开）。
+            -->
+            <Trigger Property="Variant" Value="Tab">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Padding" Value="14,9" />
+                <Setter Property="FontWeight" Value="Normal" />
+                <Setter Property="CornerRadius" Value="{DynamicResource CornerRadiusSmall}" />
+            </Trigger>
+
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="Variant" Value="Tab" />
+                    <Condition Property="IsActive" Value="True" />
+                </MultiTrigger.Conditions>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                <Setter Property="FontWeight" Value="SemiBold" />
             </MultiTrigger>
         </Style.Triggers>
     </Style>

@@ -40,11 +40,43 @@ public sealed class SOrTextBox : System.Windows.Controls.TextBox
             nameof(SubmitCommand), typeof(System.Windows.Input.ICommand), typeof(SOrTextBox),
             new System.Windows.PropertyMetadata(null));
 
+    /// <summary>
+    /// 是否显示「清除」按钮（VD-085：搜索框有内容时给一个 ×，不必逐字删）。
+    /// 多行输入不显示（有换行需求，误清代价高）。
+    /// </summary>
+    public static readonly System.Windows.DependencyProperty IsClearableProperty =
+        System.Windows.DependencyProperty.Register(
+            nameof(IsClearable), typeof(bool), typeof(SOrTextBox),
+            new System.Windows.PropertyMetadata(false));
+
+    /// <summary>
+    /// 字段校验失败态（VD-091）：为 true 时边框换语义危险色，并保持到用户重新编辑。
+    /// </summary>
+    public static readonly System.Windows.DependencyProperty IsInvalidProperty =
+        System.Windows.DependencyProperty.Register(
+            nameof(IsInvalid), typeof(bool), typeof(SOrTextBox),
+            new System.Windows.PropertyMetadata(false));
+
+    /// <summary>清除按钮命令（模板里绑定，清空 <see cref="System.Windows.Controls.TextBox.Text"/>）。</summary>
+    public static readonly System.Windows.DependencyProperty ClearCommandProperty =
+        System.Windows.DependencyProperty.Register(
+            nameof(ClearCommand), typeof(System.Windows.Input.ICommand), typeof(SOrTextBox),
+            new System.Windows.PropertyMetadata(null));
+
     static SOrTextBox()
     {
         System.Windows.Controls.TextBox.DefaultStyleKeyProperty.OverrideMetadata(
             typeof(SOrTextBox),
             new System.Windows.FrameworkPropertyMetadata(typeof(SOrTextBox)));
+    }
+
+    public SOrTextBox()
+    {
+        ClearCommand = new Common.RelayCommand(_ =>
+        {
+            SetCurrentValue(TextProperty, string.Empty);
+            Focus();
+        });
     }
 
     public string Placeholder
@@ -75,6 +107,24 @@ public sealed class SOrTextBox : System.Windows.Controls.TextBox
     {
         get => (System.Windows.Input.ICommand?)GetValue(SubmitCommandProperty);
         set => SetValue(SubmitCommandProperty, value);
+    }
+
+    public bool IsClearable
+    {
+        get => (bool)GetValue(IsClearableProperty);
+        set => SetValue(IsClearableProperty, value);
+    }
+
+    public bool IsInvalid
+    {
+        get => (bool)GetValue(IsInvalidProperty);
+        set => SetValue(IsInvalidProperty, value);
+    }
+
+    public System.Windows.Input.ICommand? ClearCommand
+    {
+        get => (System.Windows.Input.ICommand?)GetValue(ClearCommandProperty);
+        private set => SetValue(ClearCommandProperty, value);
     }
 
     /// <summary>

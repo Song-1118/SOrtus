@@ -25,6 +25,12 @@ public sealed class SOrDatePicker : System.Windows.Controls.DatePicker
             nameof(CornerRadius), typeof(System.Windows.CornerRadius), typeof(SOrDatePicker),
             new System.Windows.PropertyMetadata(new System.Windows.CornerRadius(6)));
 
+    /// <summary>字段校验失败态（VD-091）：边框换语义危险色。</summary>
+    public static readonly System.Windows.DependencyProperty IsInvalidProperty =
+        System.Windows.DependencyProperty.Register(
+            nameof(IsInvalid), typeof(bool), typeof(SOrDatePicker),
+            new System.Windows.PropertyMetadata(false));
+
     static SOrDatePicker()
     {
         System.Windows.Controls.DatePicker.DefaultStyleKeyProperty.OverrideMetadata(
@@ -36,6 +42,12 @@ public sealed class SOrDatePicker : System.Windows.Controls.DatePicker
     {
         get => (System.Windows.CornerRadius)GetValue(CornerRadiusProperty);
         set => SetValue(CornerRadiusProperty, value);
+    }
+
+    public bool IsInvalid
+    {
+        get => (bool)GetValue(IsInvalidProperty);
+        set => SetValue(IsInvalidProperty, value);
     }
 
     public override void OnApplyTemplate()

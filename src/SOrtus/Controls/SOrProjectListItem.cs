@@ -47,4 +47,45 @@ public sealed class SOrProjectListItem : ContentControl
         get => (ICommand?)GetValue(OpenCommandProperty);
         set => SetValue(OpenCommandProperty, value);
     }
+
+    /// <summary>
+    /// 单击即打开（VD-084）。
+    /// 手型光标是一份「这里可以点」的承诺，而旧版只绑了双击——单击毫无反应，用户会以为点坏了。
+    /// <para>
+    /// 用 Preview 阶段拦截：若命中的是行内按钮（「打开」），直接放行给按钮自己处理，
+    /// 否则整个行按钮化会被内层按钮的点击「吃掉」或反之触发两次。
+    /// </para>
+    /// </summary>
+    protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
+    {
+        base.OnPreviewMouseLeftButtonDown(e);
+
+        if (e.Handled || Project is null || IsFromButton(e.OriginalSource as DependencyObject))
+        {
+            return;
+        }
+
+        var command = OpenCommand;
+        if (command?.CanExecute(Project) == true)
+        {
+            command.Execute(Project);
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>命中链上是否有按钮 / 开关（含「打开」按钮与标签内的 × ）。</summary>
+    private static bool IsFromButton(DependencyObject? source)
+    {
+        while (source is not null)
+        {
+            if (source is System.Windows.Controls.Primitives.ButtonBase)
+            {
+                return true;
+            }
+
+            source = System.Windows.Media.VisualTreeHelper.GetParent(source);
+        }
+
+        return false;
+    }
 }

@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using SOrtus.Common;
 using SOrtus.Core.Models;
@@ -96,13 +97,16 @@ internal sealed class MainViewModel : ViewModelBase
             OnPropertyChanged(nameof(CurrentView));
             OnPropertyChanged(nameof(ActiveNav));
             OnPropertyChanged(nameof(HasUnsavedChanges));
+            _ = RefreshRecentAsync();
         };
         _dialogService.ActiveDialogChanged += OnActiveDialogChanged;
 
         _navigateProjectsCommand = new AsyncRelayCommand(() => ShowProjectsAsync());
         _navigateNewCommand = new AsyncRelayCommand(() => ShowNewProjectAsync());
         _navigateSettingsCommand = new AsyncRelayCommand(() => ShowSettingsAsync());
-        _closeDialogCommand = new RelayCommand(_ => CloseDialog());
+        _closeDialogCommand = new RelayCommand(_ => CloseDialog(isScrimClick: false));
+        ScrimCloseCommand = new RelayCommand(_ => CloseDialog(isScrimClick: true));
+        OpenRecentCommand = new AsyncRelayCommand(OpenRecentAsync);
 
         Updates = new UpdatesViewModel(dialogService, localization);
     }
@@ -119,6 +123,24 @@ internal sealed class MainViewModel : ViewModelBase
 
     /// <summary>关闭对话框（遮罩点击 / Esc，等同取消）。</summary>
     public ICommand CloseDialogCommand => _closeDialogCommand;
+
+    /// <summary>
+    /// 点击遮罩关闭对话框（VD-083）。与 Esc 分开：
+    /// 有输入的配置类弹窗（<see cref="IOverlayDialogViewModel.AllowScrimClose"/> = false）点遮罩不响应。
+    /// </summary>
+    public ICommand ScrimCloseCommand { get; }
+
+    /// <summary>侧边栏「最近立项」（VD-082：导航区下方不再是一整片空白）。</summary>
+    public ObservableCollection<Project> RecentProjects { get; } = new();
+
+    public bool HasRecentProjects => RecentProjects.Count > 0;
+
+    /// <summary>侧边栏页脚：版本 + 「数据留在本机」（替代原来的纯标语，VD-082）。</summary>
+    public string VersionLine =>
+        string.Format(_localization.GetString("App_VersionLine"), Updates.CurrentVersionText);
+
+    /// <summary>打开最近立项（侧边栏条目点击）。</summary>
+    public ICommand OpenRecentCommand { get; }
 
     public void Initialize()
     {
@@ -141,13 +163,19 @@ internal sealed class MainViewModel : ViewModelBase
         }
         else
         {
+            // 从详情 / 向导回来时总数可能已变（新建或删除），标记后这里会重取一次
+            _listViewModel.MarkTotalDirty();
             await _listViewModel.LoadAsync();
         }
 
         await NavigateAsync(() => _listViewModel!);
     }
 
-    public Task ShowNewProjectAsync() => NavigateAsync(() => new ProjectWizardViewModel(_projectService, _localization, () => _ = ShowProjectsAsync()));
+    public Task ShowNewProjectAsync() => NavigateAsync(() => new ProjectWizardViewModel(
+        _projectService,
+        _localization,
+        () => _ = ShowProjectsAsync(),
+        _dialogService));
 
     public Task ShowSettingsAsync() => NavigateAsync(() => new SettingsViewModel(_themeService, _localization, Updates));
 
@@ -167,13 +195,56 @@ internal sealed class MainViewModel : ViewModelBase
         _navigation.NavigateTo(factory());
     }
 
-    private async Task<bool> ConfirmLeaveCurrentAsync() =>
-        _navigation.Current is ProjectDetailViewModel detail
-            ? await detail.TryLeaveAsync()
-            : true;
+    private async Task<bool> ConfirmLeaveCurrentAsync() => _navigation.Current switch
+    {
+        ProjectDetailViewModel detail => await detail.TryLeaveAsync(),
+        // VD-092：向导也纳入离开保护（填了一半被侧边栏导航清空，此前没有任何提示）
+        ProjectWizardViewModel wizard => await wizard.ConfirmLeaveAsync(),
+        _ => true,
+    };
 
     private ProjectListViewModel CreateListView() =>
         new(_projectService, _localization, OpenDetail, () => _ = ShowNewProjectAsync());
+
+    /// <summary>打开侧边栏的最近立项（先走未保存守卫，规则与其它导航一致）。</summary>
+    private async Task OpenRecentAsync(object? parameter)
+    {
+        if (parameter is not Project project || !await ConfirmLeaveCurrentAsync())
+        {
+            return;
+        }
+
+        OpenDetail(project);
+    }
+
+    /// <summary>
+    /// 侧边栏最近立项：取更新时间最新的 4 条（VD-082）。
+    /// 每次导航后刷新一次，数据量小，单次查询可忽略。
+    /// </summary>
+    private async Task RefreshRecentAsync()
+    {
+        try
+        {
+            var all = await _projectService.GetAllAsync();
+            var recent = all
+                .OrderByDescending(p => p.UpdatedAt)
+                .Take(4)
+                .ToList();
+
+            RecentProjects.Clear();
+            foreach (var project in recent)
+            {
+                RecentProjects.Add(project);
+            }
+
+            OnPropertyChanged(nameof(HasRecentProjects));
+        }
+        catch (Exception ex)
+        {
+            // 侧边栏是辅助信息，读失败不影响主流程，只记日志
+            Services.UpdateService.Log($"侧边栏最近立项加载失败：{ex.Message}");
+        }
+    }
 
     /// <summary>
     /// 覆盖层内容变化（VD-063）：打开立即生效，关闭则先播 140ms 退场动画再卸载。
@@ -229,8 +300,14 @@ internal sealed class MainViewModel : ViewModelBase
             project,
             () => _ = ShowProjectsAsync()));
 
-    private void CloseDialog()
+    private void CloseDialog(bool isScrimClick)
     {
+        // VD-083：有输入的配置类弹窗不接受「点遮罩关闭」（误点即丢）
+        if (isScrimClick && DialogContent is IOverlayDialogViewModel { AllowScrimClose: false })
+        {
+            return;
+        }
+
         if (DialogContent is ConfirmDialogViewModel vm
             && vm.CancelCommand.CanExecute(null))
         {
@@ -240,6 +317,14 @@ internal sealed class MainViewModel : ViewModelBase
                  && unsaved.CancelCommand.CanExecute(null))
         {
             unsaved.CancelCommand.Execute(null);
+        }
+        else if (DialogContent is AddRemoteDialogViewModel remote)
+        {
+            // VD-083：Esc 对已输入的配置弹窗只做「第一次拦下 + 提示」，第二次才真正放弃
+            if (remote.ConfirmEsc())
+            {
+                remote.RequestClose();
+            }
         }
         else if (DialogContent is IOverlayDialogViewModel overlay)
         {

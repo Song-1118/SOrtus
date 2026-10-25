@@ -4,7 +4,9 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
 using SOrtus.Common;
+using SOrtus.Controls;
 using SOrtus.ViewModels;
 
 namespace SOrtus;
@@ -25,15 +27,122 @@ public partial class MainWindow : Window
 
     private bool _closeConfirmed;
     private string? _lastTheme;
+    private IFieldFocusSource? _focusSource;
+    private IInputElement? _focusBeforeDialog;
 
     public MainWindow()
     {
         InitializeComponent();
         WindowCommand = new RelayCommand(ExecuteWindowCommand);
+        DataContextChanged += OnDataContextChanged;
     }
 
     /// <summary>顶栏三键命令（CommandParameter：Minimize / Maximize / Close）。</summary>
     public ICommand WindowCommand { get; }
+
+    /// <summary>DataContext（= 主视图模型）变化时重挂事件；窗口在构造后才拿到上下文，必须用事件而非重写。</summary>
+    private void OnDataContextChanged(object? sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (e.OldValue is MainViewModel old)
+        {
+            old.PropertyChanged -= OnViewModelPropertyChanged;
+        }
+
+        if (e.NewValue is MainViewModel vm)
+        {
+            vm.PropertyChanged += OnViewModelPropertyChanged;
+            AttachFocusSource(vm.CurrentView);
+        }
+    }
+
+    /// <summary>
+    /// VD-081 / VD-091：把视图模型的两个「焦点请求」接到窗口上——
+    /// ① 弹窗打开时把焦点搬进弹窗、关闭时归还；② 向导校验失败时滚动并聚焦第一个错误字段。
+    /// </summary>
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (sender is not MainViewModel vm)
+        {
+            return;
+        }
+
+        switch (e.PropertyName)
+        {
+            case nameof(MainViewModel.CurrentView):
+                AttachFocusSource(vm.CurrentView);
+                break;
+
+            case nameof(MainViewModel.IsDialogOpen):
+                if (vm.IsDialogOpen)
+                {
+                    MoveFocusIntoDialog();
+                }
+                else
+                {
+                    RestoreFocusAfterDialog();
+                }
+
+                break;
+        }
+    }
+
+    private void AttachFocusSource(object? view)
+    {
+        if (_focusSource is not null)
+        {
+            _focusSource.FocusRequested -= OnFieldFocusRequested;
+        }
+
+        _focusSource = view as IFieldFocusSource;
+        if (_focusSource is not null)
+        {
+            _focusSource.FocusRequested += OnFieldFocusRequested;
+        }
+    }
+
+    private void OnFieldFocusRequested(string anchor)
+    {
+        // 等布局完成再找元素：错误提示刚插入，字段位置可能已经变了
+        Dispatcher.BeginInvoke(
+            new Action(() =>
+            {
+                var target = FormField.Find(PART_ContentHost, anchor);
+                if (target is not null)
+                {
+                    FormField.RevealAndFocus(target);
+                }
+            }),
+            DispatcherPriority.Loaded);
+    }
+
+    private void MoveFocusIntoDialog()
+    {
+        _focusBeforeDialog = Keyboard.FocusedElement;
+
+        Dispatcher.BeginInvoke(
+            new Action(() =>
+            {
+                // 优先落到第一个输入框；纯确认类弹窗则落到主按钮
+                FormField.FindFirstField(PART_DialogHost)?.Focus();
+            }),
+            DispatcherPriority.Loaded);
+    }
+
+    private void RestoreFocusAfterDialog()
+    {
+        var previous = _focusBeforeDialog;
+        _focusBeforeDialog = null;
+
+        Dispatcher.BeginInvoke(
+            new Action(() =>
+            {
+                if (previous is UIElement { IsVisible: true } element)
+                {
+                    element.Focus();
+                }
+            }),
+            DispatcherPriority.Loaded);
+    }
 
     protected override void OnSourceInitialized(EventArgs e)
     {

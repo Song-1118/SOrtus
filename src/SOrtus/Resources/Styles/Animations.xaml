@@ -2,34 +2,105 @@
                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!--
-        公共动画资源（规范 7.6）：进入 / 退出 / 悬浮 Storyboard 统一在此定义，通过资源键引用，
-        禁止页面内重复定义相同缓动。强调平滑缓动，避免生硬跳变。
+        公共动画资源（规范 7.6）。
+        VD-062：此前本文件定义了 3 组 Storyboard + 3 个 OnLoad 样式，全仓 0 引用（纯空转）。
+        VD-064：同一语义的 hover 有两套节奏——内联 120ms 线性 vs 库里 280ms 缓出。
+        现在统一为一套「时间语义」并在控件模板里真正引用：
+
+          微交互（按钮 / 列表项 / 输入框）  120ms 进 · 160ms 出 · CubicEaseOut
+          按压                              90ms 进 · 140ms 出（含 0.98 缩放）
+          焦点环                            100ms 进 · 0ms 出（离开即走，避免残留）
+          页面入场                          220ms 淡入 + 8px 上移
+          浮层入场                          150ms 淡入 + 8px 上移
+          弹窗入场                          240ms 弹入（遮罩 180ms）
+
+        Storyboard 以「命名层」为 TargetName（PART_Hover / PART_Press / PART_FocusRing / PART_Root），
+        所有自定义控件都遵守同一命名约定，因此同一份资源可被任意模板直接引用，无需各写一遍。
     -->
 
     <CubicEase x:Key="CubicEaseOut" EasingMode="EaseOut" />
     <BackEase x:Key="BackEaseOut" EasingMode="EaseOut" Amplitude="0.6" />
 
-    <!-- 淡入 -->
+    <!-- ===== 微交互：悬浮（TargetName = PART_Hover） ===== -->
+    <Storyboard x:Key="MicroInStoryboard">
+        <DoubleAnimation Storyboard.TargetName="PART_Hover"
+                         Storyboard.TargetProperty="Opacity"
+                         To="1" Duration="0:0:0.12"
+                         EasingFunction="{StaticResource CubicEaseOut}" />
+    </Storyboard>
+
+    <Storyboard x:Key="MicroOutStoryboard">
+        <DoubleAnimation Storyboard.TargetName="PART_Hover"
+                         Storyboard.TargetProperty="Opacity"
+                         To="0" Duration="0:0:0.16"
+                         EasingFunction="{StaticResource CubicEaseOut}" />
+    </Storyboard>
+
+    <!-- ===== 按压：蒙层 + 0.98 缩放（TargetName = PART_Press / PART_Root） ===== -->
+    <Storyboard x:Key="PressInStoryboard">
+        <DoubleAnimation Storyboard.TargetName="PART_Press"
+                         Storyboard.TargetProperty="Opacity"
+                         To="1" Duration="0:0:0.09"
+                         EasingFunction="{StaticResource CubicEaseOut}" />
+        <DoubleAnimation Storyboard.TargetName="PART_Root"
+                         Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                         To="0.98" Duration="0:0:0.09"
+                         EasingFunction="{StaticResource CubicEaseOut}" />
+        <DoubleAnimation Storyboard.TargetName="PART_Root"
+                         Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                         To="0.98" Duration="0:0:0.09"
+                         EasingFunction="{StaticResource CubicEaseOut}" />
+    </Storyboard>
+
+    <Storyboard x:Key="PressOutStoryboard">
+        <DoubleAnimation Storyboard.TargetName="PART_Press"
+                         Storyboard.TargetProperty="Opacity"
+                         To="0" Duration="0:0:0.14"
+                         EasingFunction="{StaticResource CubicEaseOut}" />
+        <DoubleAnimation Storyboard.TargetName="PART_Root"
+                         Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                         To="1" Duration="0:0:0.14"
+                         EasingFunction="{StaticResource CubicEaseOut}" />
+        <DoubleAnimation Storyboard.TargetName="PART_Root"
+                         Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                         To="1" Duration="0:0:0.14"
+                         EasingFunction="{StaticResource CubicEaseOut}" />
+    </Storyboard>
+
+    <!-- ===== 焦点环（TargetName = PART_FocusRing）：100ms 淡入，离开立即消失 ===== -->
+    <Storyboard x:Key="FocusRingInStoryboard">
+        <DoubleAnimation Storyboard.TargetName="PART_FocusRing"
+                         Storyboard.TargetProperty="Opacity"
+                         To="1" Duration="0:0:0.10"
+                         EasingFunction="{StaticResource CubicEaseOut}" />
+    </Storyboard>
+
+    <Storyboard x:Key="FocusRingOutStoryboard">
+        <DoubleAnimation Storyboard.TargetName="PART_FocusRing"
+                         Storyboard.TargetProperty="Opacity"
+                         To="0" Duration="0:0:0" />
+    </Storyboard>
+
+    <!-- ===== 页面入场：淡入 + 8px 上移（VD-063） ===== -->
     <Storyboard x:Key="FadeInStoryboard">
         <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                         From="0" To="1" Duration="0:0:0.28"
+                         From="0" To="1" Duration="0:0:0.22"
                          EasingFunction="{StaticResource CubicEaseOut}" />
     </Storyboard>
 
-    <!-- 上滑淡入（列表项 / 卡片 / 页面切换） -->
     <Storyboard x:Key="SlideUpStoryboard">
         <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                         From="0" To="1" Duration="0:0:0.30"
+                         From="0" To="1" Duration="0:0:0.22"
                          EasingFunction="{StaticResource CubicEaseOut}" />
         <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                         From="16" To="0" Duration="0:0:0.32"
+                         From="8" To="0" Duration="0:0:0.22"
                          EasingFunction="{StaticResource CubicEaseOut}" />
     </Storyboard>
 
-    <!-- 弹入（对话框 / 浮层） -->
+    <!-- ===== 弹窗 / 浮层入场：弹入（VD-063） ===== -->
     <Storyboard x:Key="PopInStoryboard">
         <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                         From="0" To="1" Duration="0:0:0.22"
+                         From="0" To="1" Duration="0:0:0.24"
                          EasingFunction="{StaticResource CubicEaseOut}" />
         <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
                          From="0.96" To="1" Duration="0:0:0.24"
@@ -39,7 +110,17 @@
                          EasingFunction="{StaticResource BackEaseOut}" />
     </Storyboard>
 
-    <!-- 元素加载即播放淡入（引用此样式的元素自带 RenderTransform） -->
+    <!-- ===== 下拉 / 日历浮层：8px 上移 + 150ms 淡入（VD-068） ===== -->
+    <Storyboard x:Key="OverlayInStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.15"
+                         EasingFunction="{StaticResource CubicEaseOut}" />
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                         From="8" To="0" Duration="0:0:0.15"
+                         EasingFunction="{StaticResource CubicEaseOut}" />
+    </Storyboard>
+
+    <!-- ===== 元素加载即播放（引用者必须自带对应 RenderTransform） ===== -->
     <Style x:Key="FadeInOnLoadStyle" TargetType="FrameworkElement">
         <Setter Property="Opacity" Value="0" />
         <Style.Triggers>
@@ -49,12 +130,12 @@
         </Style.Triggers>
     </Style>
 
-    <!-- 元素加载即播放上滑淡入（引用此样式的元素自带 RenderTransform） -->
+    <!-- 页面入场：列表 / 向导 / 详情 / 设置四个页面根卡片统一引用（VD-063） -->
     <Style x:Key="SlideUpOnLoadStyle" TargetType="FrameworkElement">
         <Setter Property="Opacity" Value="0" />
         <Setter Property="RenderTransform">
             <Setter.Value>
-                <TranslateTransform Y="16" />
+                <TranslateTransform Y="8" />
             </Setter.Value>
         </Setter>
         <Style.Triggers>
@@ -64,7 +145,7 @@
         </Style.Triggers>
     </Style>
 
-    <!-- 对话框 / 浮层加载即弹入（引用此样式的元素需设置 RenderTransformOrigin="0.5,0.5"） -->
+    <!-- 弹窗入场：引用者需设置 RenderTransformOrigin="0.5,0.5"（VD-063） -->
     <Style x:Key="PopInOnLoadStyle" TargetType="FrameworkElement">
         <Setter Property="Opacity" Value="0" />
         <Setter Property="RenderTransform">
@@ -76,6 +157,42 @@
             <EventTrigger RoutedEvent="FrameworkElement.Loaded">
                 <BeginStoryboard Storyboard="{StaticResource PopInStoryboard}" />
             </EventTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- 浮层入场（下拉 / 日历）：引用者需自带 TranslateTransform.Y=8（VD-068） -->
+    <Style x:Key="OverlayInOnLoadStyle" TargetType="FrameworkElement">
+        <Setter Property="Opacity" Value="0" />
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <TranslateTransform Y="8" />
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                <BeginStoryboard Storyboard="{StaticResource OverlayInStoryboard}" />
+            </EventTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!--
+        版块切换入场（VD-063）：详情页三个版块靠 Visibility 互斥显示，切换时是硬切。
+        这里在「变为可见」的那一刻给一次 160ms 淡入——比整页入场更快，
+        因为用户是在同一页内切换视角，不需要重新建立空间感。
+    -->
+    <Style x:Key="SectionFadeInStyle" TargetType="FrameworkElement">
+        <Style.Triggers>
+            <Trigger Property="Visibility" Value="Visible">
+                <Trigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                             From="0" To="1" Duration="0:0:0.16"
+                                             EasingFunction="{StaticResource CubicEaseOut}" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.EnterActions>
+            </Trigger>
         </Style.Triggers>
     </Style>
 

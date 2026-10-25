@@ -1,6 +1,13 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+    <ResourceDictionary.MergedDictionaries>
+        <!-- 动画节奏单点定义（VD-062/064）：本字典模板里引用 MicroIn/MicroOut/Press*/FocusRing* 等 Storyboard，
+             StaticResource 只在本字典及其 MergedDictionaries 内可见，故显式声明依赖 -->
+        <ResourceDictionary Source="Animations.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+
     <!--
         基础控件样式（规范 7.6）：圆角、主题色、字体统一收敛到全局资源，避免页面内联覆盖。
         注意：交互控件（按钮 / 输入框 / 下拉框 / 日期选择器 / 滑块）已全部自定义
@@ -16,7 +23,11 @@
         （MainWindow 的 TextElement.Foreground = TextPrimaryBrush），主题切换仍然生效。
     -->
     <Style TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif" />
+        <!-- VD-076 / 旧单 VD-003：中文优先、拉丁回退。
+             旧值 "Segoe UI, Microsoft YaHei, PingFang SC, sans-serif" 让 CJK 落到第二顺位，
+             中英混排（"65% 完成"、"a1b2c3d 提交"）行内出现粗细断层；
+             末尾 sans-serif 在 WPF 不是有效字体名，兜底无效。字族统一收敛到 AppFontFamily 令牌。 -->
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
         <!-- 不在这里设置 TextTrimming：全局省略号会把「应当换行」的说明文字也截断，
              需要省略号的场景（列表项名称 / 详情标题）由各自模板显式声明。 -->
     </Style>
@@ -45,6 +56,15 @@
             <Setter.Value>
                 <ControlTemplate TargetType="ListViewItem">
                     <Grid>
+                        <!-- 选中层与悬浮层分离（VD-064 遗留风险）：
+                             悬浮改用 Storyboard 驱动 Opacity 之后，若选中态仍复用同一层，
+                             鼠标移出时「淡出到 0」的动画会压过选中的 Setter，
+                             选中项一移开鼠标就失去高亮。这里选中用独立层、只走 Setter。 -->
+                        <Border x:Name="PART_Selected"
+                                Background="{DynamicResource NavActiveBrush}"
+                                CornerRadius="{DynamicResource CornerRadiusMedium}"
+                                Opacity="0"
+                                IsHitTestVisible="False" />
                         <Border x:Name="PART_Hover"
                                 Background="{DynamicResource HoverOverlayBrush}"
                                 CornerRadius="{DynamicResource CornerRadiusMedium}"
@@ -64,15 +84,25 @@
                                 IsHitTestVisible="False" />
                     </Grid>
                     <ControlTemplate.Triggers>
+                        <!-- VD-064：列表项悬浮与按钮共用同一套微交互节奏（120ms 进 / 160ms 出） -->
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="PART_Hover" Property="Opacity" Value="1" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource MicroInStoryboard}" />
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard Storyboard="{StaticResource MicroOutStoryboard}" />
+                            </Trigger.ExitActions>
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="PART_Hover" Property="Background" Value="{DynamicResource NavActiveBrush}" />
-                            <Setter TargetName="PART_Hover" Property="Opacity" Value="1" />
+                            <Setter TargetName="PART_Selected" Property="Opacity" Value="1" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter TargetName="PART_FocusRing" Property="Opacity" Value="1" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource FocusRingInStoryboard}" />
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard Storyboard="{StaticResource FocusRingOutStoryboard}" />
+                            </Trigger.ExitActions>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

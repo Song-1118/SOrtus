@@ -31,6 +31,8 @@ internal sealed class MainViewModel : ViewModelBase
     private readonly RelayCommand _closeDialogCommand;
 
     private object? _dialogContent;
+    private ProjectListViewModel? _listViewModel;
+    private int _dialogCloseVersion;
 
     public ViewModelBase CurrentView => _navigation.Current;
 
@@ -55,6 +57,19 @@ internal sealed class MainViewModel : ViewModelBase
     }
 
     public bool IsDialogOpen => _dialogContent is not null;
+
+    /// <summary>
+    /// 对话框正在播放退场动画（VD-063）。
+    /// 关闭时先置位让覆盖层 140ms 淡出，动画结束后再卸载内容；
+    /// 否则覆盖层会「啪」地消失，与入场弹入的节奏不对称。
+    /// </summary>
+    public bool IsDialogClosing
+    {
+        get => _isDialogClosing;
+        private set => SetProperty(ref _isDialogClosing, value);
+    }
+
+    private bool _isDialogClosing;
 
     public MainViewModel(
         IProjectService projectService,
@@ -82,11 +97,7 @@ internal sealed class MainViewModel : ViewModelBase
             OnPropertyChanged(nameof(ActiveNav));
             OnPropertyChanged(nameof(HasUnsavedChanges));
         };
-        _dialogService.ActiveDialogChanged += content =>
-        {
-            DialogContent = content;
-            OnPropertyChanged(nameof(IsDialogOpen));
-        };
+        _dialogService.ActiveDialogChanged += OnActiveDialogChanged;
 
         _navigateProjectsCommand = new AsyncRelayCommand(() => ShowProjectsAsync());
         _navigateNewCommand = new AsyncRelayCommand(() => ShowNewProjectAsync());
@@ -109,9 +120,32 @@ internal sealed class MainViewModel : ViewModelBase
     /// <summary>关闭对话框（遮罩点击 / Esc，等同取消）。</summary>
     public ICommand CloseDialogCommand => _closeDialogCommand;
 
-    public void Initialize() => _navigation.NavigateTo(CreateListView());
+    public void Initialize()
+    {
+        // 首个页面就是列表：这里必须先落进 _listViewModel，否则首次 ShowProjectsAsync
+        // 会再建一个新实例，用户第一次「进详情再返回」时筛选与滚动位置照样丢（VD-079）。
+        _listViewModel = CreateListView();
+        _navigation.NavigateTo(_listViewModel);
+    }
 
-    public Task ShowProjectsAsync() => NavigateAsync(() => CreateListView());
+    /// <summary>
+    /// 返回立项列表（VD-079）。
+    /// 列表视图模型在会话内复用同一个实例：搜索词、类型/状态筛选、滚动位置都留在实例里，
+    /// 从详情页返回时只刷新数据，不再把用户的筛选条件清空、也不再跳回列表顶部。
+    /// </summary>
+    public async Task ShowProjectsAsync()
+    {
+        if (_listViewModel is null)
+        {
+            _listViewModel = CreateListView();
+        }
+        else
+        {
+            await _listViewModel.LoadAsync();
+        }
+
+        await NavigateAsync(() => _listViewModel!);
+    }
 
     public Task ShowNewProjectAsync() => NavigateAsync(() => new ProjectWizardViewModel(_projectService, _localization, () => _ = ShowProjectsAsync()));
 
@@ -140,6 +174,48 @@ internal sealed class MainViewModel : ViewModelBase
 
     private ProjectListViewModel CreateListView() =>
         new(_projectService, _localization, OpenDetail, () => _ = ShowNewProjectAsync());
+
+    /// <summary>
+    /// 覆盖层内容变化（VD-063）：打开立即生效，关闭则先播 140ms 退场动画再卸载。
+    /// 退场期间若又打开了新弹窗，用版本号作废这次延迟，避免把新弹窗一起关掉。
+    /// </summary>
+    private async void OnActiveDialogChanged(object? content)
+    {
+        if (content is not null)
+        {
+            _dialogCloseVersion++;
+            IsDialogClosing = false;
+            DialogContent = content;
+            OnPropertyChanged(nameof(IsDialogOpen));
+            return;
+        }
+
+        if (_dialogContent is null)
+        {
+            return;
+        }
+
+        var version = ++_dialogCloseVersion;
+        IsDialogClosing = true;
+
+        try
+        {
+            await Task.Delay(140);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        if (version != _dialogCloseVersion)
+        {
+            return;
+        }
+
+        DialogContent = null;
+        IsDialogClosing = false;
+        OnPropertyChanged(nameof(IsDialogOpen));
+    }
 
     private void OpenDetail(Project project) =>
         _navigation.NavigateTo(new ProjectDetailViewModel(

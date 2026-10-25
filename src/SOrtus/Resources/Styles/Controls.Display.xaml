@@ -3,6 +3,13 @@
                     xmlns:local="clr-namespace:SOrtus.Controls"
                     xmlns:conv="clr-namespace:SOrtus.Converters">
 
+    <ResourceDictionary.MergedDictionaries>
+        <!-- 动画节奏单点定义（VD-062/064）：本字典模板里引用 MicroIn/MicroOut/Press*/FocusRing* 等 Storyboard，
+             StaticResource 只在本字典及其 MergedDictionaries 内可见，故显式声明依赖 -->
+        <ResourceDictionary Source="Animations.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+
     <!--
         展示类自定义控件样式（规范 7.1）：SOrTag / SOrProgressBar / SOrProjectListItem。
         色调、语义一律由控件属性声明（Tone / Variant），禁止页面内联覆盖颜色。
@@ -23,8 +30,14 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SOrTag">
+                    <!-- VD-074：中性 / 强调类标签改「填充 + 1px 描边」。
+                         旧版底色#F3F4F6 对白卡只有 1.10:1，胶囊退化成一行散字，
+                         GIT 分支、MD 徽标、技术栈三处完全看不出是「标签」；
+                         补描边后容器形状可辨，色相留给语义（成功/警告/危险）。 -->
                     <Border x:Name="PART_Root"
                             Background="{DynamicResource TagNeutralBgBrush}"
+                            BorderBrush="{DynamicResource TagNeutralBorderBrush}"
+                            BorderThickness="1"
                             CornerRadius="{TemplateBinding CornerRadius}"
                             Padding="{TemplateBinding Padding}"
                             SnapsToDevicePixels="True">
@@ -44,17 +57,21 @@
                             <Setter TargetName="PART_Root" Property="Background" Value="{DynamicResource TagAccentCBgBrush}" />
                             <Setter TargetName="PART_Root" Property="TextElement.Foreground" Value="{DynamicResource TagAccentCFgBrush}" />
                         </Trigger>
+                        <!-- 语义色本身已有色相区分，不再描边（描边会把「软」的语义标签变成硬框） -->
                         <Trigger Property="Tone" Value="Success">
                             <Setter TargetName="PART_Root" Property="Background" Value="{DynamicResource TagSuccessBgBrush}" />
                             <Setter TargetName="PART_Root" Property="TextElement.Foreground" Value="{DynamicResource TagSuccessFgBrush}" />
+                            <Setter TargetName="PART_Root" Property="BorderThickness" Value="0" />
                         </Trigger>
                         <Trigger Property="Tone" Value="Warning">
                             <Setter TargetName="PART_Root" Property="Background" Value="{DynamicResource TagWarningBgBrush}" />
                             <Setter TargetName="PART_Root" Property="TextElement.Foreground" Value="{DynamicResource TagWarningFgBrush}" />
+                            <Setter TargetName="PART_Root" Property="BorderThickness" Value="0" />
                         </Trigger>
                         <Trigger Property="Tone" Value="Danger">
                             <Setter TargetName="PART_Root" Property="Background" Value="{DynamicResource TagDangerBgBrush}" />
                             <Setter TargetName="PART_Root" Property="TextElement.Foreground" Value="{DynamicResource TagDangerFgBrush}" />
+                            <Setter TargetName="PART_Root" Property="BorderThickness" Value="0" />
                         </Trigger>
                         <Trigger Property="Tone" Value="Neutral">
                             <Setter TargetName="PART_Root" Property="Background" Value="{DynamicResource TagNeutralBgBrush}" />
@@ -160,28 +177,23 @@
                                 IsHitTestVisible="False" />
                     </Grid>
                     <ControlTemplate.Triggers>
+                        <!-- VD-064：与按钮共用同一套微交互节奏（120ms 进 / 160ms 出，CubicEaseOut） -->
                         <Trigger Property="IsMouseOver" Value="True">
                             <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="PART_Hover"
-                                                         Storyboard.TargetProperty="Opacity"
-                                                         To="1" Duration="0:0:0.12" />
-                                    </Storyboard>
-                                </BeginStoryboard>
+                                <BeginStoryboard Storyboard="{StaticResource MicroInStoryboard}" />
                             </Trigger.EnterActions>
                             <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="PART_Hover"
-                                                         Storyboard.TargetProperty="Opacity"
-                                                         To="0" Duration="0:0:0.18" />
-                                    </Storyboard>
-                                </BeginStoryboard>
+                                <BeginStoryboard Storyboard="{StaticResource MicroOutStoryboard}" />
                             </Trigger.ExitActions>
                         </Trigger>
+                        <!-- VD-066：焦点环 100ms 淡入、离开立即消失 -->
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter TargetName="PART_FocusRing" Property="Opacity" Value="1" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource FocusRingInStoryboard}" />
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard Storyboard="{StaticResource FocusRingOutStoryboard}" />
+                            </Trigger.ExitActions>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

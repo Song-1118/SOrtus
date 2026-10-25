@@ -25,7 +25,7 @@
   <data name="List_Empty" xml:space="preserve"><value>暂无立项，点击「新建立项」开始。</value></data>
   <data name="List_NoResults" xml:space="preserve"><value>没有匹配的立项，试试调整搜索或筛选条件。</value></data>
   <data name="List_StatAll" xml:space="preserve"><value>全部</value></data>
-  <data name="List_Subtitle" xml:space="preserve"><value>共 {0} 个立项 · 数据只留在本机</value></data>
+  <data name="List_Subtitle" xml:space="preserve"><value>共 {0} 个立项</value></data>
   <data name="List_UpdatedAt" xml:space="preserve"><value>更新于 {0:MM-dd}</value></data>
   <data name="List_NewButton" xml:space="preserve"><value>新建立项</value></data>
   <data name="List_Open" xml:space="preserve"><value>打开</value></data>
@@ -86,7 +86,7 @@
   <data name="Detail_ScheduleEmpty" xml:space="preserve"><value>未设置</value></data>
   <data name="Detail_GitPending" xml:space="preserve"><value>1.5 版本提供</value></data>
 
-  <data name="Settings_Title" xml:space="preserve"><value>设置</value></data>
+  <data name="Settings_Title" xml:space="preserve"><value>设置 · 外观与数据</value></data>
   <data name="Settings_Appearance" xml:space="preserve"><value>外观</value></data>
   <data name="Settings_Theme" xml:space="preserve"><value>主题</value></data>
   <data name="Settings_ThemeLight" xml:space="preserve"><value>浅色</value></data>
@@ -335,7 +335,7 @@
     <value>远端地址已保存</value>
   </data>
   <data name="Git_Push" xml:space="preserve">
-    <value>推送至云端</value>
+    <value>推送</value>
   </data>
   <data name="Git_Refresh" xml:space="preserve">
     <value>刷新</value>
@@ -390,5 +390,29 @@
   </data>
   <data name="Git_Confirm" xml:space="preserve">
     <value>保存</value>
+  </data>
+  <data name="List_Title" xml:space="preserve">
+    <value>全部立项</value>
+  </data>
+  <data name="List_EmptyHint" xml:space="preserve">
+    <value>立项只保存在本机：编程开发、剪辑项目、待办任务都可以在这里建。</value>
+  </data>
+  <data name="List_NoResultsCount" xml:space="preserve">
+    <value>没有匹配的立项（共 {0} 个）：当前搜索或筛选条件把它们都过滤掉了。</value>
+  </data>
+  <data name="List_ClearFilter" xml:space="preserve">
+    <value>清除筛选</value>
+  </data>
+  <data name="Window_Minimize" xml:space="preserve">
+    <value>最小化</value>
+  </data>
+  <data name="Window_Maximize" xml:space="preserve">
+    <value>最大化</value>
+  </data>
+  <data name="Wizard_TitleStepType" xml:space="preserve">
+    <value>新立项 · 1/2 选择类型</value>
+  </data>
+  <data name="Wizard_TitleStepInfo" xml:space="preserve">
+    <value>新立项 · 2/2 填写信息</value>
   </data>
 </root>

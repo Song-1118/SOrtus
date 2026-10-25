@@ -18,11 +18,23 @@
     <Color x:Key="ColorTextOnAccent">#FFFFFF</Color>
     <Color x:Key="ColorBorder">#E5E7EB</Color>
     <Color x:Key="ColorSurface">#FFFFFF</Color>
+    <!-- 卡片内再嵌一张分组卡时的底色（VD-077）：比外层低一阶，卡片套卡片才有明暗差 -->
+    <Color x:Key="ColorSurfaceAlt">#F7F8FA</Color>
+    <!-- 输入类控件的填充（VD-073）：比卡片略低一阶，配合 ColorBorderStrong 让「哪里能输入」成立 -->
+    <Color x:Key="ColorInputSurface">#F9FAFB</Color>
+    <!-- 控件边界专用（VD-073）：对白底实测 3.22:1、对输入框填充 3.08:1，满足 WCAG 1.4.11 的 3:1 -->
+    <Color x:Key="ColorBorderStrong">#88909D</Color>
+    <!-- 中性标签描边（VD-074）：描边式胶囊，形状可辨（对白底 2.16:1） -->
+    <Color x:Key="ColorTagNeutralBorder">#A9B1BD</Color>
     <Color x:Key="ColorPrimary">#111827</Color>
     <!-- 键盘焦点环专用色（VD-059）：中间灰度，与 Surface(#FFFFFF) 和 Primary 填充(#111827) 均保持可见对比；
          不用 Primary 本身——主按钮底色即近黑 Primary，同色环在按钮上不可见 -->
     <Color x:Key="ColorFocusRing">#6B7280</Color>
     <Color x:Key="ColorShadow">#9CA3AF</Color>
+
+    <!-- 语义色（VD-075）：危险 / 成功各只保留一套，按钮与标签同族 -->
+    <Color x:Key="ColorDanger">#B42318</Color>
+    <Color x:Key="ColorSuccess">#067647</Color>
 
     <!-- 模糊覆盖层颜色：浅色为纯白覆盖（配合 OverlayOpacity 控制磨砂通透度） -->
     <Color x:Key="BlurOverlayColor">#FFFFFFFF</Color>
@@ -40,6 +52,7 @@
     <Color x:Key="ColorTagWarningFg">#B54708</Color>
     <Color x:Key="ColorTagDangerBg">#FEF3F2</Color>
     <Color x:Key="ColorTagDangerFg">#B42318</Color>
+    <!-- 中性标签（VD-074）：改为描边式，底色透明由模板决定，这里只留文字色与描边色 -->
     <Color x:Key="ColorTagNeutralBg">#F3F4F6</Color>
     <Color x:Key="ColorTagNeutralFg">#6B7280</Color>
 
@@ -50,9 +63,9 @@
     <!-- 导航 / 列表选中高亮 -->
     <Color x:Key="ColorNavActive">#F3F4F6</Color>
 
-    <!-- 滚动条滑块 -->
-    <Color x:Key="ColorScrollThumb">#D1D5DB</Color>
-    <Color x:Key="ColorScrollThumbHover">#9CA3AF</Color>
+    <!-- 滚动条滑块（VD-072）：对白底 3.06:1 / 悬停 4.83:1，满足 WCAG 1.4.11 的 3:1 -->
+    <Color x:Key="ColorScrollThumb">#8C949F</Color>
+    <Color x:Key="ColorScrollThumbHover">#6B7280</Color>
 
     <!-- 背景装饰（仅中性灰阶）：glow=柔光，tint=网格/暗面 -->
     <Color x:Key="ColorBackdropGlow">#FFFFFFFF</Color>

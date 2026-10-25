@@ -45,8 +45,10 @@ internal sealed class MarkdownRenderer : IMarkdownRenderer
         {
             PagePadding = new Thickness(0),
             ColumnWidth = double.PositiveInfinity,
-            FontSize = 13,
-            FontFamily = new FontFamily("Microsoft YaHei UI, Segoe UI"),
+            // VD-071：阅读区正文 13 → 14（界面正文同档），行高同步放大到 24；
+            // 中文 13px 在 100% 缩放下笔画之间已经开始粘连，长文档连读尤其明显。
+            FontSize = 14,
+            FontFamily = new FontFamily("Microsoft YaHei UI, Microsoft YaHei, Segoe UI"),
         };
 
         foreach (var block in document.Blocks)
@@ -151,7 +153,7 @@ internal sealed class MarkdownRenderer : IMarkdownRenderer
         var paragraph = new Paragraph
         {
             Margin = new Thickness(0, 0, 0, 9),
-            LineHeight = 21,
+            LineHeight = 24,
             Foreground = Resource("TextPrimaryBrush", Brushes.Black),
         };
         AddInlines(paragraph, source.Text);
@@ -163,7 +165,7 @@ internal sealed class MarkdownRenderer : IMarkdownRenderer
         var paragraph = new Paragraph
         {
             Margin = new Thickness(6 + (item.Indent * 16), 0, 0, 4),
-            LineHeight = 20,
+            LineHeight = 22,
             Foreground = Resource("TextPrimaryBrush", Brushes.Black),
         };
 
@@ -180,7 +182,7 @@ internal sealed class MarkdownRenderer : IMarkdownRenderer
         var paragraph = new Paragraph
         {
             Margin = new Thickness(6 + (task.Indent * 16), 0, 0, 4),
-            LineHeight = 20,
+            LineHeight = 22,
             Foreground = Resource("TextPrimaryBrush", Brushes.Black),
         };
 
@@ -316,7 +318,9 @@ internal sealed class MarkdownRenderer : IMarkdownRenderer
         var paragraph = new Paragraph
         {
             Margin = new Thickness(0),
-            LineHeight = 19,
+            // VD-071：表格单元 12px/行高 12 → 13px/20，表头与正文的字号层级差回到 1px
+            FontSize = 13,
+            LineHeight = 20,
             Foreground = Resource("TextPrimaryBrush", Brushes.Black),
         };
 

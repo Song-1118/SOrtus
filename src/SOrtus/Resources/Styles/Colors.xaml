@@ -2,14 +2,17 @@
                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!--
-        共享色板（与主题无关，浅色/深色一致）。
-        主题相关的文本/表面/强调/覆盖色在 Themes/Light.xaml 与 Dark.xaml 中按键一一对应定义。
+        共享色板（与主题无关）。
+        主题相关的文本/表面/强调/语义/覆盖色在 Themes/Light.xaml 与 Dark.xaml 中按键一一对应定义。
+
+        VD-075：危险与成功语义此前各有两套色值（按钮用高饱和 #DC2626/#16A34A，标签用低饱和
+        #B42318/#067647），同一件事在按钮与标签上不同族。现统一收口到主题字典
+        （ColorDanger / ColorSuccess），浅深主题各一套，按钮走「软危险」样式。
+        因此本文件不再定义这两个色，避免与主题字典重复键造成「永远取到先合并的那一份」。
     -->
 
-    <!-- 状态色（规范 6/7：语义化、跨主题一致） -->
-    <Color x:Key="ColorSuccess">#16A34A</Color>
+    <!-- 其余状态色（暂未参与按钮/标签语义分层，跨主题一致） -->
     <Color x:Key="ColorWarning">#D97706</Color>
-    <Color x:Key="ColorDanger">#DC2626</Color>
     <Color x:Key="ColorInfo">#2563EB</Color>
 
 </ResourceDictionary>

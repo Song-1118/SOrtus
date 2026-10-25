@@ -25,7 +25,7 @@
   <data name="List_Empty" xml:space="preserve"><value>No projects yet. Click "New Project" to start.</value></data>
   <data name="List_NoResults" xml:space="preserve"><value>No matching projects. Try adjusting search or filters.</value></data>
   <data name="List_StatAll" xml:space="preserve"><value>All</value></data>
-  <data name="List_Subtitle" xml:space="preserve"><value>{0} projects · all data stays on this device</value></data>
+  <data name="List_Subtitle" xml:space="preserve"><value>{0} projects in total</value></data>
   <data name="List_UpdatedAt" xml:space="preserve"><value>Updated {0:MM-dd}</value></data>
   <data name="List_NewButton" xml:space="preserve"><value>New Project</value></data>
   <data name="List_Open" xml:space="preserve"><value>Open</value></data>
@@ -86,7 +86,7 @@
   <data name="Detail_ScheduleEmpty" xml:space="preserve"><value>Not set</value></data>
   <data name="Detail_GitPending" xml:space="preserve"><value>Coming in 1.5</value></data>
 
-  <data name="Settings_Title" xml:space="preserve"><value>Settings</value></data>
+  <data name="Settings_Title" xml:space="preserve"><value>Settings · Appearance &amp; data</value></data>
   <data name="Settings_Appearance" xml:space="preserve"><value>Appearance</value></data>
   <data name="Settings_Theme" xml:space="preserve"><value>Theme</value></data>
   <data name="Settings_ThemeLight" xml:space="preserve"><value>Light</value></data>
@@ -390,5 +390,29 @@
   </data>
   <data name="Git_Confirm" xml:space="preserve">
     <value>Save</value>
+  </data>
+  <data name="List_Title" xml:space="preserve">
+    <value>All projects</value>
+  </data>
+  <data name="List_EmptyHint" xml:space="preserve">
+    <value>Projects stay on this machine: programming, video editing, and to-dos all live here.</value>
+  </data>
+  <data name="List_NoResultsCount" xml:space="preserve">
+    <value>No matching projects ({0} in total) — the current search or filters hide them all.</value>
+  </data>
+  <data name="List_ClearFilter" xml:space="preserve">
+    <value>Clear filters</value>
+  </data>
+  <data name="Window_Minimize" xml:space="preserve">
+    <value>Minimize</value>
+  </data>
+  <data name="Window_Maximize" xml:space="preserve">
+    <value>Maximize</value>
+  </data>
+  <data name="Wizard_TitleStepType" xml:space="preserve">
+    <value>New project · 1/2 Choose a type</value>
+  </data>
+  <data name="Wizard_TitleStepInfo" xml:space="preserve">
+    <value>New project · 2/2 Fill in details</value>
   </data>
 </root>

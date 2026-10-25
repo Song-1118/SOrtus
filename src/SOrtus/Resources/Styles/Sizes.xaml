@@ -1,4 +1,4 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                       xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
@@ -72,6 +72,50 @@
 
     <!-- 品牌字号（侧边栏 SOrtus 字样，UI 设计方案 2.4「28=品牌」档，不参与五档收敛） -->
     <sys:Double x:Key="FontSizeBrand">28</sys:Double>
+
+    <!--
+        卡片标题独立档（VD-069）：分组卡标题此前复用 FontSizeBody(14)，与字段标签(13) 只差 1px，
+        且 Foreground 用的是 TextSecondary（比字段名更灰），卡片失去「这张卡讲什么」的落点。
+        这里单独给一档 15px + TextPrimary + 左侧 2px 竖条（形状语言），不再仅靠字号区分层级。
+    -->
+    <sys:Double x:Key="FontSizeCardTitle">15</sys:Double>
+
+    <!-- 卡片标题左竖条尺寸（形状语言：标题=竖条，tab=下划线，tag=描边胶囊） -->
+    <sys:Double x:Key="CardTitleBarWidth">2</sys:Double>
+    <sys:Double x:Key="CardTitleBarHeight">14</sys:Double>
+    <Thickness x:Key="CardTitleGap">0,0,8,0</Thickness>
+
+    <!--
+        文档阅读区字号（VD-071）：界面正文 14，阅读弹窗的正文一度降到 13、表格 12，
+        中文 12px 在 100% 缩放下笔画粘连。这几个值只服务 MarkdownRenderer，
+        改这里同时要改 Services/MarkdownRenderer.cs 内对应常量（代码侧无法直接读 XAML）。
+    -->
+    <sys:Double x:Key="FontSizeDocBody">14</sys:Double>
+    <sys:Double x:Key="FontSizeDocTable">13</sys:Double>
+    <sys:Double x:Key="DocLineHeight">24</sys:Double>
+    <sys:Double x:Key="DocTableLineHeight">20</sys:Double>
+
+    <!--
+        多行输入框（VD-070）：此前 70/80/56/60px 各处硬编码，1 行文字也占 80px、
+        内容多则在框内出现第二条滚动条。统一改为「最小高度 + 自动增长」的上限区间。
+    -->
+    <sys:Double x:Key="MultilineMinHeight">64</sys:Double>
+    <sys:Double x:Key="MultilineMaxHeight">180</sys:Double>
+
+    <!--
+        字族令牌（VD-076 / 旧单 VD-003）：中文优先、拉丁回退。
+        旧值 "Segoe UI, Microsoft YaHei, PingFang SC, sans-serif" 让 CJK 落到第二顺位，
+        中英混排（"65% 完成"、"a1b2c3d 提交"）字面高与重心不一致，行内出现粗细断层；
+        末尾 "sans-serif" 在 WPF 不是有效字体名，兜底无效。
+    -->
+    <FontFamily x:Key="AppFontFamily">Microsoft YaHei UI, Microsoft YaHei, Segoe UI, PingFang SC</FontFamily>
+
+    <!-- 系统窗口按钮尺寸（VD-060：自绘顶栏三键，46×32 Ghost 变体） -->
+    <sys:Double x:Key="CaptionButtonWidth">46</sys:Double>
+    <sys:Double x:Key="CaptionButtonHeight">32</sys:Double>
+    <sys:Double x:Key="TitleBarHeight">44</sys:Double>
+    <!-- RowDefinition.Height 需要 GridLength，不能复用上面的 Double -->
+    <GridLength x:Key="TitleBarRowHeight">44</GridLength>
 
     <!-- 内容区版心最大宽度（VD-059：全站统一 1120 软上限——窗口小于该宽度时表单完全撑满、
          无居中窄条观感；仅当窗口超过该宽度时才停在上限，保证超宽窗口下行长仍可扫读。

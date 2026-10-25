@@ -126,6 +126,17 @@ internal sealed class UpdatesViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// 仅供 --shot 截图预览：把提示条强制置为可见，用于截取浮层样式。
+    /// 不联网、不写状态文件，正式运行路径不会调用。
+    /// </summary>
+    internal void PreviewBanner(UpdateInfo info)
+    {
+        _pending = info;
+        HasUpdate = true;
+        OnPropertyChanged(nameof(BannerText));
+    }
+
     /// <summary>打开更新详情覆盖层，任务在对话框关闭后完成。</summary>
     public async Task ShowDetailsAsync()
     {

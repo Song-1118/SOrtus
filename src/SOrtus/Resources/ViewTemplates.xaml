@@ -6,6 +6,8 @@
                       xmlns:conv="clr-namespace:SOrtus.Converters">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="Styles/Controls.Dialog.xaml" />
+        <!-- 页面 / 版块入场样式（VD-063）与微交互节奏同源，StaticResource 需在本字典可见 -->
+        <ResourceDictionary Source="Styles/Animations.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
 
@@ -21,6 +23,27 @@
     <conv:ProjectTypeToToneConverter x:Key="ProjectTypeToToneConverter" />
     <conv:ProjectStatusToToneConverter x:Key="ProjectStatusToToneConverter" />
 
+    <!--
+        页面入场动画（VD-063）：必须 BasedOn 隐式 SOrCard 样式。
+        SOrCard 的模板只存在于隐式样式里（没有 generic.xaml），
+        直接 Style="{StaticResource PageCardStyle}" 会把隐式样式顶掉，
+        卡片失去 Template → 整页渲染为空。
+    -->
+    <Style x:Key="PageCardStyle" TargetType="local:SOrCard"
+           BasedOn="{StaticResource {x:Type local:SOrCard}}">
+        <Setter Property="Opacity" Value="0" />
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <TranslateTransform Y="8" />
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                <BeginStoryboard Storyboard="{StaticResource SlideUpStoryboard}" />
+            </EventTrigger>
+        </Style.Triggers>
+    </Style>
+
     <!-- 下拉框通用：可空枚举 → 本地化文本 -->
     <DataTemplate x:Key="TypeItemTemplate">
         <TextBlock Text="{Binding Converter={StaticResource ProjectTypeDisplayConverter}}" />
@@ -31,9 +54,11 @@
 
     <!-- ============================ 立项列表 ============================ -->
     <DataTemplate DataType="{x:Type vm:ProjectListViewModel}">
-        <local:SOrCard VerticalAlignment="Stretch">
+        <!-- VD-063：页面入场（220ms 淡入 + 8px 上移），不再「闪切」 -->
+        <local:SOrCard VerticalAlignment="Stretch" Style="{StaticResource PageCardStyle}">
             <ScrollViewer VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Disabled">
+                          HorizontalScrollBarVisibility="Disabled"
+                          local:ScrollMemory.VerticalOffset="{Binding ScrollOffset, Mode=TwoWay}">
                 <StackPanel>
                     <!-- 头部：标题 + 统计 + 新建 -->
                     <Grid Margin="0,0,0,14">
@@ -42,7 +67,11 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock Text="{DynamicResource Nav_Projects}" FontSize="{DynamicResource FontSizeTitle}" FontWeight="SemiBold" />
+                            <!-- VD-120 / 旧单 VD-057：页面标题不再与导航项同名（旧版两处都是「立项」），
+                                 导航回答「我在哪」，标题回答「这页是什么」 -->
+                            <TextBlock Text="{DynamicResource List_Title}" FontSize="{DynamicResource FontSizeTitle}" FontWeight="SemiBold" />
+                            <!-- VD-056：副标题只留统计。「数据只留在本机」这类定位句已由空状态引导句承担，
+                                 旧版同一句话在副标题和空状态各出现一次 -->
                             <TextBlock Text="{Binding Subtitle}" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,4,0,0" />
                         </StackPanel>
                         <local:SOrButton Grid.Column="1" Variant="Primary"
@@ -52,8 +81,12 @@
                                         VerticalAlignment="Center" />
                     </Grid>
 
-                    <!-- 工具栏：搜索 / 类型筛选 / 状态筛选 -->
-                    <Grid Margin="0,0,0,12">
+                    <!-- 工具栏：搜索 / 类型筛选 / 状态筛选
+                         VD-087（并入旧单 VD-056）：一个立项都没有时，搜索与两个筛选器全是空转，
+                         留着只会让人以为「有数据但没显示出来」。空列表时整条工具栏隐藏，
+                         页面只保留「新建」与引导句。 -->
+                    <Grid Margin="0,0,0,12"
+                          Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -86,23 +119,33 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <!-- 空状态：完全没有任何立项 -->
+                    <!-- 空状态：完全没有任何立项（工具栏已隐藏，这里承担全部引导） -->
                     <StackPanel Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}}"
-                                HorizontalAlignment="Center" Margin="0,30,0,0">
+                                HorizontalAlignment="Center" Margin="0,48,0,0">
                         <TextBlock Text="{DynamicResource List_Empty}" FontSize="{DynamicResource FontSizeBody}"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    HorizontalAlignment="Center" />
+                        <TextBlock Text="{DynamicResource List_EmptyHint}" FontSize="{DynamicResource FontSizeCaption}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" Opacity="0.85"
+                                   HorizontalAlignment="Center" Margin="0,8,0,0" />
                         <local:SOrButton Content="{DynamicResource List_NewButton}"
                                         Command="{Binding NewCommand}"
                                         Variant="Primary"
-                                        Margin="0,14,0,0" HorizontalAlignment="Center" />
+                                        Margin="0,16,0,0" HorizontalAlignment="Center" />
                     </StackPanel>
 
-                    <!-- 空状态：有数据但被筛选过滤为空 -->
-                    <TextBlock Visibility="{Binding HasNoResults, Converter={StaticResource BoolToVisibilityConverter}}"
-                               Text="{DynamicResource List_NoResults}" FontSize="{DynamicResource FontSizeBody}"
-                               Foreground="{DynamicResource TextSecondaryBrush}"
-                               HorizontalAlignment="Center" Margin="0,30,0,0" />
+                    <!-- 空状态：有数据但被筛选过滤为空（VD-087：给出匹配数 + 一键清除筛选，
+                         旧版只留一句话，用户只能自己逐个把筛选器改回「全部」） -->
+                    <StackPanel Visibility="{Binding HasNoResults, Converter={StaticResource BoolToVisibilityConverter}}"
+                                HorizontalAlignment="Center" Margin="0,48,0,0">
+                        <TextBlock Text="{Binding NoResultsText}" FontSize="{DynamicResource FontSizeBody}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   HorizontalAlignment="Center" />
+                        <local:SOrButton Content="{DynamicResource List_ClearFilter}"
+                                        Command="{Binding ClearFiltersCommand}"
+                                        Variant="Secondary"
+                                        Margin="0,14,0,0" HorizontalAlignment="Center" />
+                    </StackPanel>
                 </StackPanel>
             </ScrollViewer>
         </local:SOrCard>
@@ -110,7 +153,7 @@
 
     <!-- ============================ 立项向导（两步） ============================ -->
     <DataTemplate DataType="{x:Type vm:ProjectWizardViewModel}">
-        <local:SOrCard VerticalAlignment="Stretch">
+        <local:SOrCard VerticalAlignment="Stretch" Style="{StaticResource PageCardStyle}">
             <!-- 两行结构：内容滚动区 + 固定底部操作条（上一步永远在左下、下一步/创建永远在右下） -->
             <Grid>
                 <Grid.RowDefinitions>
@@ -124,8 +167,14 @@
                          窗口超过 ContentMaxWidth 时停在上限（左对齐，不居中），否则完全撑满 -->
                     <StackPanel MaxWidth="{DynamicResource ContentMaxWidth}" Margin="4,4,4,0">
 
-                        <!-- 页头：标题 + 步骤说明（第 2 步附带类型标签） -->
-                        <TextBlock Text="{DynamicResource Nav_NewProject}" FontSize="{DynamicResource FontSizeTitle}" FontWeight="SemiBold" />
+                        <!-- 页头：标题 + 步骤说明（第 2 步附带类型标签）
+                             VD-120 / 旧单 VD-057：页面标题与导航项同名（都是「新建立项」）时，
+                             用户无法判断自己是在「列表上方的位置」还是「新建流程里」。
+                             标题改为带步骤的「新立项 · 1/2 选择类型」，导航项保持「新建立项」。 -->
+                        <TextBlock Text="{DynamicResource Wizard_TitleStepType}" FontSize="{DynamicResource FontSizeTitle}" FontWeight="SemiBold"
+                                   Visibility="{Binding IsStepType, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        <TextBlock Text="{DynamicResource Wizard_TitleStepInfo}" FontSize="{DynamicResource FontSizeTitle}" FontWeight="SemiBold"
+                                   Visibility="{Binding IsStepInfo, Converter={StaticResource BoolToVisibilityConverter}}" />
                         <StackPanel Orientation="Horizontal" Margin="0,10,0,22">
                             <TextBlock Text="{DynamicResource Wizard_Step1Hint}" FontSize="{DynamicResource FontSizeLabel}"
                                        Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"
@@ -254,13 +303,11 @@
                         <!-- ============ 第 2 步：填写信息（VD-059：全宽 + 两张分组卡，卡内行式字段） ============ -->
                         <StackPanel Visibility="{Binding IsStepInfo, Converter={StaticResource BoolToVisibilityConverter}}">
                             <!-- 分组卡：基本信息 -->
-                            <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1" CornerRadius="{DynamicResource CornerRadiusMedium}"
-                                    Padding="16" Margin="0,0,0,14">
+                            <Border Style="{StaticResource GroupCardStyle}">
                                 <StackPanel>
-                                    <TextBlock Text="{DynamicResource Wizard_CardBasic}" FontWeight="SemiBold"
-                                               FontSize="{DynamicResource FontSizeBody}"
-                                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                                    <Border Style="{StaticResource CardTitleBorderStyle}">
+                                        <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Wizard_CardBasic}" />
+                                    </Border>
 
                                     <!-- 项目名字 -->
                                     <Grid Margin="0,0,0,12">
@@ -291,7 +338,7 @@
                                         <TextBlock Grid.Column="0" Text="{DynamicResource Wizard_Summary}" FontWeight="Medium"
                                                    FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Top" Margin="0,2,12,0"
                                                    Visibility="{Binding IsTodo, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}" />
-                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Summary, UpdateSourceTrigger=PropertyChanged}" Height="72"
+                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Summary, UpdateSourceTrigger=PropertyChanged}"
                                                           AcceptsReturn="True" TextWrapping="Wrap" />
                                     </Grid>
 
@@ -356,13 +403,11 @@
                             </Border>
 
                             <!-- 分组卡：归属与工期 -->
-                            <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1" CornerRadius="{DynamicResource CornerRadiusMedium}"
-                                    Padding="16" Margin="0,0,0,14">
+                            <Border Style="{StaticResource GroupCardStyle}">
                                 <StackPanel>
-                                    <TextBlock Text="{DynamicResource Wizard_CardOwnership}" FontWeight="SemiBold"
-                                               FontSize="{DynamicResource FontSizeBody}"
-                                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                                    <Border Style="{StaticResource CardTitleBorderStyle}">
+                                        <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Wizard_CardOwnership}" />
+                                    </Border>
 
                                     <!-- 子类型：编程=项目类型，剪辑=剪辑类型（待办不展示） -->
                                     <Grid Margin="0,0,0,12"
@@ -491,7 +536,7 @@
 
     <!-- ============================ 立项详情（V2：基础信息 / 开发管理 / GIT 管理） ============================ -->
     <DataTemplate DataType="{x:Type vm:ProjectDetailViewModel}">
-        <local:SOrCard VerticalAlignment="Stretch">
+        <local:SOrCard VerticalAlignment="Stretch" Style="{StaticResource PageCardStyle}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -542,15 +587,13 @@
                     <StackPanel MaxWidth="{DynamicResource ContentMaxWidth}" Margin="0,14,4,0">
 
                         <!-- ===== 基础信息 ===== -->
-                        <StackPanel Visibility="{Binding ShowBasicSection, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <StackPanel Style="{StaticResource SectionFadeInStyle}" Visibility="{Binding ShowBasicSection, Converter={StaticResource BoolToVisibilityConverter}}">
                             <!-- 分组卡：基本信息 -->
-                            <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1" CornerRadius="{DynamicResource CornerRadiusMedium}"
-                                    Padding="16" Margin="0,0,0,14">
+                            <Border Style="{StaticResource GroupCardStyle}">
                                 <StackPanel>
-                                    <TextBlock Text="{DynamicResource Detail_Basic}" FontWeight="SemiBold"
-                                               FontSize="{DynamicResource FontSizeBody}"
-                                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                                    <Border Style="{StaticResource CardTitleBorderStyle}">
+                                        <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Detail_Basic}" />
+                                    </Border>
 
                                     <Grid Margin="0,0,0,12">
                                         <Grid.ColumnDefinitions>
@@ -569,7 +612,7 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="{DynamicResource Wizard_Summary}" FontWeight="Medium"
                                                    FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Top" Margin="0,2,12,0" />
-                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Project.Summary, UpdateSourceTrigger=PropertyChanged}" Height="70"
+                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Project.Summary, UpdateSourceTrigger=PropertyChanged}"
                                                           AcceptsReturn="True" TextWrapping="Wrap" />
                                     </Grid>
 
@@ -595,13 +638,11 @@
                             </Border>
 
                             <!-- 分组卡：类型与归属 -->
-                            <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1" CornerRadius="{DynamicResource CornerRadiusMedium}"
-                                    Padding="16" Margin="0,0,0,14">
+                            <Border Style="{StaticResource GroupCardStyle}">
                                 <StackPanel>
-                                    <TextBlock Text="{DynamicResource Detail_CardOwnership}" FontWeight="SemiBold"
-                                               FontSize="{DynamicResource FontSizeBody}"
-                                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                                    <Border Style="{StaticResource CardTitleBorderStyle}">
+                                        <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Detail_CardOwnership}" />
+                                    </Border>
 
                                     <Grid Margin="0,0,0,12">
                                         <Grid.ColumnDefinitions>
@@ -656,13 +697,11 @@
                             </Border>
 
                             <!-- 分组卡：技术栈（胶囊编辑，编程类型） -->
-                            <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1" CornerRadius="{DynamicResource CornerRadiusMedium}"
-                                    Padding="16" Margin="0,0,0,14">
+                            <Border Style="{StaticResource GroupCardStyle}">
                                 <StackPanel>
-                                    <TextBlock Text="{DynamicResource Wizard_TechStack}" FontWeight="SemiBold"
-                                               FontSize="{DynamicResource FontSizeBody}"
-                                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                                    <Border Style="{StaticResource CardTitleBorderStyle}">
+                                        <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Wizard_TechStack}" />
+                                    </Border>
                                     <ItemsControl ItemsSource="{Binding TechStackChips}" Margin="0,0,0,10">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
@@ -704,15 +743,13 @@
                         </StackPanel>
 
                         <!-- ===== 开发管理 ===== -->
-                        <StackPanel Visibility="{Binding ShowDevSection, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <StackPanel Style="{StaticResource SectionFadeInStyle}" Visibility="{Binding ShowDevSection, Converter={StaticResource BoolToVisibilityConverter}}">
                             <!-- 分组卡：开发规划 -->
-                            <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1" CornerRadius="{DynamicResource CornerRadiusMedium}"
-                                    Padding="16" Margin="0,0,0,14">
+                            <Border Style="{StaticResource GroupCardStyle}">
                                 <StackPanel>
-                                    <TextBlock Text="{DynamicResource Detail_DevPlan}" FontWeight="SemiBold"
-                                               FontSize="{DynamicResource FontSizeBody}"
-                                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                                    <Border Style="{StaticResource CardTitleBorderStyle}">
+                                        <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Detail_DevPlan}" />
+                                    </Border>
 
                                     <Grid Margin="0,0,0,12">
                                         <Grid.ColumnDefinitions>
@@ -721,7 +758,7 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="{DynamicResource Detail_DevPlan}" FontWeight="Medium"
                                                    FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Top" Margin="0,2,12,0" />
-                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Project.DevPlan, UpdateSourceTrigger=PropertyChanged}" Height="80"
+                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Project.DevPlan, UpdateSourceTrigger=PropertyChanged}"
                                                           AcceptsReturn="True" TextWrapping="Wrap" />
                                     </Grid>
 
@@ -732,7 +769,7 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="{DynamicResource Detail_Constraints}" FontWeight="Medium"
                                                    FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Top" Margin="0,2,12,0" />
-                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Project.Constraints, UpdateSourceTrigger=PropertyChanged}" Height="56"
+                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Project.Constraints, UpdateSourceTrigger=PropertyChanged}"
                                                           AcceptsReturn="True" TextWrapping="Wrap" />
                                     </Grid>
 
@@ -743,7 +780,7 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="{DynamicResource Detail_Goals}" FontWeight="Medium"
                                                    FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Top" Margin="0,2,12,0" />
-                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Project.Goals, UpdateSourceTrigger=PropertyChanged}" Height="56"
+                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Project.Goals, UpdateSourceTrigger=PropertyChanged}"
                                                           AcceptsReturn="True" TextWrapping="Wrap" />
                                     </Grid>
 
@@ -754,20 +791,18 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="{DynamicResource Detail_Acceptance}" FontWeight="Medium"
                                                    FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Top" Margin="0,2,12,0" />
-                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Project.AcceptanceCriteria, UpdateSourceTrigger=PropertyChanged}" Height="56"
+                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Project.AcceptanceCriteria, UpdateSourceTrigger=PropertyChanged}"
                                                           AcceptsReturn="True" TextWrapping="Wrap" />
                                     </Grid>
                                 </StackPanel>
                             </Border>
 
                             <!-- 分组卡：项目文档（PRD / 迭代规划为单槽位，其他文档多份并存） -->
-                            <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1" CornerRadius="{DynamicResource CornerRadiusMedium}"
-                                    Padding="16" Margin="0,0,0,14">
+                            <Border Style="{StaticResource GroupCardStyle}">
                                 <StackPanel>
-                                    <TextBlock Text="{DynamicResource Detail_CardDocuments}" FontWeight="SemiBold"
-                                               FontSize="{DynamicResource FontSizeBody}"
-                                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                                    <Border Style="{StaticResource CardTitleBorderStyle}">
+                                        <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Detail_CardDocuments}" />
+                                    </Border>
 
                                     <!-- 文档操作反馈 -->
                                     <Border Background="{DynamicResource TagDangerBgBrush}" CornerRadius="{DynamicResource CornerRadiusSmall}"
@@ -913,14 +948,12 @@
                         </StackPanel>
 
                         <!-- ===== GIT 管理 ===== -->
-                        <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                                BorderThickness="1" CornerRadius="{DynamicResource CornerRadiusMedium}"
-                                Padding="16" Margin="0,0,0,14"
+                        <Border Style="{StaticResource GroupCardStyle}"
                                 Visibility="{Binding ShowGitSection, Converter={StaticResource BoolToVisibilityConverter}}">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource Detail_SectionGit}" FontWeight="SemiBold"
-                                           FontSize="{DynamicResource FontSizeBody}"
-                                           Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                            <StackPanel Style="{StaticResource SectionFadeInStyle}">
+                                <Border Style="{StaticResource CardTitleBorderStyle}">
+                                        <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Detail_SectionGit}" />
+                                    </Border>
                                 <ContentControl Content="{Binding Git}" />
                             </StackPanel>
                         </Border>
@@ -928,15 +961,13 @@
                         <!-- ===== 剪辑 / 待办：按类型派生版块（VD-059：废弃「遗留单栏」全字段平铺；
                              标签按类型派生——剪辑=剪辑类型/素材文件夹（SO-009）；
                              技术栈不再以分号串文本框编辑，剪辑/待办不展示该字段（SO-014）） ===== -->
-                        <StackPanel Visibility="{Binding ShowLegacySection, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <StackPanel Style="{StaticResource SectionFadeInStyle}" Visibility="{Binding ShowLegacySection, Converter={StaticResource BoolToVisibilityConverter}}">
                             <!-- 分组卡：基本信息 -->
-                            <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1" CornerRadius="{DynamicResource CornerRadiusMedium}"
-                                    Padding="16" Margin="0,0,0,14">
+                            <Border Style="{StaticResource GroupCardStyle}">
                                 <StackPanel>
-                                    <TextBlock Text="{DynamicResource Detail_Basic}" FontWeight="SemiBold"
-                                               FontSize="{DynamicResource FontSizeBody}"
-                                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                                    <Border Style="{StaticResource CardTitleBorderStyle}">
+                                        <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Detail_Basic}" />
+                                    </Border>
 
                                     <Grid Margin="0,0,0,12">
                                         <Grid.ColumnDefinitions>
@@ -960,7 +991,7 @@
                                         <TextBlock Grid.Column="0" Text="{DynamicResource Wizard_Summary}" FontWeight="Medium"
                                                    FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Top" Margin="0,2,12,0"
                                                    Visibility="{Binding IsTodo, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}" />
-                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Project.Summary, UpdateSourceTrigger=PropertyChanged}" Height="70"
+                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Project.Summary, UpdateSourceTrigger=PropertyChanged}"
                                                           AcceptsReturn="True" TextWrapping="Wrap" />
                                     </Grid>
 
@@ -1013,13 +1044,11 @@
                             </Border>
 
                             <!-- 分组卡：规划与约束 -->
-                            <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1" CornerRadius="{DynamicResource CornerRadiusMedium}"
-                                    Padding="16" Margin="0,0,0,14">
+                            <Border Style="{StaticResource GroupCardStyle}">
                                 <StackPanel>
-                                    <TextBlock Text="{DynamicResource Detail_CardPlanning}" FontWeight="SemiBold"
-                                               FontSize="{DynamicResource FontSizeBody}"
-                                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                                    <Border Style="{StaticResource CardTitleBorderStyle}">
+                                        <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Detail_CardPlanning}" />
+                                    </Border>
 
                                     <Grid Margin="0,0,0,12">
                                         <Grid.ColumnDefinitions>
@@ -1028,7 +1057,7 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="{DynamicResource Detail_DevPlan}" FontWeight="Medium"
                                                    FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Top" Margin="0,2,12,0" />
-                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Project.DevPlan, UpdateSourceTrigger=PropertyChanged}" Height="70"
+                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Project.DevPlan, UpdateSourceTrigger=PropertyChanged}"
                                                           AcceptsReturn="True" TextWrapping="Wrap" />
                                     </Grid>
 
@@ -1039,7 +1068,7 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="{DynamicResource Detail_Constraints}" FontWeight="Medium"
                                                    FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Top" Margin="0,2,12,0" />
-                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Project.Constraints, UpdateSourceTrigger=PropertyChanged}" Height="60"
+                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Project.Constraints, UpdateSourceTrigger=PropertyChanged}"
                                                           AcceptsReturn="True" TextWrapping="Wrap" />
                                     </Grid>
 
@@ -1050,7 +1079,7 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="{DynamicResource Detail_Goals}" FontWeight="Medium"
                                                    FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Top" Margin="0,2,12,0" />
-                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Project.Goals, UpdateSourceTrigger=PropertyChanged}" Height="60"
+                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Project.Goals, UpdateSourceTrigger=PropertyChanged}"
                                                           AcceptsReturn="True" TextWrapping="Wrap" />
                                     </Grid>
 
@@ -1061,7 +1090,7 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="{DynamicResource Detail_Acceptance}" FontWeight="Medium"
                                                    FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Top" Margin="0,2,12,0" />
-                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Project.AcceptanceCriteria, UpdateSourceTrigger=PropertyChanged}" Height="60"
+                                        <local:SOrTextBox Grid.Column="1" Text="{Binding Project.AcceptanceCriteria, UpdateSourceTrigger=PropertyChanged}"
                                                           AcceptsReturn="True" TextWrapping="Wrap" />
                                     </Grid>
                                 </StackPanel>
@@ -1123,13 +1152,26 @@
                                   Visibility="{Binding NoRemote, Converter={StaticResource BoolToVisibilityConverter}}"
                                   Content="{DynamicResource Git_NoRemote}" FontSize="{DynamicResource FontSizeCaption}" />
                 </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <local:SOrButton Content="{DynamicResource Git_Refresh}" Variant="Ghost"
-                                     Command="{Binding RefreshCommand}" Icon="{DynamicResource IconSearch}" />
-                    <local:SOrButton Content="{DynamicResource Git_AddRemote}" Variant="Secondary" Margin="8,0,0,0"
-                                     Command="{Binding AddRemoteCommand}" />
-                    <local:SOrButton Content="{DynamicResource Git_Push}" Variant="Primary" Margin="8,0,0,0"
+                <!--
+                    操作区（VD-106 / 旧单 VD-022 · VD-053 · VD-054）：
+                    旧版三个按钮只有文字（「刷新 / 添加远端地址 / 推送至云端」），
+                     · 刷新借用了 IconSearch 的放大镜（语义错位）；
+                     · 添加远端与推送无图标，与刷新并排时三者视觉权重全等；
+                     · 「推送至云端」四个字把动作描述成了结果，还比「添加远端地址」更长，工具条被文字撑开。
+                    现在：图标 + 短标签，主次按「推送 > 添加远端 > 刷新」排列，
+                    刷新降为图标按钮（ToolTip 补全语义）并靠最右——它是最高频、最不需要读字的动作。
+                -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <local:SOrButton Content="{DynamicResource Git_Push}" Variant="Primary"
+                                     Icon="{DynamicResource IconCloudUpload}" IconSize="14"
                                      Command="{Binding PushCommand}" />
+                    <local:SOrButton Content="{DynamicResource Git_AddRemote}" Variant="Secondary" Margin="8,0,0,0"
+                                     Icon="{DynamicResource IconLink}" IconSize="14"
+                                     Command="{Binding AddRemoteCommand}" />
+                    <local:SOrButton Variant="Ghost" Margin="4,0,0,0" Padding="10,8"
+                                     Icon="{DynamicResource IconRefresh}" IconSize="15"
+                                     ToolTip="{DynamicResource Git_Refresh}"
+                                     Command="{Binding RefreshCommand}" />
                 </StackPanel>
             </Grid>
 
@@ -1324,7 +1366,7 @@
 
     <!-- ============================ 设置 ============================ -->
     <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
-        <local:SOrCard VerticalAlignment="Stretch">
+        <local:SOrCard VerticalAlignment="Stretch" Style="{StaticResource PageCardStyle}">
             <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
                 <!-- VD-059：去居中窄版心（旧版 MaxWidth=760 + Center），改全宽 + 分组卡片行式排布；
@@ -1333,13 +1375,11 @@
                     <TextBlock Text="{DynamicResource Settings_Title}" FontSize="{DynamicResource FontSizeTitle}" FontWeight="SemiBold" Margin="0,0,0,18" />
 
                     <!-- 分组卡：外观 -->
-                    <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="1" CornerRadius="{DynamicResource CornerRadiusMedium}"
-                            Padding="16" Margin="0,0,0,14">
+                    <Border Style="{StaticResource GroupCardStyle}">
                         <StackPanel>
-                            <TextBlock Text="{DynamicResource Settings_Appearance}" FontWeight="SemiBold"
-                                       FontSize="{DynamicResource FontSizeBody}"
-                                       Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                            <Border Style="{StaticResource CardTitleBorderStyle}">
+                                        <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Settings_Appearance}" />
+                                    </Border>
 
                             <!-- 行式字段：标签列（固定 160）+ 控件列 -->
                             <Grid Margin="0,0,0,12">
@@ -1381,13 +1421,11 @@
                     </Border>
 
                     <!-- 分组卡：语言 -->
-                    <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="1" CornerRadius="{DynamicResource CornerRadiusMedium}"
-                            Padding="16" Margin="0,0,0,14">
+                    <Border Style="{StaticResource GroupCardStyle}">
                         <StackPanel>
-                            <TextBlock Text="{DynamicResource Settings_Language}" FontWeight="SemiBold"
-                                       FontSize="{DynamicResource FontSizeBody}"
-                                       Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                            <Border Style="{StaticResource CardTitleBorderStyle}">
+                                        <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Settings_Language}" />
+                                    </Border>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="160" />
@@ -1408,13 +1446,11 @@
                     </Border>
 
                     <!-- 分组卡：数据 -->
-                    <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="1" CornerRadius="{DynamicResource CornerRadiusMedium}"
-                            Padding="16" Margin="0,0,0,14">
+                    <Border Style="{StaticResource GroupCardStyle}">
                         <StackPanel>
-                            <TextBlock Text="{DynamicResource Settings_Data}" FontWeight="SemiBold"
-                                       FontSize="{DynamicResource FontSizeBody}"
-                                       Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                            <Border Style="{StaticResource CardTitleBorderStyle}">
+                                        <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Settings_Data}" />
+                                    </Border>
                             <Grid Margin="0,0,0,12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="160" />
@@ -1437,13 +1473,11 @@
                     </Border>
 
                     <!-- 分组卡：软件更新（手动检查入口，将来「关于」页复用同一命令） -->
-                    <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="1" CornerRadius="{DynamicResource CornerRadiusMedium}"
-                            Padding="16" Margin="0,0,0,14">
+                    <Border Style="{StaticResource GroupCardStyle}">
                         <StackPanel>
-                            <TextBlock Text="{DynamicResource Settings_Update}" FontWeight="SemiBold"
-                                       FontSize="{DynamicResource FontSizeBody}"
-                                       Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                            <Border Style="{StaticResource CardTitleBorderStyle}">
+                                        <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Settings_Update}" />
+                                    </Border>
 
                             <!-- 当前版本 -->
                             <Grid Margin="0,0,0,12">

@@ -11,6 +11,7 @@ using SOrtus.Core.Services;
 using SOrtus.Navigation;
 using SOrtus.Repositories;
 using SOrtus.Services;
+using SOrtus.Updates;
 using SOrtus.ViewModels;
 
 namespace SOrtus;
@@ -93,6 +94,9 @@ public partial class App : Application
         var window = new MainWindow { DataContext = mainViewModel };
         window.Show();
 
+        // VD-067：换肤过渡由窗口承载（淡出→换字典→淡入），服务只负责换字典与广播
+        themeService.ThemeChanged += (_, _) => window.PlayThemeTransition(themeService.CurrentTheme);
+
         ScheduleStartupUpdateCheck(mainViewModel);
     }
 
@@ -118,12 +122,14 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// 启动后延迟 3 秒再查更新：先让窗口完成首帧渲染与数据库加载，
+    /// 启动后延迟 5 秒再查更新：先让窗口完成首帧渲染与数据库加载，
     /// 避免把网络耗时叠进启动时间。检查本身 5 秒超时、失败静默。
+    /// VD-080：旧值 3 秒，正好落在用户刚开始首屏操作的时间窗里；
+    /// 提示条已改为浮层不占布局，但仍不应在用户第一眼就出现。
     /// </summary>
     private static void ScheduleStartupUpdateCheck(MainViewModel mainViewModel)
     {
-        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
         timer.Tick += async (_, _) =>
         {
             timer.Stop();
@@ -149,6 +155,8 @@ public partial class App : Application
 
         var themeService = new ThemeService();
         themeService.Initialize();
+        // 换肤验证会写回用户设置，结束时必须还原成进来时的主题
+        var originalTheme = themeService.CurrentTheme;
         var localization = new LocalizationService();
         localization.Initialize();
 
@@ -253,6 +261,44 @@ public partial class App : Application
         await SettleAsync(window);
         SaveWindow(window, System.IO.Path.Combine(targetDir, "08-settings.png"));
 
+        // VD-061 回归用：运行时整本换肤（不是启动即深色），验证分组卡 / 文字 / 边框是否一起跟随。
+        // 09 = 切到浅色后的设置页，10 = 再切回深色后的同一页——两张都会进交付证据。
+        themeService.SetTheme("Light");
+        await SettleAsync(window);
+        SaveWindow(window, System.IO.Path.Combine(targetDir, "09-settings-after-theme-switch-light.png"));
+
+        themeService.SetTheme("Dark");
+        await SettleAsync(window);
+        SaveWindow(window, System.IO.Path.Combine(targetDir, "10-settings-after-theme-switch-dark.png"));
+
+        // VD-080：更新提示条改为浮层后不能靠「看不见」来验证，这里强制置为可见截一张，
+        // 确认它是浮在内容右上角、不挤压页面布局。
+        if (SemanticVersion.TryParse("0.3.1", out var previewVersion))
+        {
+            mainViewModel.Updates.PreviewBanner(new UpdateInfo(
+                previewVersion,
+                "v0.3.1",
+                new Uri("https://example.com/SOrtus-Setup-0.3.1.exe"),
+                148_000_000,
+                null,
+                "-",
+                null));
+
+            await mainViewModel.ShowProjectsAsync();
+            await SettleAsync(window);
+            SaveWindow(window, System.IO.Path.Combine(targetDir, "11-update-toast.png"));
+        }
+
+        // VD-060 回归用：最大化。验证 WM_GETMINMAXINFO 把尺寸钳到工作区、外距 22 收为 0，
+        // 且自绘顶栏在最大化下仍然贴边完整（不会被系统边框挤出屏幕）。
+        window.WindowState = WindowState.Maximized;
+        await SettleAsync(window);
+        SaveWindow(window, System.IO.Path.Combine(targetDir, "12-maximized.png"));
+        window.WindowState = WindowState.Normal;
+
+        // 还原用户进来时的主题（SetTheme 会持久化到 settings.json）
+        themeService.SetTheme(originalTheme);
+
         window.Close();
     }
 
@@ -274,7 +320,8 @@ public partial class App : Application
     {
         window.UpdateLayout();
         await window.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
-        await Task.Delay(200);
+        // 420ms：页面入场 220ms + 弹窗弹入 240ms，等动画走完再截，否则截图里是半透明的中间帧
+        await Task.Delay(420);
         window.UpdateLayout();
     }
 

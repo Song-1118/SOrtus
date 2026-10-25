@@ -3,6 +3,13 @@
                     xmlns:local="clr-namespace:SOrtus.Controls"
                     xmlns:conv="clr-namespace:SOrtus.Converters">
 
+    <ResourceDictionary.MergedDictionaries>
+        <!-- 动画节奏单点定义（VD-062/064）：本字典模板里引用 MicroIn/MicroOut/Press*/FocusRing* 等 Storyboard，
+             StaticResource 只在本字典及其 MergedDictionaries 内可见，故显式声明依赖 -->
+        <ResourceDictionary Source="Animations.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+
     <!--
         输入类自定义控件样式（规范 7.1）：SOrTextBox / SOrComboBox / SOrDatePicker / SOrSlider。
         每个控件的视觉树都内置命名层（PART_Root / PART_Hover / PART_FocusRing / PART_Placeholder 等），
@@ -15,9 +22,11 @@
     <!-- ============================ SOrTextBox ============================ -->
     <Style TargetType="local:SOrTextBox">
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <!-- VD-073：输入框填充比卡片低一阶 + 边界 ≥3:1（BorderStrongBrush），
+             旧版 #FFFFFF 底 + #E5E7EB 边（1.24:1）在白卡上几乎隐形，用户只能靠右侧对齐关系猜哪里能输入 -->
+        <Setter Property="Background" Value="{DynamicResource InputSurfaceBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <!-- 文本内边距由模板内的 Inset 层统一提供（12,0,12,0）；控件 Padding 置 0，
              避免 TextBox 内部再叠加一次内边距，导致文字不是从最左侧开始输入 -->
@@ -40,7 +49,7 @@
                                 SnapsToDevicePixels="True">
                             <Grid>
                                 <!-- 悬浮覆盖层（VD-011）：鼠标划过仅叠一层 HoverOverlayBrush 弱底色、不改描边；
-                                     键盘焦点才换 FocusRingBrush 描边（单一焦点信号，VD-059 去掉旧版外扩环） -->
+                                     键盘焦点由独立焦点环表达（单一焦点信号，VD-059 / VD-066） -->
                                 <Border x:Name="PART_Hover"
                                         Background="{DynamicResource HoverOverlayBrush}"
                                         Opacity="0"
@@ -85,6 +94,14 @@
                                 </Border>
                             </Grid>
                         </Border>
+                        <!-- 键盘焦点环（VD-066）：独立 1px 内描边，100ms 淡入、离开即走；
+                             不再直接切换 BorderBrush（一帧硬切在磨砂卡上像一次闪烁） -->
+                        <Border x:Name="PART_FocusRing"
+                                BorderBrush="{DynamicResource FocusRingBrush}"
+                                BorderThickness="1"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                Opacity="0"
+                                IsHitTestVisible="False" />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <MultiTrigger>
@@ -94,20 +111,33 @@
                             </MultiTrigger.Conditions>
                             <Setter TargetName="PART_Placeholder" Property="Visibility" Value="Visible" />
                         </MultiTrigger>
-                        <!-- 多行输入（简介 / 开发规划 等）：文本与占位符一律左上对齐，并补上下内边距 -->
+                        <!-- 多行输入（简介 / 开发规划 / 约束 / 目标 / 验收 等）：
+                             VD-070 统一「最小高度 + 自动增长」——不再各页写死 56/70/80，
+                             内容多时框体会长到 180 后内部才滚动，短内容也不会白占 80px。 -->
                         <Trigger Property="AcceptsReturn" Value="True">
                             <Setter TargetName="PART_Inset" Property="Padding" Value="{DynamicResource InputInsetMultiline}" />
                             <Setter TargetName="PART_ContentHost" Property="VerticalAlignment" Value="Stretch" />
+                            <Setter TargetName="PART_ContentHost" Property="VerticalScrollBarVisibility" Value="Auto" />
                             <Setter TargetName="PART_Placeholder" Property="VerticalAlignment" Value="Top" />
                             <Setter Property="VerticalContentAlignment" Value="Top" />
+                            <Setter Property="MinHeight" Value="{DynamicResource MultilineMinHeight}" />
+                            <Setter Property="MaxHeight" Value="{DynamicResource MultilineMaxHeight}" />
                         </Trigger>
-                        <!-- 键盘聚焦（VD-059）：唯一焦点信号 = 边框换 FocusRingBrush（旧版「边框染 Primary + 外扩环」
-                             双信号叠加已移除；鼠标点击不触发系统框，FocusVisualStyle 已置空） -->
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource FocusRingInStoryboard}" />
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard Storyboard="{StaticResource FocusRingOutStoryboard}" />
+                            </Trigger.ExitActions>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="PART_Hover" Property="Opacity" Value="1" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource MicroInStoryboard}" />
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard Storyboard="{StaticResource MicroOutStoryboard}" />
+                            </Trigger.ExitActions>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Root" Property="Opacity" Value="0.55" />
@@ -121,9 +151,10 @@
     <!-- ============================ SOrComboBox ============================ -->
     <Style TargetType="local:SOrComboBox">
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <!-- VD-073：与输入框同一套「填充低一阶 + 边界 ≥3:1」 -->
+        <Setter Property="Background" Value="{DynamicResource InputSurfaceBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
         <Setter Property="Padding" Value="12,0,8,0" />
@@ -172,7 +203,8 @@
                                            HorizontalAlignment="Left"
                                            IsHitTestVisible="False"
                                            Visibility="Collapsed" />
-                                <!-- 下拉箭头（IsDropDownOpen 时翻转） -->
+                                <!-- 下拉箭头（VD-068）：改为 RotateTransform 旋转，
+                                     旧版展开时把 Path.Data 换成反向路径，视觉上「跳」了一下 -->
                                 <Path x:Name="PART_Arrow"
                                       Grid.Column="1"
                                       Data="M 0,1.5 L 5,6.5 L 10,1.5"
@@ -184,7 +216,12 @@
                                       Width="10"
                                       Height="7"
                                       Margin="0,0,12,0"
-                                      IsHitTestVisible="False" />
+                                      RenderTransformOrigin="0.5,0.5"
+                                      IsHitTestVisible="False">
+                                    <Path.RenderTransform>
+                                        <RotateTransform Angle="0" />
+                                    </Path.RenderTransform>
+                                </Path>
                                 <!-- 整字段可点的开关（IsChecked 与 IsDropDownOpen 双向同步） -->
                                 <ToggleButton x:Name="PART_DropDownToggle"
                                               Grid.ColumnSpan="2"
@@ -199,15 +236,18 @@
                                 </ToggleButton>
                             </Grid>
                         </Border>
-                        <!-- 下拉浮层（原生约定：Popup 承载 ItemsPresenter） -->
+                        <!-- 下拉浮层（原生约定：Popup 承载 ItemsPresenter）
+                             VD-068：去掉系统 PopupAnimation（固定约 150ms 只淡入不位移），
+                             改为自绘「8px 上移 + 150ms 淡入」，与界面其它微交互同源 -->
                         <Popup x:Name="PART_Popup"
                                Placement="Bottom"
                                AllowsTransparency="True"
                                Focusable="False"
                                StaysOpen="False"
-                               PopupAnimation="Fade"
+                               PopupAnimation="None"
                                IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
-                            <Border Background="{DynamicResource SurfaceBrush}"
+                            <Border Style="{StaticResource OverlayInOnLoadStyle}"
+                                    Background="{DynamicResource SurfaceBrush}"
                                     BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1"
                                     CornerRadius="{DynamicResource CornerRadiusMedium}"
@@ -223,19 +263,53 @@
                                 </ScrollViewer>
                             </Border>
                         </Popup>
+                        <!-- 键盘焦点环（VD-066）：独立 1px 内描边，淡入淡出 -->
+                        <Border x:Name="PART_FocusRing"
+                                BorderBrush="{DynamicResource FocusRingBrush}"
+                                BorderThickness="1"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                Opacity="0"
+                                IsHitTestVisible="False" />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="PART_Hover" Property="Opacity" Value="1" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource MicroInStoryboard}" />
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard Storyboard="{StaticResource MicroOutStoryboard}" />
+                            </Trigger.ExitActions>
                         </Trigger>
-                        <!-- 键盘聚焦 / 展开（VD-059）：唯一焦点信号 = 边框换 FocusRingBrush（旧版外扩环已移除）；
-                             展开态与聚焦态同色——下拉浮层本身已是强信号，边框无需再加重 -->
+                        <!-- 键盘聚焦 / 展开（VD-059）：唯一焦点信号 = 独立焦点环；展开态与聚焦态同信号 -->
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource FocusRingInStoryboard}" />
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard Storyboard="{StaticResource FocusRingOutStoryboard}" />
+                            </Trigger.ExitActions>
                         </Trigger>
                         <Trigger Property="IsDropDownOpen" Value="True">
-                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
-                            <Setter TargetName="PART_Arrow" Property="Data" Value="M 0,6.5 L 5,1.5 L 10,6.5" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="PART_Arrow"
+                                                         Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                         To="180" Duration="0:0:0.16"
+                                                         EasingFunction="{StaticResource CubicEaseOut}" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="PART_Arrow"
+                                                         Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                         To="0" Duration="0:0:0.16"
+                                                         EasingFunction="{StaticResource CubicEaseOut}" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
                         </Trigger>
                         <DataTrigger Binding="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}}" Value="{x:Null}">
                             <Setter TargetName="PART_Placeholder" Property="Visibility" Value="Visible" />
@@ -577,8 +651,8 @@
                 <ControlTemplate TargetType="local:SOrDatePicker">
                     <Grid>
                         <Border x:Name="PART_Root"
-                                Background="{DynamicResource SurfaceBrush}"
-                                BorderBrush="{DynamicResource BorderBrush}"
+                                Background="{DynamicResource InputSurfaceBrush}"
+                                BorderBrush="{DynamicResource BorderStrongBrush}"
                                 BorderThickness="1"
                                 CornerRadius="{TemplateBinding CornerRadius}"
                                 SnapsToDevicePixels="True">
@@ -627,26 +701,44 @@
                             </Grid>
                         </Border>
                         <!-- 原生约定：Popup 内不写内容，DatePicker 会把内置 Calendar 赋给 Popup.Child -->
-                        <!-- 日历弹在输入框上方；StaysOpen=False → 点击日历外部任意位置自动关闭 -->
+                        <!-- VD-068：日历统一向下弹（旧版永远向上，在页面中部展开时会盖住上方输入框）；
+                             浮层的 8px + 150ms 入场动画在 SOrDatePicker.OnApplyTemplate 里对 Calendar 施加 -->
                         <Popup x:Name="PART_Popup"
-                               Placement="Top"
-                               VerticalOffset="-6"
+                               Placement="Bottom"
+                               VerticalOffset="4"
                                AllowsTransparency="True"
                                Focusable="False"
                                StaysOpen="False"
-                               PopupAnimation="Fade"
+                               PopupAnimation="None"
                                IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" />
+                        <!-- 键盘焦点环（VD-066）：独立 1px 内描边 -->
+                        <Border x:Name="PART_FocusRing"
+                                BorderBrush="{DynamicResource FocusRingBrush}"
+                                BorderThickness="1"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                Opacity="0"
+                                IsHitTestVisible="False" />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="PART_Hover" Property="Opacity" Value="1" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource MicroInStoryboard}" />
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard Storyboard="{StaticResource MicroOutStoryboard}" />
+                            </Trigger.ExitActions>
                         </Trigger>
-                        <!-- 键盘聚焦 / 展开（VD-059）：唯一焦点信号 = 边框换 FocusRingBrush（旧版外扩环已移除） -->
+                        <!-- 键盘聚焦 / 展开（VD-059）：唯一焦点信号 = 独立焦点环 -->
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource FocusRingInStoryboard}" />
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard Storyboard="{StaticResource FocusRingOutStoryboard}" />
+                            </Trigger.ExitActions>
                         </Trigger>
                         <Trigger Property="IsDropDownOpen" Value="True">
-                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+                            <Setter TargetName="PART_FocusRing" Property="Opacity" Value="1" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Root" Property="Opacity" Value="0.55" />
@@ -731,7 +823,12 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter TargetName="PART_FocusRing" Property="Opacity" Value="1" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource FocusRingInStoryboard}" />
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard Storyboard="{StaticResource FocusRingOutStoryboard}" />
+                            </Trigger.ExitActions>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

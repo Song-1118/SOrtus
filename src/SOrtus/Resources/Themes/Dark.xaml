@@ -17,11 +17,23 @@
     <Color x:Key="ColorTextOnAccent">#111827</Color>
     <Color x:Key="ColorBorder">#363B42</Color>
     <Color x:Key="ColorSurface">#23262B</Color>
+    <!-- 卡片内再嵌一张分组卡时的底色（VD-077）：比外层低一阶，卡片套卡片才有明暗差 -->
+    <Color x:Key="ColorSurfaceAlt">#1E2126</Color>
+    <!-- 输入类控件的填充（VD-073）：比卡片略低一阶，深色下不再是「一块稍亮的矩形」 -->
+    <Color x:Key="ColorInputSurface">#1B1E23</Color>
+    <!-- 控件边界专用（VD-073）：对卡片底色实测 3.30:1，满足 WCAG 1.4.11 的 3:1 -->
+    <Color x:Key="ColorBorderStrong">#6E7681</Color>
+    <!-- 中性标签描边（VD-074）：描边式胶囊，形状可辨 -->
+    <Color x:Key="ColorTagNeutralBorder">#5A6270</Color>
     <Color x:Key="ColorPrimary">#F3F4F6</Color>
     <!-- 键盘焦点环专用色（VD-059）：中间灰度，与 Surface(#23262B) 和 Primary 填充(#F3F4F6) 均保持可见对比；
          不用 Primary 本身——主按钮底色即近白 Primary，同色环在按钮上不可见 -->
     <Color x:Key="ColorFocusRing">#8E98A8</Color>
     <Color x:Key="ColorShadow">#000000</Color>
+
+    <!-- 语义色（VD-075）：危险 / 成功各只保留一套，按钮与标签同族（深色用亮字） -->
+    <Color x:Key="ColorDanger">#FDA29B</Color>
+    <Color x:Key="ColorSuccess">#75E0A7</Color>
 
     <!-- 模糊覆盖层颜色：深色为深灰覆盖（配合 OverlayOpacity 控制磨砂通透度） -->
     <Color x:Key="BlurOverlayColor">#FF22252A</Color>
@@ -49,9 +61,9 @@
     <!-- 导航 / 列表选中高亮 -->
     <Color x:Key="ColorNavActive">#2B3036</Color>
 
-    <!-- 滚动条滑块 -->
-    <Color x:Key="ColorScrollThumb">#3A3D42</Color>
-    <Color x:Key="ColorScrollThumbHover">#4B4F55</Color>
+    <!-- 滚动条滑块（VD-072）：对卡片底色 3.30:1 / 悬停 5.95:1，满足 WCAG 1.4.11 的 3:1 -->
+    <Color x:Key="ColorScrollThumb">#6E7681</Color>
+    <Color x:Key="ColorScrollThumbHover">#9AA3AF</Color>
 
     <!-- 背景装饰（仅中性灰阶）：深色主题用比底色略亮的中性灰，避免出现刺眼白斑 -->
     <Color x:Key="ColorBackdropGlow">#FF1B1F24</Color>

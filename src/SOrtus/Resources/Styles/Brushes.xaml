@@ -5,6 +5,17 @@
         画刷层（规范 7.5）：所有主题相关色值一律通过 DynamicResource 引用主题字典，
         换肤时自动重新解析，无需重启。
         设计约束：不使用任何渐变与装饰光斑——背景为纯色，层次靠 Surface 底 + 1px Border 表达。
+
+        VD-061（P0）修复说明：
+        此前只有 WallpaperBrush / BackdropGlow / BackdropTint / SoftShadow 带 x:Shared="False"，
+        其余主题画刷（SurfaceBrush / TextPrimaryBrush / BorderBrush / …）是**单实例**资源。
+        单实例 Freezable 在资源字典里会被 WPF 冻结（Freeze），而冻结会把
+        Color="{DynamicResource ColorSurface}" 这个表达式就地求值成固定颜色——
+        于是运行时替换主题字典后，SurfaceBrush 仍是上一套主题的白，而文字色（另一条路径）
+        已经变了，得到「白卡 + 深底」这种在任何主题下都不成立的组合。
+        修法：全部主题画刷加 x:Shared="False"，每次查找都新建实例，构造时重新求值 DynamicResource；
+        配合 ThemeService 在换主题后对可视树逐属性 InvalidateProperty（重挂资源引用），
+        已挂在控件上的画刷也会被重新取一次。
     -->
 
     <!--
@@ -22,7 +33,7 @@
         作用：给磨砂卡片提供**硬边缘**细节——模糊半径变大时网格会整体糊成柔和过渡，
         拖动「高斯模糊强度」时肉眼可见；圆点/色块要么太弱要么太抢，网格属于「有意的画布纹理」。
     -->
-    <DrawingBrush x:Key="DotGridBrush" TileMode="Tile"
+    <DrawingBrush x:Key="DotGridBrush" x:Shared="False" TileMode="Tile"
                   Viewport="0,0,64,64" ViewportUnits="Absolute"
                   Stretch="None">
         <DrawingBrush.Drawing>
@@ -45,53 +56,61 @@
     <SolidColorBrush x:Key="SoftShadowBrush" x:Shared="False" Color="{DynamicResource ColorShadow}" />
 
     <!-- 语义画刷 -->
-    <SolidColorBrush x:Key="PrimaryBrush" Color="{DynamicResource ColorPrimary}" />
+    <SolidColorBrush x:Key="PrimaryBrush" x:Shared="False" Color="{DynamicResource ColorPrimary}" />
     <!-- 键盘焦点环画刷（VD-059）：全站控件焦点视觉唯一取色处，深浅主题各自中间灰度 -->
-    <SolidColorBrush x:Key="FocusRingBrush" Color="{DynamicResource ColorFocusRing}" />
-    <SolidColorBrush x:Key="SurfaceBrush" Color="{DynamicResource ColorSurface}" />
-    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{DynamicResource ColorTextPrimary}" />
-    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{DynamicResource ColorTextSecondary}" />
-    <SolidColorBrush x:Key="TextOnAccentBrush" Color="{DynamicResource ColorTextOnAccent}" />
-    <SolidColorBrush x:Key="BorderBrush" Color="{DynamicResource ColorBorder}" />
-    <SolidColorBrush x:Key="AccentABrush" Color="{DynamicResource ColorAccentA}" />
-    <SolidColorBrush x:Key="AccentBBrush" Color="{DynamicResource ColorAccentB}" />
-    <SolidColorBrush x:Key="AccentCBrush" Color="{DynamicResource ColorAccentC}" />
-    <SolidColorBrush x:Key="SuccessBrush" Color="{DynamicResource ColorSuccess}" />
-    <SolidColorBrush x:Key="WarningBrush" Color="{DynamicResource ColorWarning}" />
-    <SolidColorBrush x:Key="DangerBrush" Color="{DynamicResource ColorDanger}" />
-    <SolidColorBrush x:Key="ShadowBrush" Color="{DynamicResource ColorShadow}" />
+    <SolidColorBrush x:Key="FocusRingBrush" x:Shared="False" Color="{DynamicResource ColorFocusRing}" />
+    <SolidColorBrush x:Key="SurfaceBrush" x:Shared="False" Color="{DynamicResource ColorSurface}" />
+    <!-- 卡内分组卡底色（VD-077）：比 Surface 低/高一阶，卡片套卡片才有明暗差 -->
+    <SolidColorBrush x:Key="SurfaceAltBrush" x:Shared="False" Color="{DynamicResource ColorSurfaceAlt}" />
+    <!-- 输入类控件填充（VD-073）：与卡片分层，配合 BorderStrongBrush 让可编辑区域成立 -->
+    <SolidColorBrush x:Key="InputSurfaceBrush" x:Shared="False" Color="{DynamicResource ColorInputSurface}" />
+    <SolidColorBrush x:Key="TextPrimaryBrush" x:Shared="False" Color="{DynamicResource ColorTextPrimary}" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" x:Shared="False" Color="{DynamicResource ColorTextSecondary}" />
+    <SolidColorBrush x:Key="TextOnAccentBrush" x:Shared="False" Color="{DynamicResource ColorTextOnAccent}" />
+    <SolidColorBrush x:Key="BorderBrush" x:Shared="False" Color="{DynamicResource ColorBorder}" />
+    <!-- 控件边界画刷（VD-073）：≥3:1，只用于输入框/下拉框/日期框这类「可编辑区域」的描边 -->
+    <SolidColorBrush x:Key="BorderStrongBrush" x:Shared="False" Color="{DynamicResource ColorBorderStrong}" />
+    <SolidColorBrush x:Key="AccentABrush" x:Shared="False" Color="{DynamicResource ColorAccentA}" />
+    <SolidColorBrush x:Key="AccentBBrush" x:Shared="False" Color="{DynamicResource ColorAccentB}" />
+    <SolidColorBrush x:Key="AccentCBrush" x:Shared="False" Color="{DynamicResource ColorAccentC}" />
+    <SolidColorBrush x:Key="SuccessBrush" x:Shared="False" Color="{DynamicResource ColorSuccess}" />
+    <SolidColorBrush x:Key="WarningBrush" x:Shared="False" Color="{DynamicResource ColorWarning}" />
+    <SolidColorBrush x:Key="DangerBrush" x:Shared="False" Color="{DynamicResource ColorDanger}" />
+    <SolidColorBrush x:Key="ShadowBrush" x:Shared="False" Color="{DynamicResource ColorShadow}" />
 
     <!-- 高斯模糊覆盖层画刷：颜色随主题变化（浅色=白覆盖，深色=深灰覆盖），键名与两主题一一对应 -->
-    <SolidColorBrush x:Key="BlurOverlayBrush" Color="{DynamicResource BlurOverlayColor}" />
+    <SolidColorBrush x:Key="BlurOverlayBrush" x:Shared="False" Color="{DynamicResource BlurOverlayColor}" />
 
     <!-- SOrTag 色调画刷（Tone → 背景/前景，随主题切换） -->
-    <SolidColorBrush x:Key="TagAccentABgBrush" Color="{DynamicResource ColorTagAccentABg}" />
-    <SolidColorBrush x:Key="TagAccentAFgBrush" Color="{DynamicResource ColorTagAccentAFg}" />
-    <SolidColorBrush x:Key="TagAccentBBgBrush" Color="{DynamicResource ColorTagAccentBBg}" />
-    <SolidColorBrush x:Key="TagAccentBFgBrush" Color="{DynamicResource ColorTagAccentBFg}" />
-    <SolidColorBrush x:Key="TagAccentCBgBrush" Color="{DynamicResource ColorTagAccentCBg}" />
-    <SolidColorBrush x:Key="TagAccentCFgBrush" Color="{DynamicResource ColorTagAccentCFg}" />
-    <SolidColorBrush x:Key="TagSuccessBgBrush" Color="{DynamicResource ColorTagSuccessBg}" />
-    <SolidColorBrush x:Key="TagSuccessFgBrush" Color="{DynamicResource ColorTagSuccessFg}" />
-    <SolidColorBrush x:Key="TagWarningBgBrush" Color="{DynamicResource ColorTagWarningBg}" />
-    <SolidColorBrush x:Key="TagWarningFgBrush" Color="{DynamicResource ColorTagWarningFg}" />
-    <SolidColorBrush x:Key="TagDangerBgBrush" Color="{DynamicResource ColorTagDangerBg}" />
-    <SolidColorBrush x:Key="TagDangerFgBrush" Color="{DynamicResource ColorTagDangerFg}" />
-    <SolidColorBrush x:Key="TagNeutralBgBrush" Color="{DynamicResource ColorTagNeutralBg}" />
-    <SolidColorBrush x:Key="TagNeutralFgBrush" Color="{DynamicResource ColorTagNeutralFg}" />
+    <SolidColorBrush x:Key="TagAccentABgBrush" x:Shared="False" Color="{DynamicResource ColorTagAccentABg}" />
+    <SolidColorBrush x:Key="TagAccentAFgBrush" x:Shared="False" Color="{DynamicResource ColorTagAccentAFg}" />
+    <SolidColorBrush x:Key="TagAccentBBgBrush" x:Shared="False" Color="{DynamicResource ColorTagAccentBBg}" />
+    <SolidColorBrush x:Key="TagAccentBFgBrush" x:Shared="False" Color="{DynamicResource ColorTagAccentBFg}" />
+    <SolidColorBrush x:Key="TagAccentCBgBrush" x:Shared="False" Color="{DynamicResource ColorTagAccentCBg}" />
+    <SolidColorBrush x:Key="TagAccentCFgBrush" x:Shared="False" Color="{DynamicResource ColorTagAccentCFg}" />
+    <SolidColorBrush x:Key="TagSuccessBgBrush" x:Shared="False" Color="{DynamicResource ColorTagSuccessBg}" />
+    <SolidColorBrush x:Key="TagSuccessFgBrush" x:Shared="False" Color="{DynamicResource ColorTagSuccessFg}" />
+    <SolidColorBrush x:Key="TagWarningBgBrush" x:Shared="False" Color="{DynamicResource ColorTagWarningBg}" />
+    <SolidColorBrush x:Key="TagWarningFgBrush" x:Shared="False" Color="{DynamicResource ColorTagWarningFg}" />
+    <SolidColorBrush x:Key="TagDangerBgBrush" x:Shared="False" Color="{DynamicResource ColorTagDangerBg}" />
+    <SolidColorBrush x:Key="TagDangerFgBrush" x:Shared="False" Color="{DynamicResource ColorTagDangerFg}" />
+    <SolidColorBrush x:Key="TagNeutralBgBrush" x:Shared="False" Color="{DynamicResource ColorTagNeutralBg}" />
+    <SolidColorBrush x:Key="TagNeutralFgBrush" x:Shared="False" Color="{DynamicResource ColorTagNeutralFg}" />
+    <!-- 中性标签描边（VD-074）：中性 Tag 改描边式，容器形状才可辨 -->
+    <SolidColorBrush x:Key="TagNeutralBorderBrush" x:Shared="False" Color="{DynamicResource ColorTagNeutralBorder}" />
 
     <!-- 交互层画刷：悬浮 / 按压（自定义控件统一引用，便于后续挂动画） -->
-    <SolidColorBrush x:Key="HoverOverlayBrush" Color="{DynamicResource ColorHoverOverlay}" />
-    <SolidColorBrush x:Key="PressOverlayBrush" Color="{DynamicResource ColorPressOverlay}" />
+    <SolidColorBrush x:Key="HoverOverlayBrush" x:Shared="False" Color="{DynamicResource ColorHoverOverlay}" />
+    <SolidColorBrush x:Key="PressOverlayBrush" x:Shared="False" Color="{DynamicResource ColorPressOverlay}" />
 
     <!-- 导航 / 列表选中高亮画刷 -->
-    <SolidColorBrush x:Key="NavActiveBrush" Color="{DynamicResource ColorNavActive}" />
+    <SolidColorBrush x:Key="NavActiveBrush" x:Shared="False" Color="{DynamicResource ColorNavActive}" />
 
     <!-- 滑块底轨画刷：比「填充色」浅但比分隔线深，保证左右两段视觉粗细一致 -->
-    <SolidColorBrush x:Key="SliderTrackBrush" Color="{DynamicResource ColorSliderTrack}" />
+    <SolidColorBrush x:Key="SliderTrackBrush" x:Shared="False" Color="{DynamicResource ColorSliderTrack}" />
 
-    <!-- 滚动条滑块画刷 -->
-    <SolidColorBrush x:Key="ScrollThumbBrush" Color="{DynamicResource ColorScrollThumb}" />
-    <SolidColorBrush x:Key="ScrollThumbHoverBrush" Color="{DynamicResource ColorScrollThumbHover}" />
+    <!-- 滚动条滑块画刷（VD-072：≥3:1） -->
+    <SolidColorBrush x:Key="ScrollThumbBrush" x:Shared="False" Color="{DynamicResource ColorScrollThumb}" />
+    <SolidColorBrush x:Key="ScrollThumbHoverBrush" x:Shared="False" Color="{DynamicResource ColorScrollThumbHover}" />
 
 </ResourceDictionary>

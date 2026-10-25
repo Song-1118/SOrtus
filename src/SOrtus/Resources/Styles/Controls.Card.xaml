@@ -41,6 +41,41 @@
     </Style>
 
     <!--
+        卡片标题（VD-069）：分组卡标题此前用 FontSizeBody(14) + TextSecondary（比字段名 13px 更灰），
+        与「项目名 / 简介 / 工期」这些字段标签只差 1px，卡片失去「这张卡讲什么」的落点。
+        现在：15px + TextPrimary + SemiBold + 左侧 2px 竖条。
+        竖条是形状语言的一部分（标题=竖条，tab=下划线，tag=描边胶囊），不靠字号单独支撑层级。
+        用法：<Border Style="{StaticResource CardTitleBorderStyle}"><TextBlock Style="{StaticResource CardTitleTextStyle}" Text="…"/></Border>
+    -->
+    <Style x:Key="CardTitleBorderStyle" TargetType="Border">
+        <Setter Property="BorderBrush" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="BorderThickness" Value="2,0,0,0" />
+        <Setter Property="Padding" Value="8,0,0,0" />
+        <Setter Property="Margin" Value="0,0,0,12" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
+
+    <Style x:Key="CardTitleTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeCardTitle}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!--
+        卡内分组卡（VD-077）：卡片套卡片时内层比外层低一阶底色。
+        外层的层次由磨砂覆盖层给出（≈Surface），内层用 SurfaceAlt，两层才不会糊成一整块白。
+    -->
+    <Style x:Key="GroupCardStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource CornerRadiusMedium}" />
+        <Setter Property="Padding" Value="16" />
+        <Setter Property="Margin" Value="0,0,0,14" />
+    </Style>
+
+    <!--
         磨砂卡片样式（Border 直用版）：页面直接引用此样式即可获得背景模糊 + 覆盖层 + 圆角，
         无需任何内联 <BlurEffect>。模糊半径绑定全局资源，受设置页调节影响。
         新建控件场景优先使用 SOrCard；此样式保留给对话框浮层等纯 Border 容器。

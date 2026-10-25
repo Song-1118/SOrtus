@@ -1,4 +1,5 @@
-using SOrtus.Core.Models;
+﻿using SOrtus.Core.Models;
+using SOrtus.Navigation;
 using SOrtus.Core.Services;
 using SOrtus.Services;
 using SOrtus.ViewModels;
@@ -348,6 +349,75 @@ public class ViewModelTests
         Assert.Equal(ProjectStatus.Completed, vm.Project.Status);
         Assert.Equal(1, service.SaveCalls);
         Assert.False(vm.IsDirty);
+    }
+
+    #endregion
+
+    #region 列表页 / 导航（VD-079 保留筛选与滚动、VD-087 清除筛选）
+
+    /// <summary>主题服务桩：只要满足构造签名，不触碰磁盘。</summary>
+    private sealed class StubThemeService : IThemeService
+    {
+        public string CurrentTheme { get; private set; } = "Light";
+
+        public double GlobalBlurRadius { get; private set; } = 12;
+
+        public event EventHandler? ThemeChanged
+        {
+            add { }
+            remove { }
+        }
+
+        public void Initialize()
+        {
+        }
+
+        public void SetTheme(string themeName) => CurrentTheme = themeName;
+
+        public void SetBlurStrength(double radius) => GlobalBlurRadius = radius;
+    }
+
+    [Fact]
+    public async Task List_ClearFilters_ResetsConditionsAndReloads()
+    {
+        var service = new StubProjectService();
+        service.Items.Add(new Project { Id = 1, Name = "A", Type = ProjectType.Programming });
+        var vm = new ProjectListViewModel(service, new StubLocalization(), _ => { }, () => { });
+        await vm.LoadAsync();
+
+        vm.SearchText = "abc";
+        vm.FilterType = ProjectType.Programming;
+        vm.FilterStatus = ProjectStatus.Completed;
+        Assert.True(vm.HasFilter);
+
+        vm.ClearFiltersCommand.Execute(null);
+
+        // 清空是同步的（先复位条件再统一刷新一次），因此无需等待 LoadAsync
+        Assert.Equal(string.Empty, vm.SearchText);
+        Assert.Null(vm.FilterType);
+        Assert.Null(vm.FilterStatus);
+        Assert.False(vm.HasFilter);
+    }
+
+    [Fact]
+    public async Task Main_ReturningToList_KeepsSameListViewModel()
+    {
+        var navigation = new NavigationService();
+        var vm = new MainViewModel(
+            new StubProjectService(),
+            new StubThemeService(),
+            new StubLocalization(),
+            navigation,
+            new StubDialogService());
+
+        vm.Initialize();
+        var listBefore = vm.CurrentView;
+
+        await vm.ShowNewProjectAsync();
+        Assert.NotSame(listBefore, vm.CurrentView);
+
+        await vm.ShowProjectsAsync();
+        Assert.Same(listBefore, vm.CurrentView);
     }
 
     #endregion

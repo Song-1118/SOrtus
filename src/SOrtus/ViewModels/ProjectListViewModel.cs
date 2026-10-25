@@ -33,6 +33,7 @@ internal sealed class ProjectListViewModel : ViewModelBase
     public ICommand NewCommand { get; }
     public ICommand OpenDetailCommand { get; }
     public ICommand RefreshCommand { get; }
+    public ICommand ClearFiltersCommand { get; }
 
     /// <summary>立项总数（不受筛选影响，用于副标题统计）。</summary>
     public int TotalCount
@@ -54,6 +55,33 @@ internal sealed class ProjectListViewModel : ViewModelBase
 
     /// <summary>有数据但被筛选过滤为空（区别于「完全没有任何立项」）。</summary>
     public bool HasNoResults => Projects.Count == 0 && TotalCount > 0;
+
+    /// <summary>
+    /// 「没有匹配的立项（共 N 个）」——带上总数，用户才知道筛掉的是 3 个还是 300 个（VD-087）。
+    /// </summary>
+    public string NoResultsText =>
+        string.Format(_localization.GetString("List_NoResultsCount"), TotalCount);
+
+    /// <summary>一键清除全部筛选条件（VD-087：空结果页的唯一出口，不再让用户逐个改回「全部」）。</summary>
+    private void ClearFilters()
+    {
+        if (!HasFilter)
+        {
+            return;
+        }
+
+        // 直接改字段再统一刷新一次，避免三个 setter 各触发一次查询
+        _searchText = string.Empty;
+        _filterType = null;
+        _filterStatus = null;
+
+        OnPropertyChanged(nameof(SearchText));
+        OnPropertyChanged(nameof(FilterType));
+        OnPropertyChanged(nameof(FilterStatus));
+        OnPropertyChanged(nameof(HasFilter));
+
+        _ = LoadAsync();
+    }
 
     public string SearchText
     {
@@ -94,6 +122,12 @@ internal sealed class ProjectListViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// 列表滚动位置（VD-079）。由 ViewTemplates 里的 ScrollViewer 双向绑定：
+    /// 离开列表时写回，返回时还原，用户不会因为去看了眼详情就回到顶部。
+    /// </summary>
+    public double ScrollOffset { get; set; }
+
     public Project? SelectedProject
     {
         get => _selectedProject;
@@ -121,6 +155,7 @@ internal sealed class ProjectListViewModel : ViewModelBase
         NewCommand = new RelayCommand(_ => _requestNew());
         OpenDetailCommand = new RelayCommand(o => { if (o is Project p) _openDetail(p); });
         RefreshCommand = new AsyncRelayCommand(LoadAsync);
+        ClearFiltersCommand = new RelayCommand(_ => ClearFilters());
 
         _ = LoadAsync();
     }
@@ -148,6 +183,7 @@ internal sealed class ProjectListViewModel : ViewModelBase
                 OnPropertyChanged(nameof(IsEmpty));
                 OnPropertyChanged(nameof(HasFilter));
                 OnPropertyChanged(nameof(HasNoResults));
+                OnPropertyChanged(nameof(NoResultsText));
                 OnPropertyChanged(nameof(Subtitle));
             }
 

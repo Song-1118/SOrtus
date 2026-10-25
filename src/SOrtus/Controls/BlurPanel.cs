@@ -258,9 +258,13 @@ public static class BlurPanel
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch,
-            Fill = ResolveOverlayBrush(),
             Opacity = GetOverlayOpacity(fe),
         };
+
+        // VD-061：覆盖层颜色必须走资源引用，不能在建层时把画刷实例「拍」进 Fill。
+        // 旧实现用 TryFindResource 取一次实例直接赋值——主题切换后该实例不再跟随，
+        // 深色模式下卡片仍覆盖着上一套主题的白，于是出现白卡。
+        overlay.SetResourceReference(Shape.FillProperty, "BlurOverlayBrush");
 
         grid.Children.Add(blurRect);
         grid.Children.Add(overlay);
@@ -438,10 +442,5 @@ public static class BlurPanel
     private static Brush ResolveDefaultBackdrop()
     {
         return (Brush?)Application.Current?.TryFindResource("WallpaperBrush") ?? Brushes.Transparent;
-    }
-
-    private static Brush ResolveOverlayBrush()
-    {
-        return (Brush?)Application.Current?.TryFindResource("BlurOverlayBrush") ?? Brushes.Transparent;
     }
 }

@@ -147,7 +147,19 @@
 
 <!-- ===== 下拉 / 日历浮层：8px 上移 + 150ms 淡入（VD-068） ===== -->
 <!-- 浮层入场（下拉 / 日历）：引用者需自带 TranslateTransform.Y=8（VD-068） -->
-<!--
+<!-- 浮层（下拉框 / 日历）入场：淡入 + 8px 上移（150ms）。
+         PlayOnShow 由 Motion 注入独立变换实例播放，不使用 Style Setter 的共享变换
+         （共享变换会被 WPF 冻结，第二个元素动画即崩，见 Motion.PlayOnShow 注释）。 -->
+    <Storyboard x:Key="OverlayInStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.15"
+                         EasingFunction="{StaticResource CubicEaseOut}" />
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.Y)"
+                         From="8" To="0" Duration="0:0:0.15"
+                         EasingFunction="{StaticResource CubicEaseOut}" />
+    </Storyboard>
+
+    <!--
         弹窗拒绝关闭时的抖动（用户反馈：点遮罩没反应像卡死）。
         左右各晃一次后归位，260ms；幅度 6/5/3 递减，最后停在 0。
         目标是 MainWindow 的 PART_DialogHost（RenderTransform 已是 TransformGroup）。

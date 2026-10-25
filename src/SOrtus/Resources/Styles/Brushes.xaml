@@ -118,6 +118,10 @@
 
     <!-- 导航 / 列表选中高亮画刷 -->
     <SolidColorBrush x:Key="NavActiveBrush" x:Shared="False" Color="{DynamicResource ColorNavActive}" />
+    <!-- 导航项悬停色：两套主题都取「灰」。原来导航复用全站 HoverOverlayBrush——
+         深色主题下它是白色 8% 叠加（悬停变亮），与「悬停变灰」的预期不符；
+         该画刷全站共用不能改，这里给导航专用一档灰。 -->
+    <SolidColorBrush x:Key="NavHoverBrush" x:Shared="False" Color="{DynamicResource ColorNavHover}" />
 
     <!-- 滑块底轨画刷：比「填充色」浅但比分隔线深，保证左右两段视觉粗细一致 -->
     <SolidColorBrush x:Key="SliderTrackBrush" x:Shared="False" Color="{DynamicResource ColorSliderTrack}" />

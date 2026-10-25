@@ -67,6 +67,8 @@
 
     <!-- 导航 / 列表选中高亮 -->
     <Color x:Key="ColorNavActive">#F3F4F6</Color>
+    <!-- 导航悬停灰：比选中态 #F3F4F6 弱一档 -->
+    <Color x:Key="ColorNavHover">#EDEFF2</Color>
 
     <!-- 滚动条滑块（VD-072）：对白底 3.06:1 / 悬停 4.83:1，满足 WCAG 1.4.11 的 3:1 -->
     <Color x:Key="ColorScrollThumb">#8C949F</Color>

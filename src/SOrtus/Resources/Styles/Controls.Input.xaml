@@ -310,7 +310,8 @@
                                StaysOpen="False"
                                PopupAnimation="None"
                                IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
-                            <Border Background="{DynamicResource SurfaceBrush}"
+                            <Border local:Motion.PlayOnShow="OverlayInStoryboard"
+                                    Background="{DynamicResource SurfaceBrush}"
                                     BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1"
                                     CornerRadius="{DynamicResource CornerRadiusMedium}"
@@ -376,6 +377,12 @@
                         </Trigger>
                         <DataTrigger Binding="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}}" Value="{x:Null}">
                             <Setter TargetName="PART_Placeholder" Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                        <!-- 浮层打开期间收起触发器里的选中文字（VD-127）：否则原来的
+                             「编程开发」与浮层第一行「全部类型」在视觉上叠在一起。
+                             用 Hidden 而非 Collapsed——保留布局空间，关闭后文字位置不跳。 -->
+                        <DataTrigger Binding="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
+                            <Setter TargetName="PART_ContentSite" Property="Visibility" Value="Hidden" />
                         </DataTrigger>
                         <!-- 校验失败态（VD-091）：边框与焦点环同用语义危险色 -->
                         <Trigger Property="IsInvalid" Value="True">

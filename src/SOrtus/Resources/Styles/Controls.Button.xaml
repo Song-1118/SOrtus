@@ -182,6 +182,17 @@
                                 <BeginStoryboard Storyboard="{StaticResource EnableFadeStoryboard}" />
                             </Trigger.ExitActions>
                         </Trigger>
+                        <!-- 导航悬停用专用灰（VD-126）：深色主题下全站 HoverOverlayBrush 是
+                             白色 8% 叠加（悬停变亮），与「悬停变灰」不符；该画刷全站共用，
+                             在模板触发器里只把导航变体的覆盖层换成 NavHoverBrush。
+                             必须放 ControlTemplate.Triggers——Style.Triggers 的 Setter
+                             不能设 TargetName。 -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="Variant" Value="Nav" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="PART_Hover" Property="Background" Value="{DynamicResource NavHoverBrush}" />
+                        </MultiTrigger>
                         <!-- hover 保底（VD-125）：非悬停态显式把覆盖层 Opacity 归零。
                              只靠 MicroOut 动画不够——HoldEnd 动画在元素复用 / 状态快速
                              翻转等路径下可能把 Opacity 遗留在 1，鼠标划过后留下一层

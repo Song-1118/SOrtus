@@ -138,6 +138,12 @@
 - **文档预览滚轮灵敏度**：新增 `MouseWheelScroll` 附加属性，文档阅读区每格滚轮 6 行（系统默认 3），按正文行高 24px 换算像素并接管事件，避免系统再滚一次造成双倍位移。
 - **全局非线性缓动**：补齐 8 处仍为线性插值的动画——类型卡淡出、tab 指示条收起、开关轨道色、占位符淡入淡出、加载指示器退出、进度条 400ms 填充（改 Exit 缓动）。规范令牌 `Std / Enter / Exit / Back` 已在 `Animations.xaml` 统一提供；仅加载指示的匀速旋转与 0ms 的焦点环失焦保持原语义。
 
+### 用户反馈批次四（导航悬停灰 / 下拉动画恢复 / 打开下拉收起旧文字）
+
+- **左侧菜单栏悬停颜色**：原来导航复用全站 `HoverOverlayBrush`——深色主题下它是**白色 8% 叠加（悬停变亮）**，与「悬停变灰、移走恢复」的预期不符；该画刷全站共用不能直接改。新增 `NavHoverBrush`（深色 `#262A2F` / 浅色 `#EDEFF2`，均比各自的选中态弱一档，避免「悬停和选中看起来一样」），经模板触发器只对 Nav 变体替换覆盖层背景（`Style.Triggers` 的 Setter 不能设 TargetName，必须放 `ControlTemplate.Triggers`）；恢复由 `IsMouseOver=False` 保底 Setter 保证，与动画终值无关。
+- **下拉动画恢复**（上轮按「改没了」删错，用户实际要保留）：恢复 `OverlayInStoryboard`（淡入 + 8px 上移 150ms）与 Popup 上的 `Motion.PlayOnShow` 引用。
+- **打开下拉时收起触发器旧文字**（用户意见「菜单栏切换是删除原数据」）：浮层打开期间把 `PART_ContentSite`（原选中项「编程开发」）置为 Hidden——否则它与浮层第一行「全部类型」在视觉上叠在一起；用 Hidden 而非 Collapsed 保留布局空间，关闭后文字位置不跳。
+
 ### 用户反馈批次三（滑块回跳回归 / 下拉动画移除 / 按钮居中 / hover 残留）
 
 - **滑块「点击到 A 又缩回去」**：上一轮为消除「动画持有 Value」把填充行为改成 `FillBehavior.Stop`——它的语义是动画一结束属性**立即弹回动画前旧值**，Completed 回调要到下一帧才写回目标值，用户看到的就是「进度条到 A 又缩回去、再点一次才过来」。改为默认 HoldEnd 保持到结束，Completed 里**同一帧内**先 `BeginAnimation(prop, null)` 摘掉动画再 `SetCurrentValue` 固化终值——两步之间没有渲染帧，既不留持有也不回跳。

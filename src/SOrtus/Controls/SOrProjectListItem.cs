@@ -31,9 +31,41 @@ public sealed class SOrProjectListItem : ContentControl
             nameof(OpenCommand), typeof(ICommand), typeof(SOrProjectListItem),
             new PropertyMetadata(null));
 
+    /// <summary>M-29 按下态（只读）：驱动 0.995 缩放与按压覆盖层，由鼠标按下/抬起维护。</summary>
+    private static readonly DependencyPropertyKey IsPressedPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(IsPressed), typeof(bool), typeof(SOrProjectListItem),
+            new PropertyMetadata(false));
+
+    public static readonly DependencyProperty IsPressedProperty = IsPressedPropertyKey.DependencyProperty;
+
+    public bool IsPressed
+    {
+        get => (bool)GetValue(IsPressedProperty);
+        private set => SetValue(IsPressedPropertyKey, value);
+    }
+
     static SOrProjectListItem()
     {
         DefaultStyleKeyProperty.OverrideMetadata(typeof(SOrProjectListItem), new FrameworkPropertyMetadata(typeof(SOrProjectListItem)));
+    }
+
+    protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+    {
+        IsPressed = true;
+        base.OnMouseLeftButtonDown(e);
+    }
+
+    protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
+    {
+        IsPressed = false;
+        base.OnMouseLeftButtonUp(e);
+    }
+
+    protected override void OnMouseLeave(MouseEventArgs e)
+    {
+        IsPressed = false;
+        base.OnMouseLeave(e);
     }
 
     public Project? Project

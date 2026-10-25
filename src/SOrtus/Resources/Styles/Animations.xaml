@@ -18,8 +18,20 @@
         所有自定义控件都遵守同一命名约定，因此同一份资源可被任意模板直接引用，无需各写一遍。
     -->
 
+    <!--
+        缓动令牌（规范 §3）：
+          Std  = 0.20, 0, 0, 1       → WPF 用 CubicEase EaseOut 近似（规范允许）
+          Enter= 0.05, 0, 0.15, 1    → CubicEase EaseOut（起步更快，观感「轻」）
+          Exit = 0.40, 0, 1, 1       → CubicEase EaseIn（起步缓、收尾快，不拖泥带水）
+          Back = 0.34, 1.56, 0.64, 1 → BackEase，回弹幅度 ≤4%（Amplitude=0.35，仅弹窗/徽标）
+          Lin  = 线性                → 仅进度填充
+        时长令牌：D-80 / D-120 / D-180 / D-240 / D-320 / D-600。
+    -->
     <CubicEase x:Key="CubicEaseOut" EasingMode="EaseOut" />
-    <BackEase x:Key="BackEaseOut" EasingMode="EaseOut" Amplitude="0.6" />
+    <CubicEase x:Key="StdEase" EasingMode="EaseOut" />
+    <CubicEase x:Key="EnterEase" EasingMode="EaseOut" />
+    <CubicEase x:Key="ExitEase" EasingMode="EaseIn" />
+    <BackEase x:Key="BackEaseOut" EasingMode="EaseOut" Amplitude="0.35" />
 
     <!-- ===== 微交互：悬浮（TargetName = PART_Hover） ===== -->
     <Storyboard x:Key="MicroInStoryboard">
@@ -120,86 +132,27 @@
                          To="0" Duration="0:0:0.10" />
     </Storyboard>
 
-    <!-- ===== 页面入场：淡入 + 8px 上移（VD-063） ===== -->
-    <Storyboard x:Key="FadeInStoryboard">
+<Storyboard x:Key="SlideUpStoryboard">
         <DoubleAnimation Storyboard.TargetProperty="Opacity"
                          From="0" To="1" Duration="0:0:0.22"
                          EasingFunction="{StaticResource CubicEaseOut}" />
-    </Storyboard>
-
-    <Storyboard x:Key="SlideUpStoryboard">
-        <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                         From="0" To="1" Duration="0:0:0.22"
-                         EasingFunction="{StaticResource CubicEaseOut}" />
-        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.Y)"
                          From="8" To="0" Duration="0:0:0.22"
                          EasingFunction="{StaticResource CubicEaseOut}" />
     </Storyboard>
 
-    <!-- ===== 弹窗 / 浮层入场：弹入（VD-063） ===== -->
-    <Storyboard x:Key="PopInStoryboard">
-        <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                         From="0" To="1" Duration="0:0:0.24"
-                         EasingFunction="{StaticResource CubicEaseOut}" />
-        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                         From="0.96" To="1" Duration="0:0:0.24"
-                         EasingFunction="{StaticResource BackEaseOut}" />
-        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                         From="0.96" To="1" Duration="0:0:0.24"
-                         EasingFunction="{StaticResource BackEaseOut}" />
-    </Storyboard>
-
-    <!-- ===== 下拉 / 日历浮层：8px 上移 + 150ms 淡入（VD-068） ===== -->
+<!-- ===== 下拉 / 日历浮层：8px 上移 + 150ms 淡入（VD-068） ===== -->
     <Storyboard x:Key="OverlayInStoryboard">
         <DoubleAnimation Storyboard.TargetProperty="Opacity"
                          From="0" To="1" Duration="0:0:0.15"
                          EasingFunction="{StaticResource CubicEaseOut}" />
+        <!-- 浮层只动 Y，用单 TranslateTransform（OverlayInOnLoadStyle 注入的就是它） -->
         <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
                          From="8" To="0" Duration="0:0:0.15"
                          EasingFunction="{StaticResource CubicEaseOut}" />
     </Storyboard>
 
-    <!-- ===== 元素加载即播放（引用者必须自带对应 RenderTransform） ===== -->
-    <Style x:Key="FadeInOnLoadStyle" TargetType="FrameworkElement">
-        <Setter Property="Opacity" Value="0" />
-        <Style.Triggers>
-            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                <BeginStoryboard Storyboard="{StaticResource FadeInStoryboard}" />
-            </EventTrigger>
-        </Style.Triggers>
-    </Style>
-
-    <!-- 页面入场：列表 / 向导 / 详情 / 设置四个页面根卡片统一引用（VD-063） -->
-    <Style x:Key="SlideUpOnLoadStyle" TargetType="FrameworkElement">
-        <Setter Property="Opacity" Value="0" />
-        <Setter Property="RenderTransform">
-            <Setter.Value>
-                <TranslateTransform Y="8" />
-            </Setter.Value>
-        </Setter>
-        <Style.Triggers>
-            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                <BeginStoryboard Storyboard="{StaticResource SlideUpStoryboard}" />
-            </EventTrigger>
-        </Style.Triggers>
-    </Style>
-
-    <!-- 弹窗入场：引用者需设置 RenderTransformOrigin="0.5,0.5"（VD-063） -->
-    <Style x:Key="PopInOnLoadStyle" TargetType="FrameworkElement">
-        <Setter Property="Opacity" Value="0" />
-        <Setter Property="RenderTransform">
-            <Setter.Value>
-                <ScaleTransform ScaleX="0.96" ScaleY="0.96" />
-            </Setter.Value>
-        </Setter>
-        <Style.Triggers>
-            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                <BeginStoryboard Storyboard="{StaticResource PopInStoryboard}" />
-            </EventTrigger>
-        </Style.Triggers>
-    </Style>
-
-    <!-- 浮层入场（下拉 / 日历）：引用者需自带 TranslateTransform.Y=8（VD-068） -->
+<!-- 浮层入场（下拉 / 日历）：引用者需自带 TranslateTransform.Y=8（VD-068） -->
     <Style x:Key="OverlayInOnLoadStyle" TargetType="FrameworkElement">
         <Setter Property="Opacity" Value="0" />
         <Setter Property="RenderTransform">
@@ -246,14 +199,330 @@
                 <Trigger.EnterActions>
                     <BeginStoryboard>
                         <Storyboard>
+                            <!-- M-34：内容交叉淡化 180ms（指示条 200ms 已由 TabIndicatorInStoryboard 承担，先动） -->
                             <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                             From="0" To="1" Duration="0:0:0.16"
-                                             EasingFunction="{StaticResource CubicEaseOut}" />
+                                             From="0" To="1" Duration="0:0:0.18"
+                                             EasingFunction="{StaticResource EnterEase}" />
                         </Storyboard>
                     </BeginStoryboard>
                 </Trigger.EnterActions>
             </Trigger>
         </Style.Triggers>
     </Style>
+
+    <!--
+        =====================================================================
+        规范 §4 操作级动效清单补全（M-01 ~ M-57，M-50 下载进度本版无场景）。
+        每条注释标注 M 编号，数值与《SOrtus 动效设计规范-0.3.0》一致，禁止改动。
+        =====================================================================
+    -->
+
+    <!-- M-01 应用首帧：窗口内容 Opacity 0→1，180ms Enter，只淡入不缩放 -->
+    <Storyboard x:Key="StartupFadeInStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.18"
+                         EasingFunction="{StaticResource EnterEase}" />
+    </Storyboard>
+
+    <!-- M-02 侧边栏首次出现：Y +8→0 / Opacity 0→1，240ms（仅启动一次） -->
+    <Storyboard x:Key="SidebarInStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.24"
+                         EasingFunction="{StaticResource EnterEase}" />
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.Y)"
+                         From="8" To="0" Duration="0:0:0.24"
+                         EasingFunction="{StaticResource EnterEase}" />
+    </Storyboard>
+
+    <!-- M-03 最大化/还原：内容 Opacity 1→.98→1，160ms Std；几何尺寸交给系统，不做窗口缩放 -->
+    <Storyboard x:Key="MaximizeDipStoryboard">
+        <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity">
+            <DiscreteDoubleKeyFrame KeyTime="0:0:0" Value="1" />
+            <EasingDoubleKeyFrame KeyTime="0:0:0.08" Value="0.98">
+                <EasingDoubleKeyFrame.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </EasingDoubleKeyFrame.EasingFunction>
+            </EasingDoubleKeyFrame>
+            <EasingDoubleKeyFrame KeyTime="0:0:0.16" Value="1">
+                <EasingDoubleKeyFrame.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </EasingDoubleKeyFrame.EasingFunction>
+            </EasingDoubleKeyFrame>
+        </DoubleAnimationUsingKeyFrames>
+    </Storyboard>
+
+    <!-- M-05 更新提示条出现：内容 +8→0 / 0→1，220ms Enter（先落位再淡入，避免瞬移） -->
+    <Storyboard x:Key="ToastInStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.22"
+                         EasingFunction="{StaticResource EnterEase}" />
+        <!-- 更新条 Border 的 Style 注入的是单 TranslateTransform（不是 Group） -->
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                         From="8" To="0" Duration="0:0:0.22"
+                         EasingFunction="{StaticResource EnterEase}" />
+    </Storyboard>
+
+    <!-- M-06 更新提示条消失：1→0，160ms Exit（退场快于入场） -->
+    <Storyboard x:Key="ToastOutStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="1" To="0" Duration="0:0:0.16"
+                         EasingFunction="{StaticResource ExitEase}" />
+    </Storyboard>
+
+    <!-- M-07 旧页淡出：1→0，90ms Exit（同容器内先出后进，总时长 ≤300ms） -->
+    <Storyboard x:Key="PageOutStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="1" To="0" Duration="0:0:0.09"
+                         EasingFunction="{StaticResource ExitEase}" />
+    </Storyboard>
+
+    <!-- M-08 列表→详情：0→1 / Y +12→0，220ms / 280ms Enter（「从卡片里展开」的方向感） -->
+    <Storyboard x:Key="PageForwardStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.22"
+                         EasingFunction="{StaticResource EnterEase}" />
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.Y)"
+                         From="12" To="0" Duration="0:0:0.28"
+                         EasingFunction="{StaticResource EnterEase}" />
+    </Storyboard>
+
+    <!-- M-09 详情→列表（返回）：0→1 / Y -8→0，180ms / 220ms（位移方向与进入相反） -->
+    <Storyboard x:Key="PageBackStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.18"
+                         EasingFunction="{StaticResource EnterEase}" />
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.Y)"
+                         From="-8" To="0" Duration="0:0:0.22"
+                         EasingFunction="{StaticResource EnterEase}" />
+    </Storyboard>
+
+    <!-- M-10 筛选结果刷新：列表容器 Opacity 0.55→1，160ms Std（不重播整页入场） -->
+    <Storyboard x:Key="RefreshPulseStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0.55" To="1" Duration="0:0:0.16"
+                         EasingFunction="{StaticResource StdEase}" />
+    </Storyboard>
+
+    <!-- M-11 空状态出现：0→1 / Y +6→0，200ms Enter（与列表交叉淡化） -->
+    <Storyboard x:Key="EmptyStateInStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.20"
+                         EasingFunction="{StaticResource EnterEase}" />
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.Y)"
+                         From="6" To="0" Duration="0:0:0.20"
+                         EasingFunction="{StaticResource EnterEase}" />
+    </Storyboard>
+
+    <!-- M-12 无结果文案出现：0→1，140ms Std（不抖动、不红色——空结果不是错误） -->
+    <Storyboard x:Key="NoResultInStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.14"
+                         EasingFunction="{StaticResource StdEase}" />
+    </Storyboard>
+
+    <!-- M-18 按钮进入禁用：整体 Opacity 1→0.45，120ms（光标同时切回箭头由控件模板承担） -->
+    <Storyboard x:Key="DisableFadeStoryboard">
+        <DoubleAnimation Storyboard.TargetName="PART_Root"
+                         Storyboard.TargetProperty="Opacity"
+                         To="0.45" Duration="0:0:0.12"
+                         EasingFunction="{StaticResource StdEase}" />
+    </Storyboard>
+    <Storyboard x:Key="EnableFadeStoryboard">
+        <DoubleAnimation Storyboard.TargetName="PART_Root"
+                         Storyboard.TargetProperty="Opacity"
+                         To="1" Duration="0:0:0.12"
+                         EasingFunction="{StaticResource StdEase}" />
+    </Storyboard>
+
+<!-- M-21 占位符消失/出现：Opacity 1→0 / 0→1，100ms -->
+    <Storyboard x:Key="PlaceholderOutStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0.85" To="0" Duration="0:0:0.10" />
+    </Storyboard>
+    <Storyboard x:Key="PlaceholderInStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="0.85" Duration="0:0:0.10" />
+    </Storyboard>
+
+    <!--
+        M-22 字段校验失败 / M-23 错误消除：错误行高度 0→auto→0。
+        原则 1 只允许「折叠、错误行、删除收拢」三处做高度动画，且单元素、同帧、≤240ms——这里正是其一。
+    -->
+    <Storyboard x:Key="ErrorRowInStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.18"
+                         EasingFunction="{StaticResource EnterEase}" />
+    </Storyboard>
+    <Storyboard x:Key="ErrorRowOutStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="1" To="0" Duration="0:0:0.16"
+                         EasingFunction="{StaticResource ExitEase}" />
+    </Storyboard>
+
+    <!-- M-27 列表首次加载：每项 0→1 / Y +10→0，220ms Enter（stagger 40ms 由 Motion.StaggerIndex 承担） -->
+    <Storyboard x:Key="ListStaggerInStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.22"
+                         EasingFunction="{StaticResource EnterEase}" />
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.Y)"
+                         From="10" To="0" Duration="0:0:0.22"
+                         EasingFunction="{StaticResource EnterEase}" />
+    </Storyboard>
+
+    <!-- M-29 列表项按下：覆盖层 + 卡片 Scale 1→0.995，90ms（0.995 几乎不可见但能「感觉到」） -->
+    <Storyboard x:Key="ListPressInStoryboard">
+        <DoubleAnimation Storyboard.TargetName="PART_Press"
+                         Storyboard.TargetProperty="Opacity"
+                         To="1" Duration="0:0:0.09"
+                         EasingFunction="{StaticResource StdEase}" />
+        <DoubleAnimation Storyboard.TargetName="PART_Root"
+                         Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                         To="0.995" Duration="0:0:0.09"
+                         EasingFunction="{StaticResource StdEase}" />
+        <DoubleAnimation Storyboard.TargetName="PART_Root"
+                         Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                         To="0.995" Duration="0:0:0.09"
+                         EasingFunction="{StaticResource StdEase}" />
+    </Storyboard>
+    <Storyboard x:Key="ListPressOutStoryboard">
+        <DoubleAnimation Storyboard.TargetName="PART_Press"
+                         Storyboard.TargetProperty="Opacity"
+                         To="0" Duration="0:0:0.14"
+                         EasingFunction="{StaticResource EnterEase}" />
+        <DoubleAnimation Storyboard.TargetName="PART_Root"
+                         Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                         To="1" Duration="0:0:0.14"
+                         EasingFunction="{StaticResource EnterEase}" />
+        <DoubleAnimation Storyboard.TargetName="PART_Root"
+                         Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                         To="1" Duration="0:0:0.14"
+                         EasingFunction="{StaticResource EnterEase}" />
+    </Storyboard>
+
+<!-- M-39 设置页分组卡首次进入：每卡 0→1 / Y +8→0，200ms Enter（stagger 30ms 由 Motion.StaggerIndex 承担） -->
+    <Storyboard x:Key="SettingsCardInStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.20"
+                         EasingFunction="{StaticResource EnterEase}" />
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.Y)"
+                         From="8" To="0" Duration="0:0:0.20"
+                         EasingFunction="{StaticResource EnterEase}" />
+    </Storyboard>
+
+    <!-- M-40 遮罩出现：0→1，180ms Std（先于面板 40ms，制造纵深） -->
+    <Storyboard x:Key="ScrimInStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.18"
+                         EasingFunction="{StaticResource StdEase}" />
+    </Storyboard>
+
+    <!-- M-41 弹窗出现：0→1 / Scale .96→1 / Y +8→0，240ms Back（回弹幅度 0.35，不要「弹一下再抖」） -->
+    <Storyboard x:Key="DialogInStoryboard">
+        <!-- BeginTime 40ms：遮罩（M-40）先于面板（M-41）入场，制造纵深 -->
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" BeginTime="0:0:0.04" Duration="0:0:0.24"
+                         EasingFunction="{StaticResource EnterEase}" />
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)"
+                         From="0.96" To="1" BeginTime="0:0:0.04" Duration="0:0:0.24"
+                         EasingFunction="{StaticResource BackEaseOut}" />
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)"
+                         From="0.96" To="1" BeginTime="0:0:0.04" Duration="0:0:0.24"
+                         EasingFunction="{StaticResource BackEaseOut}" />
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.Y)"
+                         From="8" To="0" BeginTime="0:0:0.04" Duration="0:0:0.24"
+                         EasingFunction="{StaticResource EnterEase}" />
+    </Storyboard>
+
+<!-- M-44 错误条出现：0→1，200ms Enter（把下方内容推下去，同帧） -->
+    <Storyboard x:Key="ErrorBannerInStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.20"
+                         EasingFunction="{StaticResource EnterEase}" />
+    </Storyboard>
+
+    <!-- M-45 文档弹窗内容载入：正文 0→1，160ms Std（只淡入一次，滚动时不再触发） -->
+    <Storyboard x:Key="DocContentInStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.16"
+                         EasingFunction="{StaticResource StdEase}" />
+    </Storyboard>
+
+    <!-- M-46 保存成功：180ms 淡入 → 停 2.5s → 240ms 淡出（停留时长由代码计时） -->
+    <Storyboard x:Key="SaveStatusInStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.18"
+                         EasingFunction="{StaticResource EnterEase}" />
+    </Storyboard>
+    <Storyboard x:Key="SaveStatusOutStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="1" To="0" Duration="0:0:0.24"
+                         EasingFunction="{StaticResource ExitEase}" />
+    </Storyboard>
+
+    <!-- M-47 保存中：按钮 Opacity 1→0.7，120ms Std（禁用点击但保持可读，不加旋转 loading） -->
+    <Storyboard x:Key="SavingDimStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         To="0.7" Duration="0:0:0.12"
+                         EasingFunction="{StaticResource StdEase}" />
+    </Storyboard>
+
+    <!-- M-48 未保存徽标出现：Scale 0.9→1 / 0→1，180ms Back（幅度小，不抢标题注意力） -->
+    <Storyboard x:Key="BadgePopInStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.18"
+                         EasingFunction="{StaticResource EnterEase}" />
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)"
+                         From="0.9" To="1" Duration="0:0:0.18"
+                         EasingFunction="{StaticResource BackEaseOut}" />
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)"
+                         From="0.9" To="1" Duration="0:0:0.18"
+                         EasingFunction="{StaticResource BackEaseOut}" />
+    </Storyboard>
+
+<!-- M-51 GIT 时间线加载：每条 0→1，180ms Enter（stagger 30ms 由 Motion.StaggerIndex 承担，最多 8 条） -->
+    <Storyboard x:Key="TimelineInStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.18"
+                         EasingFunction="{StaticResource EnterEase}" />
+    </Storyboard>
+
+    <!-- M-53 主题切换：整窗 1→.86→1，180+180，中途 60ms 停在下沉态（切换期间禁用其它动画） -->
+    <Storyboard x:Key="ThemeDipStoryboard">
+        <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity">
+            <EasingDoubleKeyFrame KeyTime="0:0:0" Value="1">
+                <EasingDoubleKeyFrame.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </EasingDoubleKeyFrame.EasingFunction>
+            </EasingDoubleKeyFrame>
+            <EasingDoubleKeyFrame KeyTime="0:0:0.18" Value="0.86">
+                <EasingDoubleKeyFrame.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </EasingDoubleKeyFrame.EasingFunction>
+            </EasingDoubleKeyFrame>
+            <DiscreteDoubleKeyFrame KeyTime="0:0:0.24" Value="0.86" />
+            <EasingDoubleKeyFrame KeyTime="0:0:0.42" Value="1">
+                <EasingDoubleKeyFrame.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </EasingDoubleKeyFrame.EasingFunction>
+            </EasingDoubleKeyFrame>
+        </DoubleAnimationUsingKeyFrames>
+    </Storyboard>
+
+    <!-- M-55 语言切换：内容 1→0→1，100 + 140（与字符串字典重建同帧，避免半中半英） -->
+    <Storyboard x:Key="LanguageFadeStoryboard">
+        <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity">
+            <EasingDoubleKeyFrame KeyTime="0:0:0" Value="1" />
+            <EasingDoubleKeyFrame KeyTime="0:0:0.10" Value="0">
+                <EasingDoubleKeyFrame.EasingFunction>
+                    <CubicEase EasingMode="EaseIn" />
+                </EasingDoubleKeyFrame.EasingFunction>
+            </EasingDoubleKeyFrame>
+            <EasingDoubleKeyFrame KeyTime="0:0:0.24" Value="1">
+                <EasingDoubleKeyFrame.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </EasingDoubleKeyFrame.EasingFunction>
+            </EasingDoubleKeyFrame>
+        </DoubleAnimationUsingKeyFrames>
+    </Storyboard>
 
 </ResourceDictionary>

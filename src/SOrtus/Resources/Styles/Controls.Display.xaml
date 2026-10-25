@@ -84,6 +84,28 @@
     </Style>
 
     <!-- ============================ SOrProgressBar ============================ -->
+    <!-- 未保存徽标出现（M-48）：Scale 0.9→1 / 0→1，180ms Back（幅度小，不抢标题注意力）。
+         同样不能写在页面里：SOrTag 的模板也只存在于隐式样式。 -->
+    <Style x:Key="UnsavedBadgeStyle" TargetType="local:SOrTag"
+           BasedOn="{StaticResource {x:Type local:SOrTag}}">
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <TransformGroup>
+                    <ScaleTransform ScaleX="1" ScaleY="1" />
+                    <TranslateTransform />
+                </TransformGroup>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsDirty}" Value="True">
+                <DataTrigger.EnterActions>
+                    <BeginStoryboard Storyboard="{StaticResource BadgePopInStoryboard}" />
+                </DataTrigger.EnterActions>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
     <Style TargetType="local:SOrProgressBar">
         <Setter Property="Height" Value="8" />
         <Setter Property="CornerRadius" Value="{DynamicResource CornerRadiusBar}" />
@@ -112,6 +134,7 @@
                 <ControlTemplate TargetType="local:SOrProjectListItem">
                     <Grid>
                         <Border x:Name="PART_Root"
+                                RenderTransformOrigin="0.5,0.5"
                                 Background="{DynamicResource SurfaceBrush}"
                                 BorderBrush="{DynamicResource BorderBrush}"
                                 BorderThickness="1"
@@ -119,6 +142,10 @@
                                 Padding="14,10"
                                 Cursor="Hand"
                                 ToolTip="{DynamicResource List_OpenHint}">
+                            <!-- M-29：按压 0.995 缩放的目标变换（单 ScaleTransform，供 ListPressIn/Out 的直接路径） -->
+                            <Border.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1" />
+                            </Border.RenderTransform>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
@@ -167,6 +194,12 @@
                             </Grid>
                         </Border>
                         <!-- 悬浮覆盖层（动画挂点：改 Opacity 即得平滑过渡） -->
+                        <!-- M-29 按下覆盖层（与 PART_Root 的 0.995 缩放配对，90ms 进 / 140ms 出） -->
+                        <Border x:Name="PART_Press"
+                                Background="{DynamicResource HoverOverlayBrush}"
+                                CornerRadius="{DynamicResource CornerRadiusMedium}"
+                                Opacity="0"
+                                IsHitTestVisible="False" />
                         <Border x:Name="PART_Hover"
                                 Background="{DynamicResource HoverOverlayBrush}"
                                 CornerRadius="{DynamicResource CornerRadiusMedium}"
@@ -182,6 +215,15 @@
                                 IsHitTestVisible="False" />
                     </Grid>
                     <ControlTemplate.Triggers>
+                        <!-- M-29 按下：覆盖层 + 卡片 Scale 1→0.995，90ms（0.995 几乎不可见但能「感觉到」） -->
+                        <Trigger Property="IsPressed" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource ListPressInStoryboard}" />
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard Storyboard="{StaticResource ListPressOutStoryboard}" />
+                            </Trigger.ExitActions>
+                        </Trigger>
                         <!-- VD-064：与按钮共用同一套微交互节奏（120ms 进 / 160ms 出，CubicEaseOut） -->
                         <Trigger Property="IsMouseOver" Value="True">
                             <Trigger.EnterActions>

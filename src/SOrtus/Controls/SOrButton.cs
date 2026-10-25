@@ -74,7 +74,51 @@ public sealed class SOrButton : System.Windows.Controls.Button
     public static readonly System.Windows.DependencyProperty IsDestructiveProperty =
         System.Windows.DependencyProperty.Register(
             nameof(IsDestructive), typeof(bool), typeof(SOrButton),
-            new System.Windows.PropertyMetadata(false));
+            new System.Windows.PropertyMetadata(false, OnIsDestructiveChanged));
+
+    /// <summary>
+    /// M-43 危险确认主按钮：Primary→Danger 用 120ms 颜色过渡而不是瞬间闪红（规范明确「避免惊吓」）。
+    /// 背景画刷可能被主题冻结或共享，这里克隆一份本地画刷再对 Color 做动画，
+    /// 终值取主题的 DangerBrush——两套主题各自的红都能正确落点。
+    /// </summary>
+    private static void OnIsDestructiveChanged(System.Windows.DependencyObject d, System.Windows.DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not SOrButton button || e.NewValue is not true)
+        {
+            return;
+        }
+
+        button.ApplyTemplate();
+        if (button.Template?.FindName("PART_Root", button) is not System.Windows.Controls.Border root)
+        {
+            return;
+        }
+
+        if (button.TryFindResource("DangerBrush") is not System.Windows.Media.SolidColorBrush danger)
+        {
+            return;
+        }
+
+        var from = root.Background as System.Windows.Media.SolidColorBrush;
+        var local = (System.Windows.Media.SolidColorBrush)danger.Clone();
+        root.Background = local;
+
+        if (from is not null && !Motion.IsReducedMotion)
+        {
+            var animation = new System.Windows.Media.Animation.ColorAnimation(
+                danger.Color,
+                System.TimeSpan.FromMilliseconds(120))
+            {
+                EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut },
+            };
+            local.Color = from.Color;
+            local.BeginAnimation(System.Windows.Media.SolidColorBrush.ColorProperty, animation);
+        }
+        else
+        {
+            local.Color = danger.Color;
+        }
+    }
 
     static SOrButton()
     {

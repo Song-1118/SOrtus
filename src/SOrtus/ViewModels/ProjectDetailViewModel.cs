@@ -121,7 +121,8 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
         // VD-102：保存反馈内联到保存按钮上，2 秒后回落。
         // 旧版是页脚闪一句「已保存」，而用户最可能正看着表单中部——
         // 页脚状态行与标题旁的未保存徽标都在视野外，只能靠「按钮没变灰」猜结果。
-        _savedFlashTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        // M-46：停留 2.5s 后回落（规范明确替换现有 2s 硬切）
+        _savedFlashTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(2500) };
         _savedFlashTimer.Tick += OnSavedFlashTick;
 
         if (CanUseDocuments())
@@ -335,6 +336,9 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
         ? _localization.GetString("Common_Saved")
         : _localization.GetString("Detail_Save");
 
+    /// <summary>M-46 保存回执状态（界面据此播 180ms 淡入 / 停 2.5s / 240ms 淡出）。</summary>
+    public bool IsJustSaved => _isJustSaved;
+
     /// <summary>技术栈删除后的撤销入口（VD-104）：给 3 秒窗口，不再「误删一个技术栈就再也找不回」。</summary>
     public bool CanUndoRemoveTechStack => _removedTechStack is not null;
 
@@ -359,6 +363,7 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
         _savedFlashTimer.Stop();
         _isJustSaved = false;
         OnPropertyChanged(nameof(SaveButtonText));
+        OnPropertyChanged(nameof(IsJustSaved));
     }
 
     /// <summary>
@@ -846,6 +851,7 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
             // VD-102：反馈内联在保存按钮上（2 秒回落），页脚状态行只留给删除这类一次性结果
             _isJustSaved = true;
             OnPropertyChanged(nameof(SaveButtonText));
+            OnPropertyChanged(nameof(IsJustSaved));
             _savedFlashTimer.Stop();
             _savedFlashTimer.Start();
         });

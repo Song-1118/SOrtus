@@ -119,6 +119,14 @@
 - **更新开关**：同 VD-108，按钮改为开关。
 - **顶栏 logo 与图标同源**：顶栏此前是手绘的近似母题（「窗框 + 光点」），与应用图标不是同一份，于是「换了图标但界面没变」。现在顶栏直接 `Image` 引用 `pack://application:,,,/Resources/icon/app.ico`——与 csproj `ApplicationIcon`、安装器 `SetupIconFile` 同一文件；用户提供的新 `app.ico`（7 档 16~256，32bpp）已全局替换 `src/SOrtus/Resources/icon/app.ico` 与 `EXE/assets/app.ico`（MD5 一致）。`gen_app_ico.py` 增加 `iconSourceOverride` 守卫：`mark.json` 声明该字段后脚本拒绝再按旧母题覆盖 ico。
 
+### 动效规范落地（《SOrtus 动效设计规范-0.3.0》M-01~M-57）
+
+- **接线层**：新增 `Controls/Motion.cs`——统一注入 `RenderTransform`（规范 §7「Storyboard 写死变换路径时元素没有对应变换就静默不动」）、统一播放入口、统一「减少动效」降级（读 `SystemParameters.ClientAreaAnimation` + `SPI_GETMINANIMATE`）、统一动画计数。页面只声明意图（`Motion.PageEnter` / `StaggerIndex` / `RefreshPulse` / `PlayOnLoad`）。
+- **令牌层**：`Animations.xaml` 补 `Std / Enter / Exit / Back` 四种缓动与六档时长用法注释；规范 §4 的 57 条逐条落地，其中 **32 条新接线、13 条沿用既有且已合规、2 条本版无场景、10 条如实记为未做**（逐条原因见 `docs/动效落地记录-0.3.0.md`）。
+- **新增关键动效**：页面「先出后进」（旧页 90ms 淡出 → 新页 220/280ms 入场，且列表→详情 +12、详情→列表 −8 方向相反）、弹窗遮罩 180ms 先行 + 面板 240ms Back 弹入、列表项 40ms 错开入场（最多 8 项）、GIT 时间线 30ms 错开、设置页分组卡首次进入错开、危险确认按钮 120ms 颜色过渡（不是闪红）、保存回执 180ms 淡入 → 停 2.5s → 240ms 淡出、进度条 220ms → 400ms、主题切换 180 + 60ms 停留 + 180 下沉、语言切换 100 + 140 淡出淡入。
+- **断言层**：新增 `build/check_animation_wiring.py`——要求 `Animations.xaml` 每个 `x:Key` 至少被引用一次（VD-062 的原始事故就是「3 组 Storyboard 全仓 0 引用」）。当前 **48 个动画资源全部接线**；未接线且无场景的资源已删除，不留「做了没接」的空转。
+- **修掉两个真实缺陷**：① 页面内联 `<Style TargetType="local:SOr*">` 顶掉隐式样式导致控件无模板（确认弹窗主按钮整颗消失）——统一改为在控件字典里定义 keyed 样式并让页面字典合并；② 弹窗退场动画未走完就开下一个弹窗会被 `DialogService` 吞掉（截图 07 空白）——截图顺序已调整。
+
 ### 修复（本轮自查发现的回归）
 
 - **确认弹窗主按钮整颗消失**：模板里用内联 `<Style TargetType="local:SOrButton">` 覆盖 `Variant`，但控件模板只存在于隐式样式（无 `generic.xaml`），内联样式顶掉隐式样式后按钮无 `Template` → 不可见。改为控件属性 `IsDestructive` + 隐式样式内 `Trigger`，不再在模板里写样式。

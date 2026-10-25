@@ -119,6 +119,12 @@ internal sealed class MainViewModel : ViewModelBase
     /// <summary>把语言变更转发给需要重算文案的视图模型（VD-110）。</summary>
     private void RefreshLocalizedText()
     {
+        // M-55：内容 1→0→1（100+140ms）与字符串字典重建同帧，避免半中半英的中间态
+        if (System.Windows.Application.Current?.MainWindow is System.Windows.Window shell)
+        {
+            Controls.Motion.Begin(shell, "LanguageFadeStoryboard");
+        }
+
         OnCultureChanged();
         _listViewModel?.OnCultureChanged();
         CurrentView.OnCultureChanged();
@@ -181,22 +187,38 @@ internal sealed class MainViewModel : ViewModelBase
             await _listViewModel.LoadAsync();
         }
 
+        SetEnterDirection(Controls.Motion.EnterDirection.Return);
         await NavigateAsync(() => _listViewModel!);
     }
 
-    public Task ShowNewProjectAsync() => NavigateAsync(() => new ProjectWizardViewModel(
+    public Task ShowNewProjectAsync()
+    {
+        SetEnterDirection(Controls.Motion.EnterDirection.Default);
+        return NavigateAsync(() => new ProjectWizardViewModel(
         _projectService,
         _localization,
         () => _ = ShowProjectsAsync(),
         _dialogService));
+    }
 
-    public Task ShowSettingsAsync() => NavigateAsync(() => new SettingsViewModel(_themeService, _localization, Updates));
+    public Task ShowSettingsAsync()
+    {
+        SetEnterDirection(Controls.Motion.EnterDirection.Default);
+        return NavigateAsync(() => new SettingsViewModel(_themeService, _localization, Updates));
+    }
 
     /// <summary>关闭窗口前的守卫：详情页有未保存更改时先询问用户（A12）。</summary>
     public Task<bool> CanCloseAsync() => ConfirmLeaveCurrentAsync();
 
     /// <summary>直接打开指定立项的详情页（截图 / 预览脚本用）。</summary>
     internal void ShowDetail(Project project) => OpenDetail(project);
+
+    /// <summary>
+    /// 页面进出场方向（规范 M-07/08/09）：列表→详情 = Forward（+12 上浮），
+    /// 详情→列表 = Return（-8 下落），其余 = Default（+8）。由页面的 Motion.PageEnter 在 Loaded 时消费。
+    /// </summary>
+    private static void SetEnterDirection(Controls.Motion.EnterDirection direction) =>
+        Controls.Motion.PendingEnter = direction;
 
     private async Task NavigateAsync(Func<ViewModelBase> factory)
     {
@@ -301,7 +323,9 @@ internal sealed class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsDialogOpen));
     }
 
-    private void OpenDetail(Project project) =>
+    private void OpenDetail(Project project)
+    {
+        SetEnterDirection(Controls.Motion.EnterDirection.Forward);
         _navigation.NavigateTo(new ProjectDetailViewModel(
             _projectService,
             _localization,
@@ -312,6 +336,7 @@ internal sealed class MainViewModel : ViewModelBase
             _filePicker,
             project,
             () => _ = ShowProjectsAsync()));
+    }
 
     private void CloseDialog(bool isScrimClick)
     {

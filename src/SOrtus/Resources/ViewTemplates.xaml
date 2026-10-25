@@ -8,6 +8,10 @@
         <ResourceDictionary Source="Styles/Controls.Dialog.xaml" />
         <!-- 页面 / 版块入场样式（VD-063）与微交互节奏同源，StaticResource 需在本字典可见 -->
         <ResourceDictionary Source="Styles/Animations.xaml" />
+        <!-- 按钮 / 展示类控件字典：SaveFeedbackButtonStyle（M-46/47）、UnsavedBadgeStyle（M-48）
+             必须在页面可见——页面里不能内联 <Style TargetType="local:SOr*">（会顶掉隐式样式导致控件无模板） -->
+        <ResourceDictionary Source="Styles/Controls.Button.xaml" />
+        <ResourceDictionary Source="Styles/Controls.Display.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
 
@@ -29,19 +33,14 @@
         直接 Style="{StaticResource PageCardStyle}" 会把隐式样式顶掉，
         卡片失去 Template → 整页渲染为空。
     -->
+    <!--
+        页面入场由 Motion.PageEnter 接管（规范 M-07/08/09）：
+        侧边栏导航 = 220ms +8；列表→详情 = 220/280ms +12（Forward）；详情→列表 = 180/220ms -8（Return）。
+        之前这里固定播 SlideUpStoryboard，前进与返回的位移方向完全相同，用户感知不到「回去了」。
+    -->
     <Style x:Key="PageCardStyle" TargetType="local:SOrCard"
            BasedOn="{StaticResource {x:Type local:SOrCard}}">
-        <Setter Property="Opacity" Value="0" />
-        <Setter Property="RenderTransform">
-            <Setter.Value>
-                <TranslateTransform Y="8" />
-            </Setter.Value>
-        </Setter>
-        <Style.Triggers>
-            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                <BeginStoryboard Storyboard="{StaticResource SlideUpStoryboard}" />
-            </EventTrigger>
-        </Style.Triggers>
+        <Setter Property="local:Motion.PageEnter" Value="Auto" />
     </Style>
 
     <!-- 下拉框通用：可空枚举 → 本地化文本 -->
@@ -110,21 +109,28 @@
                                           Margin="10,0,0,0" MinWidth="130" />
                     </Grid>
 
-                    <!-- 列表 / 空状态 -->
+                    <!-- 列表 / 空状态
+                         M-27 首次加载：每项 220ms 入场，stagger 40ms 最多 8 项（Motion.StaggerIndex 第 9 项起直接出现）
+                         M-10 筛选刷新：容器 0.55→1 / 160ms 脉冲，不重播整页入场 -->
                     <ItemsControl ItemsSource="{Binding Projects}"
+                                  AlternationCount="8"
+                                  local:Motion.RefreshPulse="{Binding SearchText}"
                                   Visibility="{Binding Projects.Count, Converter={StaticResource CountToVisibilityConverter}}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <local:SOrProjectListItem Project="{Binding}"
                                                           Margin="0,0,0,10"
+                                                          local:Motion.StaggerIndex="{Binding Path=(ItemsControl.AlternationIndex), RelativeSource={RelativeSource AncestorType=ContentPresenter}}"
                                                           OpenCommand="{Binding DataContext.OpenDetailCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <!-- 空状态：完全没有任何立项（工具栏已隐藏，这里承担全部引导） -->
+                    <!-- 空状态：完全没有任何立项（工具栏已隐藏，这里承担全部引导）
+                         M-11：0→1 / Y+6→0，200ms Enter，与列表交叉淡化 -->
                     <StackPanel Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}}"
-                                HorizontalAlignment="Center" Margin="0,48,0,0">
+                                HorizontalAlignment="Center" Margin="0,48,0,0"
+                                local:Motion.PlayOnLoad="EmptyStateInStoryboard">
                         <TextBlock Text="{DynamicResource List_Empty}" FontSize="{DynamicResource FontSizeBody}"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    HorizontalAlignment="Center" />
@@ -139,7 +145,9 @@
 
                     <!-- 空状态：有数据但被筛选过滤为空（VD-087：给出匹配数 + 一键清除筛选，
                          旧版只留一句话，用户只能自己逐个把筛选器改回「全部」） -->
+                    <!-- M-12 无结果文案：0→1，140ms Std（不抖动、不红色——空结果不是错误） -->
                     <StackPanel Visibility="{Binding HasNoResults, Converter={StaticResource BoolToVisibilityConverter}}"
+                                local:Motion.PlayOnLoad="NoResultInStoryboard"
                                 HorizontalAlignment="Center" Margin="0,48,0,0">
                         <TextBlock Text="{Binding NoResultsText}" FontSize="{DynamicResource FontSizeBody}"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
@@ -636,10 +644,12 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Margin="14,0" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding ErrorMessage}"
+                        <TextBlock local:Motion.RefreshPulse="{Binding ErrorMessage}" local:Motion.PulseStoryboard="ErrorBannerInStoryboard"
+                                   Text="{Binding ErrorMessage}"
                                    Foreground="{DynamicResource DangerBrush}" FontWeight="SemiBold"
                                    TextWrapping="Wrap" />
-                        <TextBlock Text="{Binding ErrorDetail}" FontSize="{DynamicResource FontSizeCaption}"
+                        <TextBlock Text="{Binding ErrorDetail}"
+                                   local:Motion.RefreshPulse="{Binding ErrorDetail}" local:Motion.PulseStoryboard="ErrorRowInStoryboard" local:Motion.PulseStoryboardOut="ErrorRowOutStoryboard" FontSize="{DynamicResource FontSizeCaption}"
                                    Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"
                                    Visibility="{Binding HasErrorDetail, Converter={StaticResource BoolToVisibilityConverter}}" />
                     </StackPanel>
@@ -1257,9 +1267,12 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <local:SOrButton Grid.Column="0" Content="{Binding SaveButtonText}" Variant="Primary"
+                                     Style="{StaticResource SaveFeedbackButtonStyle}"
                                      Command="{Binding SaveCommand}" Padding="22,10" VerticalAlignment="Center" />
+                    <!-- M-48 未保存徽标出现：Scale 0.9→1 / 0→1，180ms Back（幅度小，不抢标题注意力） -->
                     <local:SOrTag Grid.Column="1" Tone="Warning" Content="{DynamicResource Detail_UnsavedBadge}"
                                   Margin="10,0,0,0" VerticalAlignment="Center"
+                                  Style="{StaticResource UnsavedBadgeStyle}"
                                   Visibility="{Binding IsDirty, Converter={StaticResource BoolToVisibilityConverter}}" />
                     <StackPanel Grid.Column="2" Margin="14,0">
                         <StackPanel Orientation="Horizontal">
@@ -1275,9 +1288,11 @@
                         <!-- VD-119：主文案一句话 + 技术细节降级为小字，不把异常原文塞进主句 -->
                         <StackPanel Orientation="Horizontal" Margin="0,2,0,0"
                                     Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
-                            <TextBlock Text="{Binding ErrorMessage}" FontSize="{DynamicResource FontSizeCaption}"
+                            <TextBlock local:Motion.RefreshPulse="{Binding ErrorMessage}" local:Motion.PulseStoryboard="ErrorBannerInStoryboard"
+                                   Text="{Binding ErrorMessage}" FontSize="{DynamicResource FontSizeCaption}"
                                        Foreground="{DynamicResource DangerBrush}" TextWrapping="Wrap" />
-                            <TextBlock Text="{Binding ErrorDetail}" FontSize="{DynamicResource FontSizeCaption}"
+                            <TextBlock Text="{Binding ErrorDetail}"
+                                   local:Motion.RefreshPulse="{Binding ErrorDetail}" local:Motion.PulseStoryboard="ErrorRowInStoryboard" local:Motion.PulseStoryboardOut="ErrorRowOutStoryboard" FontSize="{DynamicResource FontSizeCaption}"
                                        Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" MaxWidth="360"
                                        Visibility="{Binding HasErrorDetail, Converter={StaticResource BoolToVisibilityConverter}}" />
                         </StackPanel>
@@ -1345,7 +1360,8 @@
                     Padding="10,6" Margin="0,0,0,10"
                     Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
                 <StackPanel>
-                    <TextBlock Text="{Binding ErrorMessage}" FontSize="{DynamicResource FontSizeCaption}" TextWrapping="Wrap"
+                    <TextBlock local:Motion.RefreshPulse="{Binding ErrorMessage}" local:Motion.PulseStoryboard="ErrorBannerInStoryboard"
+                                   Text="{Binding ErrorMessage}" FontSize="{DynamicResource FontSizeCaption}" TextWrapping="Wrap"
                                Foreground="{DynamicResource TagDangerFgBrush}" />
                     <TextBlock Text="{Binding RawOutput}" FontSize="{DynamicResource FontSizeCaption}" Margin="0,4,0,0" TextWrapping="Wrap"
                                Foreground="{DynamicResource TextSecondaryBrush}"
@@ -1378,10 +1394,13 @@
 
             <!-- 时间线（VD-006：不再内嵌 ScrollViewer + MaxHeight 双层滚动，统一由外层页面滚动承载） -->
             <TextBlock Text="{DynamicResource Git_Timeline}" FontWeight="Medium" FontSize="{DynamicResource FontSizeLabel}" Margin="0,4,0,8" />
-            <ItemsControl ItemsSource="{Binding Timeline}">
+            <!-- M-51：时间线每条 180ms 入场，stagger 30ms 最多 8 条（其余直接显示） -->
+            <ItemsControl ItemsSource="{Binding Timeline}" AlternationCount="8">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Grid>
+                        <Grid local:Motion.StaggerIndex="{Binding Path=(ItemsControl.AlternationIndex), RelativeSource={RelativeSource AncestorType=ContentPresenter}}"
+                              local:Motion.StaggerStep="30"
+                              local:Motion.StaggerStoryboard="TimelineInStoryboard">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="26" />
                                 <ColumnDefinition Width="*" />
@@ -1482,8 +1501,10 @@
                                      VerticalAlignment="Top" />
                 </Grid>
 
-                <!-- 正文：FlowDocumentScrollViewer 负责连续滚动与文本选择 -->
-                <Border Grid.Row="1" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,1" Padding="0,14">
+                <!-- 正文：FlowDocumentScrollViewer 负责连续滚动与文本选择
+                     M-45 文档弹窗内容载入：正文 0→1，160ms Std（只淡入一次，滚动时不再触发） -->
+                <Border Grid.Row="1" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,1" Padding="0,14"
+                            local:Motion.PlayOnLoad="DocContentInStoryboard">
                     <FlowDocumentScrollViewer Document="{Binding Document}"
                                               VerticalScrollBarVisibility="Auto"
                                               HorizontalScrollBarVisibility="Disabled"
@@ -1531,7 +1552,8 @@
                 <local:SOrTextBox Text="{Binding Url, UpdateSourceTrigger=PropertyChanged}"
                                   Placeholder="{DynamicResource Git_RemoteUrlPlaceholder}" Margin="0,6,0,8" />
 
-                <TextBlock Text="{Binding ErrorMessage}" FontSize="{DynamicResource FontSizeCaption}" TextWrapping="Wrap" Margin="0,0,0,8"
+                <TextBlock local:Motion.RefreshPulse="{Binding ErrorMessage}" local:Motion.PulseStoryboard="ErrorBannerInStoryboard"
+                                   Text="{Binding ErrorMessage}" FontSize="{DynamicResource FontSizeCaption}" TextWrapping="Wrap" Margin="0,0,0,8"
                            Foreground="{DynamicResource TagDangerFgBrush}"
                            Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}" />
 
@@ -1632,7 +1654,7 @@
                     </Border>
 
                     <!-- 分组卡：语言 -->
-                    <Border Style="{StaticResource GroupCardStyle}">
+                    <Border Style="{StaticResource GroupCardStyle}" local:Motion.StaggerIndex="0" local:Motion.StaggerStep="30" local:Motion.StaggerStoryboard="SettingsCardInStoryboard">
                         <StackPanel>
                             <Border Style="{StaticResource CardTitleBorderStyle}">
                                         <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Settings_Language}" />
@@ -1657,7 +1679,7 @@
                     </Border>
 
                     <!-- 分组卡：数据 -->
-                    <Border Style="{StaticResource GroupCardStyle}">
+                    <Border Style="{StaticResource GroupCardStyle}" local:Motion.StaggerIndex="1" local:Motion.StaggerStep="30" local:Motion.StaggerStoryboard="SettingsCardInStoryboard">
                         <StackPanel>
                             <Border Style="{StaticResource CardTitleBorderStyle}">
                                         <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Settings_Data}" />

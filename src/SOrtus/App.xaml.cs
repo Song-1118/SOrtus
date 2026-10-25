@@ -302,14 +302,6 @@ public partial class App : Application
             }
             SaveWindow(window, System.IO.Path.Combine(targetDir, "06b-detail-git-more.png"));
 
-            // 第三批 VD-117 回归：破坏性确认弹窗（红色警示 + 明确动作文案）
-            var confirmTask = dialogService.ConfirmDestructiveAsync("删除这个立项？", "立项及其全部文档将被永久删除，此操作无法撤销。");
-            await SettleAsync(window);
-            SaveWindow(window, System.IO.Path.Combine(targetDir, "13-destructive-confirm.png"));
-            mainViewModel.CloseDialogCommand.Execute(null);
-            await confirmTask;
-            await SettleAsync(window);
-
             detail.SelectSectionCommand.Execute(ProjectDetailViewModel.SectionDev);
             await SettleAsync(window);
 
@@ -327,6 +319,16 @@ public partial class App : Application
                 await SettleAsync(window);
             }
         }
+
+        // 第三批 VD-117 回归：破坏性确认弹窗（危险样式 + 明确动作文案）
+        // 放在文档弹窗之后：DialogService 同一时刻只承载一个覆盖层，前一个弹窗的退场动画
+        // （150ms）没走完就开下一个，新弹窗会被吞掉——这正是上一版 07 截图没有弹窗的原因。
+        var confirmTask = dialogService.ConfirmDestructiveAsync("删除这个立项？", "立项及其全部文档将被永久删除，此操作无法撤销。");
+        await SettleAsync(window);
+        SaveWindow(window, System.IO.Path.Combine(targetDir, "13-destructive-confirm.png"));
+        mainViewModel.CloseDialogCommand.Execute(null);
+        await confirmTask;
+        await SettleAsync(window);
 
         // VD-091 回归：名称留空直接点「创建」——应把焦点搬到第一个错误字段，
         // 页脚给出「还有 N 项必填未完成」，字段边框转成危险色。

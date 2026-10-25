@@ -114,7 +114,8 @@ public sealed class SOrProgressBar : RangeBase
 
         if (animate && _fill.ActualWidth > 0 && !width.Equals(_fill.ActualWidth))
         {
-            var animation = new DoubleAnimation(width, new Duration(System.TimeSpan.FromMilliseconds(220)))
+            // M-49：220ms → 400ms，让「追上」看得出来（规范明确由 220 提到 400）
+            var animation = new DoubleAnimation(width, new Duration(System.TimeSpan.FromMilliseconds(400)))
             {
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
             };

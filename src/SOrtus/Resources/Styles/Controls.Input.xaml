@@ -82,15 +82,15 @@
                                                       HorizontalScrollBarVisibility="Hidden"
                                                       VerticalScrollBarVisibility="Hidden" />
                                         <!-- 占位符：与真实文本共用同一列与同一起点，保证左对齐一致 -->
+                                        <!-- M-21：显隐用 Opacity（0 ↔ 0.85，100ms），不用 Collapsed -->
                                         <TextBlock x:Name="PART_Placeholder"
                                                    Grid.Column="1"
                                                    Text="{TemplateBinding Placeholder}"
                                                    Foreground="{DynamicResource TextSecondaryBrush}"
-                                                   Opacity="0.85"
+                                                   Opacity="0"
                                                    VerticalAlignment="Center"
                                                    HorizontalAlignment="Left"
-                                                   IsHitTestVisible="False"
-                                                   Visibility="Collapsed" />
+                                                   IsHitTestVisible="False" />
                                         <!-- 清除按钮（VD-085）：搜索框有内容时出现，一键清空而不是逐字删。
                                              多行输入不显示（有换行需求，误清代价高）。 -->
                                         <local:SOrButton x:Name="PART_Clear"
@@ -118,12 +118,20 @@
                                 IsHitTestVisible="False" />
                     </Grid>
                     <ControlTemplate.Triggers>
+                        <!-- M-21 占位符消失/出现：100ms 淡入淡出（输入第一个字符即消失，不等失焦）。
+                             显隐用 Opacity，不用 Collapsed——Setter 立即恢复会把退出动画砍掉。 -->
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="Text" Value="" />
                                 <Condition Property="IsKeyboardFocusWithin" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Placeholder" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="PART_Placeholder" Property="Opacity" Value="0.85" />
+                            <MultiTrigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource PlaceholderInStoryboard}" />
+                            </MultiTrigger.EnterActions>
+                            <MultiTrigger.ExitActions>
+                                <BeginStoryboard Storyboard="{StaticResource PlaceholderOutStoryboard}" />
+                            </MultiTrigger.ExitActions>
                         </MultiTrigger>
                         <!-- 多行输入（简介 / 开发规划 / 约束 / 目标 / 验收 等）：
                              VD-070 统一「最小高度 + 自动增长」——不再各页写死 56/70/80，

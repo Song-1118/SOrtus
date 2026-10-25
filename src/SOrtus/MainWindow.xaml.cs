@@ -52,7 +52,32 @@ public partial class MainWindow : Window
         {
             vm.PropertyChanged += OnViewModelPropertyChanged;
             AttachFocusSource(vm.CurrentView);
+
+            // M-07：内容不再由绑定直接换对象（那样是瞬切），首次也走同一套「先出后进」
+            ShowView(vm.CurrentView, immediate: true);
         }
+    }
+
+    /// <summary>
+    /// M-07 页面切换：同容器内先出后进。
+    /// 旧内容 90ms 淡出（Exit）→ 换内容 → 新内容由 Motion.PageEnter 播 220ms 入场。
+    /// 旧版是 ContentControl.Content 直接换对象，1150px 宽的内容区整块瞬切，是「生硬」的主因。
+    /// </summary>
+    private void ShowView(object? next, bool immediate = false)
+    {
+        if (next is null)
+        {
+            PART_ContentHost.Content = null;
+            return;
+        }
+
+        if (immediate || PART_ContentHost.Content is null)
+        {
+            PART_ContentHost.Content = next;
+            return;
+        }
+
+        Controls.Motion.Begin(PART_ContentHost, "PageOutStoryboard", () => PART_ContentHost.Content = next);
     }
 
     /// <summary>
@@ -70,6 +95,7 @@ public partial class MainWindow : Window
         {
             case nameof(MainViewModel.CurrentView):
                 AttachFocusSource(vm.CurrentView);
+                ShowView(vm.CurrentView);
                 break;
 
             case nameof(MainViewModel.IsDialogOpen):
@@ -148,6 +174,10 @@ public partial class MainWindow : Window
     {
         base.OnSourceInitialized(e);
 
+        // M-03 最大化/还原：几何尺寸交给系统，只对内容做 160ms 的 1→.98→1 下沉
+        // （规范 M-03 明确「不要给 Window 做缩放动画」）
+        StateChanged += (_, _) => Controls.Motion.Begin(PART_Shell, "MaximizeDipStoryboard");
+
         // 无边框窗最大化时必须把尺寸钳到「显示器工作区」，否则会按 WindowChrome 的边框补偿
         // 向外溢出几像素、把任务栏盖住一部分（VD-060）。
         var handle = new WindowInteropHelper(this).Handle;
@@ -182,17 +212,9 @@ public partial class MainWindow : Window
 
         _lastTheme = themeName;
 
-        var animation = new DoubleAnimationUsingKeyFrames { Duration = TimeSpan.FromMilliseconds(300) };
-        animation.KeyFrames.Add(new EasingDoubleKeyFrame(0.86, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(120)))
-        {
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
-        });
-        animation.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(300)))
-        {
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
-        });
-
-        PART_Shell.BeginAnimation(OpacityProperty, animation);
+        // M-53：整窗 1→.86→1，180ms 下沉 + 60ms 停留 + 180ms 回升（规范明确「中途停在下沉态」；
+        // 切换期间不逐控件过渡——负清单第 8 条）
+        Controls.Motion.Begin(PART_Shell, "ThemeDipStoryboard");
     }
 
     private void ExecuteWindowCommand(object? parameter)

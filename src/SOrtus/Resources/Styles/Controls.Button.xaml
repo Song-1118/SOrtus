@@ -161,8 +161,15 @@
                             </Trigger.ExitActions>
                         </Trigger>
                         <!-- 规范调整：全局不显示键盘聚焦框（FocusVisualStyle 亦置空），避免点击后残留描边 -->
+                        <!-- M-18 进入禁用：1→0.45，120ms Std（Setter 保底，动画跟随状态） -->
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Root" Property="Opacity" Value="0.45" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource DisableFadeStoryboard}" />
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard Storyboard="{StaticResource EnableFadeStoryboard}" />
+                            </Trigger.ExitActions>
                         </Trigger>
                         <!-- 类型卡选中（VD-093）：2px 主色环 + 右上角对勾 -->
                         <MultiTrigger>
@@ -222,8 +229,9 @@
                 破坏性最终动作（VD-117）：只出现在二次确认弹窗里。
                 实心危险底 + 反色文字；与页面内软危险按钮不同重量，用户不会把它当成普通按钮顺手下按。
             -->
+            <!-- M-43：背景色交给 SOrButton.IsDestructive 的 120ms ColorAnimation（代码侧），
+                 这里不再 Setter Background——硬切会把颜色过渡顶掉；前景/描边仍由 Setter 兜底。 -->
             <Trigger Property="IsDestructive" Value="True">
-                <Setter Property="Background" Value="{DynamicResource DangerBrush}" />
                 <Setter Property="Foreground" Value="{DynamicResource TextOnAccentBrush}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
                 <Setter Property="BorderThickness" Value="1" />
@@ -327,6 +335,35 @@
         注意：SOrButton 的模板来自隐式样式（无 generic.xaml），任何 keyed 样式都必须 BasedOn 它，
         否则 Style 会顶掉隐式样式 → 控件没有 Template → 渲染为空（窗口三键「消失」就是这么来的）。
     -->
+    <!--
+        保存按钮反馈（M-46 / M-47）：定义在控件字典里而不是页面内联 Style。
+        原因：自定义控件的模板只存在于隐式样式，页面里写 <Style TargetType="local:SOrButton">
+        会顶掉隐式样式导致按钮无模板（整颗不可见）；而 BasedOn="{StaticResource {x:Type local:SOrButton}}"
+        在 ViewTemplates 字典内又找不到（Controls.Button.xaml 不在其可见范围）。
+        正确做法就是在这里定义 keyed 样式，并让 ViewTemplates 合并本字典。
+    -->
+    <Style x:Key="SaveFeedbackButtonStyle" TargetType="local:SOrButton"
+           BasedOn="{StaticResource {x:Type local:SOrButton}}">
+        <Style.Triggers>
+            <!-- M-47 保存中：1→0.7，120ms Std（禁用点击但保持可读，不加旋转 loading） -->
+            <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                <Setter Property="Opacity" Value="0.7" />
+                <DataTrigger.EnterActions>
+                    <BeginStoryboard Storyboard="{StaticResource SavingDimStoryboard}" />
+                </DataTrigger.EnterActions>
+            </DataTrigger>
+            <!-- M-46 保存成功回执：180ms 淡入 → 停 2.5s → 240ms 淡出 -->
+            <DataTrigger Binding="{Binding IsJustSaved}" Value="True">
+                <DataTrigger.EnterActions>
+                    <BeginStoryboard Storyboard="{StaticResource SaveStatusInStoryboard}" />
+                </DataTrigger.EnterActions>
+                <DataTrigger.ExitActions>
+                    <BeginStoryboard Storyboard="{StaticResource SaveStatusOutStoryboard}" />
+                </DataTrigger.ExitActions>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
     <Style x:Key="CaptionButtonStyle" TargetType="local:SOrButton"
            BasedOn="{StaticResource {x:Type local:SOrButton}}">
         <Setter Property="Variant" Value="Ghost" />

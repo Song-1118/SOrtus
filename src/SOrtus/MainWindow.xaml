@@ -46,7 +46,9 @@
          卡片本身不在其视觉树内，避免自引用递归），保证「模糊的是背景、不是内容」。
          文本默认前景与字族在这里统一下发（TextElement 继承），主题切换自动生效；
          控件内部的局部 Foreground（如主按钮白字、标签色调）优先级更高，会正确覆盖。 -->
+    <!-- M-01 应用首帧：窗口内容 180ms 淡入，只淡入不做缩放（避免「启动像加载页」） -->
     <Grid x:Name="PART_Shell"
+          local:Motion.PlayOnLoad="StartupFadeInStoryboard"
           TextElement.Foreground="{DynamicResource TextPrimaryBrush}"
           TextElement.FontFamily="{DynamicResource AppFontFamily}">
         <Grid.RowDefinitions>
@@ -136,7 +138,8 @@
 
             <!-- 侧边栏：磨砂卡片 + 导航（自定义 SOrCard / SOrButton） -->
             <local:SOrCard Grid.Column="0" Margin="0,0,18,0" VerticalAlignment="Stretch">
-                <DockPanel LastChildFill="True">
+                <!-- M-02 侧边栏首次出现：内容容器 Y+8→0 / 0→1，240ms（仅启动一次；负清单禁止给磨砂卡本体做 Opacity） -->
+                <DockPanel LastChildFill="True" local:Motion.PlayOnLoad="SidebarInStoryboard">
                     <TextBlock DockPanel.Dock="Top" Text="{DynamicResource App_Title}"
                                FontSize="{DynamicResource FontSizeBrand}" FontWeight="SemiBold" Margin="6,10,6,26" />
 
@@ -191,8 +194,9 @@
             <!-- 内容区：承载当前视图（视图内部自行使用 SOrCard 磨砂卡片）。
                  与侧边栏同处一行、上下不留额外 margin，保证两张卡片顶边与底边严格对齐。 -->
             <Grid Grid.Column="1">
+                <!-- M-07 同容器内「先出后进」：旧页 90ms 淡出后再换内容（新页由 Motion.PageEnter 自播），
+                     总时长 90+220=310ms，规范要求 ≤300~350ms 内可感知但不拖沓 -->
                 <ContentControl x:Name="PART_ContentHost"
-                                Content="{Binding CurrentView}"
                                 HorizontalContentAlignment="Stretch"
                                 VerticalContentAlignment="Stretch" />
 
@@ -214,29 +218,25 @@
                                           Color="{DynamicResource ColorShadow}" Opacity="0.20" />
                     </Border.Effect>
                     <Border.Style>
+                        <!-- M-05 出现：+8→0 / 0→1，220ms Enter；M-06 消失：1→0，160ms Exit（退场快于入场）。
+                             显隐用 Opacity + IsHitTestVisible，不用 Collapsed——Setter 立即恢复会把退出动画砍掉。 -->
                         <Style TargetType="Border">
-                            <Setter Property="Visibility" Value="Collapsed" />
                             <Setter Property="Opacity" Value="0" />
+                            <Setter Property="IsHitTestVisible" Value="False" />
                             <Setter Property="RenderTransform">
                                 <Setter.Value>
-                                    <TranslateTransform Y="-8" />
+                                    <TranslateTransform Y="8" />
                                 </Setter.Value>
                             </Setter>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding Updates.HasUpdate}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Setter Property="IsHitTestVisible" Value="True" />
                                     <DataTrigger.EnterActions>
-                                        <BeginStoryboard>
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                 From="0" To="1" Duration="0:0:0.22"
-                                                                 EasingFunction="{StaticResource CubicEaseOut}" />
-                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                                                                 From="-8" To="0" Duration="0:0:0.22"
-                                                                 EasingFunction="{StaticResource CubicEaseOut}" />
-                                            </Storyboard>
-                                        </BeginStoryboard>
+                                        <BeginStoryboard Storyboard="{StaticResource ToastInStoryboard}" />
                                     </DataTrigger.EnterActions>
+                                    <DataTrigger.ExitActions>
+                                        <BeginStoryboard Storyboard="{StaticResource ToastOutStoryboard}" />
+                                    </DataTrigger.ExitActions>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -259,31 +259,25 @@
         </Grid>
 
         <!-- 对话框覆盖层（规范 7.7 红线 #5：主窗口内承载，不用全透明窗口）
-             入场：遮罩 180ms 淡入 + 内容弹入（PopIn）；出场：整体 140ms 淡出后卸载（VD-063） -->
+             M-40 遮罩 180ms 先行 → M-41 面板延迟 40ms 弹入 240ms（Back 0.35）→ M-42 退出 150ms 不阻塞 -->
         <Grid Grid.RowSpan="2" Panel.ZIndex="50"
               Visibility="{Binding IsDialogOpen, Converter={StaticResource BoolToVisibilityConverter}}">
             <Grid.Style>
                 <Style TargetType="Grid">
                     <Setter Property="Opacity" Value="1" />
                     <Style.Triggers>
+                        <!-- M-40 遮罩 180ms 先行（ScrimIn），面板 DialogIn 延迟 40ms——纵深由两者时间差表达 -->
                         <DataTrigger Binding="{Binding IsDialogOpen}" Value="True">
-                            <DataTrigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                         From="0" To="1" Duration="0:0:0.18"
-                                                         EasingFunction="{StaticResource CubicEaseOut}" />
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </DataTrigger.EnterActions>
+                            <Setter Property="Opacity" Value="1" />
                         </DataTrigger>
+                        <!-- M-42 弹窗退出：1→0，150ms Exit（退出不阻塞，Esc 立即生效） -->
                         <DataTrigger Binding="{Binding IsDialogClosing}" Value="True">
                             <DataTrigger.EnterActions>
                                 <BeginStoryboard>
                                     <Storyboard>
                                         <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                         To="0" Duration="0:0:0.14"
-                                                         EasingFunction="{StaticResource CubicEaseOut}" />
+                                                         To="0" Duration="0:0:0.15"
+                                                         EasingFunction="{StaticResource ExitEase}" />
                                     </Storyboard>
                                 </BeginStoryboard>
                             </DataTrigger.EnterActions>
@@ -292,7 +286,20 @@
                 </Style>
             </Grid.Style>
 
+            <!-- M-40 遮罩出现：0→1，180ms Std -->
             <Border Background="{StaticResource ScrimBrush}">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Opacity" Value="0" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsDialogOpen}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard Storyboard="{StaticResource ScrimInStoryboard}" />
+                                </DataTrigger.EnterActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
                 <Border.InputBindings>
                     <!-- VD-083：遮罩点击走独立命令——有输入的配置类弹窗不响应（误点即丢） -->
                     <MouseBinding MouseAction="LeftClick" Command="{Binding ScrimCloseCommand}" />
@@ -311,15 +318,20 @@
                 <ContentControl.Style>
                     <Style TargetType="ContentControl">
                         <Setter Property="Opacity" Value="1" />
+                        <!-- M-41：面板同时动 Scale 与 Y，必须是 TransformGroup（索引路径见 DialogInStoryboard） -->
                         <Setter Property="RenderTransform">
                             <Setter.Value>
-                                <ScaleTransform ScaleX="1" ScaleY="1" />
+                                <TransformGroup>
+                                    <ScaleTransform ScaleX="1" ScaleY="1" />
+                                    <TranslateTransform Y="0" />
+                                </TransformGroup>
                             </Setter.Value>
                         </Setter>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsDialogOpen}" Value="True">
                                 <DataTrigger.EnterActions>
-                                    <BeginStoryboard Storyboard="{StaticResource PopInStoryboard}" />
+                                    <!-- M-41：240ms Back 弹入（资源自带 40ms 延迟，遮罩先落） -->
+                                    <BeginStoryboard Storyboard="{StaticResource DialogInStoryboard}" />
                                 </DataTrigger.EnterActions>
                             </DataTrigger>
                         </Style.Triggers>

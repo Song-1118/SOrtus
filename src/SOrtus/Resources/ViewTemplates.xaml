@@ -1435,9 +1435,126 @@
                                        TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
+
+                    <!-- 分组卡：软件更新（手动检查入口，将来「关于」页复用同一命令） -->
+                    <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1" CornerRadius="{DynamicResource CornerRadiusMedium}"
+                            Padding="16" Margin="0,0,0,14">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Settings_Update}" FontWeight="SemiBold"
+                                       FontSize="{DynamicResource FontSizeBody}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" />
+
+                            <!-- 当前版本 -->
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="160" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Settings_CurrentVersionLabel}" FontWeight="Medium"
+                                           FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                                <TextBlock Grid.Column="1" Text="{Binding CurrentVersionText}" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                            </Grid>
+
+                            <!-- 自动检查开关 -->
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="160" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Settings_AutoCheck}" FontWeight="Medium"
+                                           FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                                <StackPanel Grid.Column="1">
+                                    <local:SOrButton Content="{Binding AutoCheckStateText}" Variant="Secondary"
+                                                     Command="{Binding ToggleAutoCheckCommand}"
+                                                     HorizontalAlignment="Left" Padding="16,8" />
+                                    <TextBlock Text="{DynamicResource Settings_AutoCheckHint}"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               FontSize="{DynamicResource FontSizeCaption}"
+                                               Margin="0,6,0,0" TextWrapping="Wrap" MaxWidth="520" HorizontalAlignment="Left" />
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- 手动检查：不受自动开关影响，永远可用 -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="160" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <local:SOrButton Content="{DynamicResource Settings_CheckNow}" Variant="Secondary"
+                                                     Command="{Binding CheckUpdatesCommand}" Padding="16,8" />
+                                    <TextBlock Text="{Binding UpdateStatusText}" VerticalAlignment="Center" Margin="12,0,0,0"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap" MaxWidth="360"
+                                               Visibility="{Binding IsUpdateStatusVisible, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </ScrollViewer>
         </local:SOrCard>
+    </DataTemplate>
+
+    <!-- ============================ 更新详情（覆盖层） ============================ -->
+    <DataTemplate DataType="{x:Type vm:UpdateViewModel}">
+        <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Border Style="{StaticResource BlurDialogStyle}" MinWidth="480" MaxWidth="580" Padding="0">
+                <StackPanel Margin="24">
+                    <TextBlock Text="{Binding Title}" FontSize="{DynamicResource FontSizeSection}"
+                               FontWeight="SemiBold" TextWrapping="Wrap" />
+
+                    <!-- 版本对比 + 安装包体积 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock Text="{Binding VersionText}" Foreground="{DynamicResource TextSecondaryBrush}" />
+                        <TextBlock Text=" · " Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Visibility="{Binding IsSizeVisible, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        <TextBlock Text="{Binding SizeText}" Foreground="{DynamicResource TextSecondaryBrush}"
+                                   FontSize="{DynamicResource FontSizeCaption}" VerticalAlignment="Center"
+                                   Visibility="{Binding IsSizeVisible, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    </StackPanel>
+
+                    <!-- 更新说明：限高滚动，避免长 changelog 把按钮顶出屏幕 -->
+                    <TextBlock Text="{Binding NotesTitle}" Margin="0,16,0,6"
+                               FontWeight="Medium" FontSize="{DynamicResource FontSizeLabel}" />
+                    <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1" CornerRadius="{DynamicResource CornerRadiusMedium}" Padding="12">
+                        <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            <TextBlock Text="{Binding NotesText}" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       FontSize="{DynamicResource FontSizeCaption}" />
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- 下载进度 -->
+                    <local:SOrProgressBar Margin="0,14,0,0" Height="6" Minimum="0" Maximum="100"
+                                          Value="{Binding ProgressValue}"
+                                          Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                    <!-- 状态文案：下载百分比 / 校验中 / 失败原因 -->
+                    <TextBlock Text="{Binding StatusText}" Margin="0,10,0,0" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               FontSize="{DynamicResource FontSizeCaption}" />
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                        <local:SOrButton Content="{Binding OpenPageText}" Variant="Secondary"
+                                        Command="{Binding OpenPageCommand}" Padding="14,8" />
+                        <local:SOrButton Content="{Binding SkipText}" Variant="Secondary"
+                                        Command="{Binding SkipCommand}" IsEnabled="{Binding CanSkip}"
+                                        Margin="8,0,0,0" Padding="14,8" />
+                        <local:SOrButton Content="{Binding LaterText}" Variant="Secondary"
+                                        Command="{Binding LaterCommand}" Margin="8,0,0,0" Padding="14,8" />
+                        <local:SOrButton Content="{Binding PrimaryActionText}" Variant="Primary"
+                                        Command="{Binding PrimaryActionCommand}"
+                                        IsEnabled="{Binding CanStartInstall}"
+                                        Margin="10,0,0,0" Padding="16,8" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
     </DataTemplate>
 
     <!-- ============================ 确认 / 提示对话框 ============================ -->

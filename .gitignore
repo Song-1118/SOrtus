@@ -3,6 +3,9 @@
 bin/
 obj/
 artifacts/
+# 发布目录（自包含 / 框架依赖），体积可达数百 MB，绝不入库
+publish/
+publish-sc/
 
 # 包与缓存
 /packages/

@@ -19,6 +19,13 @@ internal sealed class AppSettings
 
     public string Culture { get; set; } = "zh-CN";
 
+    /// <summary>
+    /// 是否在启动时自动检查更新（默认开启）。
+    /// 关闭后程序不再主动联网，仅保留设置页的「立即检查」手动入口——
+    /// 这是「数据留在本地」承诺下用户可行使的退出权，必须真实生效，不能只是界面摆设。
+    /// </summary>
+    public bool AutoCheckForUpdates { get; set; } = true;
+
     private static readonly string SettingsPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "SOrtus",

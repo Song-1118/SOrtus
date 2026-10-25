@@ -6,6 +6,7 @@
         Title="{DynamicResource App_Title}"
         Height="760" Width="1180"
         WindowStartupLocation="CenterScreen"
+        Icon="pack://application:,,,/Resources/icon/app.ico"
         Background="{DynamicResource WallpaperBrush}">
 
     <Window.Resources>
@@ -77,9 +78,37 @@
             </local:SOrCard>
 
             <!-- 内容区：承载当前视图（视图内部自行使用 SOrCard 磨砂卡片）。
-                 与侧边栏同处一行、上下不留额外 margin，保证两张卡片顶边与底边严格对齐。 -->
+                 与侧边栏同处一行、上下不留额外 margin，保证两张卡片顶边与底边严格对齐。
+                 顶部更新提示条仅在「发现更高版本」时出现，出现时内容区整体下移，不遮挡内容。 -->
             <Grid Grid.Column="1">
-                <ContentControl Content="{Binding CurrentView}"
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- 更新提示条：非模态、可忽略，绝不打断当前操作 -->
+                <Border Grid.Row="0"
+                        Visibility="{Binding Updates.HasUpdate, Converter={StaticResource BoolToVisibilityConverter}}"
+                        Background="{DynamicResource SurfaceBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="{DynamicResource CornerRadiusMedium}"
+                        Padding="16,10" Margin="0,0,0,12">
+                    <DockPanel LastChildFill="True">
+                        <local:SOrButton DockPanel.Dock="Right"
+                                        Content="{Binding Updates.BannerActionText}"
+                                        Command="{Binding Updates.ShowCommand}"
+                                        Variant="Secondary" Padding="14,6" Margin="12,0,0,0" />
+                        <TextBlock Text="{Binding Updates.BannerText}"
+                                   VerticalAlignment="Center"
+                                   FontWeight="Medium"
+                                   FontSize="{DynamicResource FontSizeLabel}"
+                                   TextTrimming="CharacterEllipsis" />
+                    </DockPanel>
+                </Border>
+
+                <ContentControl Grid.Row="1"
+                                Content="{Binding CurrentView}"
                                 HorizontalContentAlignment="Stretch"
                                 VerticalContentAlignment="Stretch" />
             </Grid>

@@ -110,10 +110,38 @@
   <data name="Settings_Data" xml:space="preserve"><value>数据</value></data>
   <data name="Settings_DataSoon" xml:space="preserve"><value>即将推出</value></data>
   <data name="Settings_AboutLocal" xml:space="preserve"><value>本地优先的立项管理工具，管理编程、剪辑与待办三类项目。</value></data>
-  <data name="Settings_AboutLicense" xml:space="preserve"><value>MIT License · 无网络请求 · 数据只留在本机</value></data>
+  <data name="Settings_AboutLicense" xml:space="preserve"><value>MIT License · 数据留在本地</value></data>
   <data name="Settings_AboutDb" xml:space="preserve"><value>数据库位置：%LocalAppData%\SOrtus\sortus.db（单文件，可直接备份）</value></data>
   <data name="Settings_DbPath" xml:space="preserve"><value>数据库位置：{0}</value></data>
   <data name="Settings_OpenFolder" xml:space="preserve"><value>打开所在文件夹</value></data>
+
+  <!-- 软件更新（自动更新功能） -->
+  <data name="Settings_Update" xml:space="preserve"><value>软件更新</value></data>
+  <data name="Settings_AutoCheck" xml:space="preserve"><value>自动检查更新</value></data>
+  <data name="Settings_AutoCheckHint" xml:space="preserve"><value>启动后检查，每天最多一次。关闭后程序不再主动联网，仍可手动检查。</value></data>
+  <data name="Settings_CurrentVersionLabel" xml:space="preserve"><value>当前版本</value></data>
+  <data name="Settings_CheckNow" xml:space="preserve"><value>立即检查</value></data>
+  <data name="Settings_AutoCheckOn" xml:space="preserve"><value>已开启</value></data>
+  <data name="Settings_AutoCheckOff" xml:space="preserve"><value>已关闭</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>正在检查…</value></data>
+  <data name="Update_UpToDate" xml:space="preserve"><value>已是最新版本（{0}）</value></data>
+  <data name="Update_CheckFailed" xml:space="preserve"><value>检查失败：{0}</value></data>
+  <data name="Update_AvailableTitle" xml:space="preserve"><value>有新版本可用</value></data>
+  <data name="Update_VersionLine" xml:space="preserve"><value>当前 {0} → 最新 {1}</value></data>
+  <data name="Update_SizeLine" xml:space="preserve"><value>安装包 {0} MB</value></data>
+  <data name="Update_NotesTitle" xml:space="preserve"><value>更新说明</value></data>
+  <data name="Update_NoNotes" xml:space="preserve"><value>本次更新未提供说明。</value></data>
+  <data name="Update_InstallNow" xml:space="preserve"><value>下载并安装</value></data>
+  <data name="Update_Later" xml:space="preserve"><value>稍后提醒</value></data>
+  <data name="Update_Skip" xml:space="preserve"><value>跳过此版本</value></data>
+  <data name="Update_Downloading" xml:space="preserve"><value>正在下载 {0}%</value></data>
+  <data name="Update_Verifying" xml:space="preserve"><value>正在校验安装包…</value></data>
+  <data name="Update_Preparing" xml:space="preserve"><value>正在备份数据并启动安装…</value></data>
+  <data name="Update_Failed" xml:space="preserve"><value>更新失败：{0}</value></data>
+  <data name="Update_Retry" xml:space="preserve"><value>重试</value></data>
+  <data name="Update_OpenPage" xml:space="preserve"><value>打开发布页</value></data>
+  <data name="Update_BannerText" xml:space="preserve"><value>新版本 {0} 可用</value></data>
+  <data name="Update_BannerAction" xml:space="preserve"><value>查看</value></data>
 
   <data name="Common_Confirm" xml:space="preserve"><value>确认</value></data>
   <data name="Common_OK" xml:space="preserve"><value>确定</value></data>

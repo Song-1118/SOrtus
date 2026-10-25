@@ -1,5 +1,5 @@
 <Solution>
-    <Project Path="src/SOrtus/SOrtus.csproj"/>
-    <Project Path="src/SOrtus.Core/SOrtus.Core.csproj"/>
-    <Project Path="tests/SOrtus.UnitTests/SOrtus.UnitTests.csproj"/>
+    <Project Path="src/SOrtus/SOrtus.csproj" />
+    <Project Path="src/SOrtus.Core/SOrtus.Core.csproj" />
+    <Project Path="tests/SOrtus.UnitTests/SOrtus.UnitTests.csproj" />
 </Solution>

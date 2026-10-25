@@ -92,7 +92,15 @@ internal sealed class MainViewModel : ViewModelBase
         _navigateNewCommand = new AsyncRelayCommand(() => ShowNewProjectAsync());
         _navigateSettingsCommand = new AsyncRelayCommand(() => ShowSettingsAsync());
         _closeDialogCommand = new RelayCommand(_ => CloseDialog());
+
+        Updates = new UpdatesViewModel(dialogService, localization);
     }
+
+    /// <summary>
+    /// 更新编排（顶部提示条 + 手动检查入口）。
+    /// 由 App 在窗口显示后延迟触发一次自动检查；本对象自身不主动联网。
+    /// </summary>
+    public UpdatesViewModel Updates { get; }
 
     public ICommand NavigateProjectsCommand => _navigateProjectsCommand;
     public ICommand NavigateNewCommand => _navigateNewCommand;
@@ -107,7 +115,7 @@ internal sealed class MainViewModel : ViewModelBase
 
     public Task ShowNewProjectAsync() => NavigateAsync(() => new ProjectWizardViewModel(_projectService, _localization, () => _ = ShowProjectsAsync()));
 
-    public Task ShowSettingsAsync() => NavigateAsync(() => new SettingsViewModel(_themeService, _localization));
+    public Task ShowSettingsAsync() => NavigateAsync(() => new SettingsViewModel(_themeService, _localization, Updates));
 
     /// <summary>关闭窗口前的守卫：详情页有未保存更改时先询问用户（A12）。</summary>
     public Task<bool> CanCloseAsync() => ConfirmLeaveCurrentAsync();

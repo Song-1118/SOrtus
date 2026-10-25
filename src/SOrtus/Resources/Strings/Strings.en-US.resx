@@ -110,10 +110,38 @@
   <data name="Settings_Data" xml:space="preserve"><value>Data</value></data>
   <data name="Settings_DataSoon" xml:space="preserve"><value>Coming soon</value></data>
   <data name="Settings_AboutLocal" xml:space="preserve"><value>A local-first project kickoff manager for programming, clip and todo projects.</value></data>
-  <data name="Settings_AboutLicense" xml:space="preserve"><value>MIT License · No network requests · Data stays on this device</value></data>
+  <data name="Settings_AboutLicense" xml:space="preserve"><value>MIT License · Your data stays on this device</value></data>
   <data name="Settings_AboutDb" xml:space="preserve"><value>Database: %LocalAppData%\SOrtus\sortus.db (single file, easy to back up)</value></data>
   <data name="Settings_DbPath" xml:space="preserve"><value>Database location: {0}</value></data>
   <data name="Settings_OpenFolder" xml:space="preserve"><value>Open folder</value></data>
+
+  <!-- Software update -->
+  <data name="Settings_Update" xml:space="preserve"><value>Software update</value></data>
+  <data name="Settings_AutoCheck" xml:space="preserve"><value>Check for updates automatically</value></data>
+  <data name="Settings_AutoCheckHint" xml:space="preserve"><value>Checked once at startup, at most once per day. When off, the app makes no background requests; you can still check manually.</value></data>
+  <data name="Settings_CurrentVersionLabel" xml:space="preserve"><value>Current version</value></data>
+  <data name="Settings_CheckNow" xml:space="preserve"><value>Check now</value></data>
+  <data name="Settings_AutoCheckOn" xml:space="preserve"><value>On</value></data>
+  <data name="Settings_AutoCheckOff" xml:space="preserve"><value>Off</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>Checking…</value></data>
+  <data name="Update_UpToDate" xml:space="preserve"><value>You are on the latest version ({0})</value></data>
+  <data name="Update_CheckFailed" xml:space="preserve"><value>Check failed: {0}</value></data>
+  <data name="Update_AvailableTitle" xml:space="preserve"><value>A new version is available</value></data>
+  <data name="Update_VersionLine" xml:space="preserve"><value>{0} → {1}</value></data>
+  <data name="Update_SizeLine" xml:space="preserve"><value>Installer {0} MB</value></data>
+  <data name="Update_NotesTitle" xml:space="preserve"><value>What's new</value></data>
+  <data name="Update_NoNotes" xml:space="preserve"><value>No release notes provided.</value></data>
+  <data name="Update_InstallNow" xml:space="preserve"><value>Download and install</value></data>
+  <data name="Update_Later" xml:space="preserve"><value>Remind me later</value></data>
+  <data name="Update_Skip" xml:space="preserve"><value>Skip this version</value></data>
+  <data name="Update_Downloading" xml:space="preserve"><value>Downloading {0}%</value></data>
+  <data name="Update_Verifying" xml:space="preserve"><value>Verifying installer…</value></data>
+  <data name="Update_Preparing" xml:space="preserve"><value>Backing up data and starting the installer…</value></data>
+  <data name="Update_Failed" xml:space="preserve"><value>Update failed: {0}</value></data>
+  <data name="Update_Retry" xml:space="preserve"><value>Retry</value></data>
+  <data name="Update_OpenPage" xml:space="preserve"><value>Open release page</value></data>
+  <data name="Update_BannerText" xml:space="preserve"><value>Version {0} is available</value></data>
+  <data name="Update_BannerAction" xml:space="preserve"><value>View</value></data>
 
   <data name="Common_Confirm" xml:space="preserve"><value>Confirm</value></data>
   <data name="Common_OK" xml:space="preserve"><value>OK</value></data>

@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Threading;
 using SOrtus.Core.Models;
 using SOrtus.Core.Repositories;
 using SOrtus.Core.Services;
@@ -43,6 +45,14 @@ public partial class App : Application
             return;
         }
 
+        // 单实例守护：自动更新安装完成后，安装器的 RestartApplications 与本程序 [Run] 条目
+        // 可能各拉起一次；若旧进程尚未完全退出，就会出现两个窗口。命名互斥量在此兜底。
+        if (!TryAcquireSingleInstance())
+        {
+            Shutdown(0);
+            return;
+        }
+
         // 首次运行自动创建 SQLite 数据库与立项基表（验收 A4）
         try
         {
@@ -54,7 +64,6 @@ public partial class App : Application
             Shutdown(1);
             return;
         }
-
         // 服务装配（跨层通信优先接口 + 依赖注入，规范 6.3）
         IProjectRepository repository = new ProjectRepository();
         IProjectService projectService = new ProjectService(repository);
@@ -83,6 +92,51 @@ public partial class App : Application
 
         var window = new MainWindow { DataContext = mainViewModel };
         window.Show();
+
+        ScheduleStartupUpdateCheck(mainViewModel);
+    }
+
+    /// <summary>单实例互斥量。持有到进程退出，由 OS 在进程终止时自动释放。</summary>
+    private static Mutex? _singleInstanceMutex;
+
+    /// <summary>
+    /// 尝试获取单实例锁。首次返回 true；已有实例在运行时返回 false。
+    /// </summary>
+    private static bool TryAcquireSingleInstance()
+    {
+        try
+        {
+            _singleInstanceMutex = new Mutex(initiallyOwned: true, @"Local\SOrtus.SingleInstance", out var createdNew);
+            return createdNew;
+        }
+        catch (Exception ex)
+        {
+            // 互斥量创建失败（极端权限/命名冲突）时放行，宁可双开也不能打不开程序
+            UpdateService.Log($"单实例互斥量创建失败：{ex.Message}");
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// 启动后延迟 3 秒再查更新：先让窗口完成首帧渲染与数据库加载，
+    /// 避免把网络耗时叠进启动时间。检查本身 5 秒超时、失败静默。
+    /// </summary>
+    private static void ScheduleStartupUpdateCheck(MainViewModel mainViewModel)
+    {
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        timer.Tick += async (_, _) =>
+        {
+            timer.Stop();
+            try
+            {
+                await mainViewModel.Updates.CheckAsync(force: false);
+            }
+            catch (Exception ex)
+            {
+                Services.UpdateService.Log($"启动检查更新异常：{ex}");
+            }
+        };
+        timer.Start();
     }
 
     /// <summary>

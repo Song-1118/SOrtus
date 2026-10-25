@@ -9,7 +9,8 @@
     <RootNamespace>SOrtus</RootNamespace>
     <AssemblyName>SOrtus</AssemblyName>
     <!-- 规范 9.3：关于页/安装包版本与程序集一致，版本由 Directory.Build.props 统一注入 -->
-  </PropertyGroup>
+    <ApplicationIcon>Resources\icon\app.ico</ApplicationIcon>
+</PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SOrtus.Core\SOrtus.Core.csproj" />
@@ -18,6 +19,13 @@
   <ItemGroup>
     <!-- 本地优先、纯本地：仅引入必要的 SQLite 驱动，无网络/云服务依赖 -->
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 窗口标题栏图标：以 WPF 资源形式嵌入，供 MainWindow.xaml 的 Icon 显式引用
+         （ApplicationIcon 仅决定 EXE 的 Win32 图标，窗口标题栏需显式指定）。
+         唯一图标源为 Resources\icon\app.ico，禁止在此处替换为其他文件。 -->
+    <Resource Include="Resources\icon\app.ico" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,5 +44,6 @@
     <EmbeddedResource Include="Migrations\v0001_CreateProject.sql" />
     <EmbeddedResource Include="Migrations\v0002_project_document.sql" />
   </ItemGroup>
+  
 
 </Project>

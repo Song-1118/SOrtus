@@ -23,7 +23,7 @@
 
 ### 变更
 
-- **安装位置改为按用户**：`SOrtus.iss` 使用 `PrivilegesRequired=lowest`，并把 `DefaultDirName` 显式写为 `{localappdata}\Programs\SOrtus`（不用 `{autopf}`，避免其随安装模式在 Program Files 与会话目录之间切换），安装与后续静默升级全程不弹 UAC。0.1.2 是首个采用用户级安装的版本。
+- **安装位置改为按用户**：`SOrtus.iss` 使用 `PrivilegesRequired=lowest`，并把 `DefaultDirName` 显式写为 `{localappdata}\Programs\SOrtus`（不用 `{autopf}`，避免其随安装模式在 Program Files 与会话目录之间切换），安装与后续静默升级全程不弹 UAC。0.2.0 是首个采用用户级安装的版本；从 0.1.2（默认装入 `Program Files`）手动升级时需先卸载旧版，否则两套程序会同时存在。
 - `Settings_AboutLicense` 文案由「无网络请求 · 数据只留在本机」改为「数据留在本地」，与自动更新的联网行为保持一致。
 - `build/build.ps1` 修正为引用 `SOrtus.slnx`（原引用的 `SOrtus.sln` 不存在）；`build/package.ps1` 改为从 `build/version.props` 读取版本号、去掉会导致失败的 `--no-build`，并明确它只产便携 zip、不产安装包。
 - README 中英文版重写：更正「无网络请求」表述，补充安装方式、自动更新流程、联网说明与发版约定。

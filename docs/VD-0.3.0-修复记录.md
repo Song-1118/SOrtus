@@ -37,7 +37,7 @@
 
 | 编号 | 结论 | 落点 | 验证 |
 | --- | --- | --- | --- |
-| VD-081 | 已修复 | `MainWindow.xaml`（`PART_DialogHost` + `KeyboardNavigation.*Navigation=Cycle`）、`MainWindow.xaml.cs`（`MoveFocusIntoDialog` / `RestoreFocusAfterDialog`）、`Controls/FormField.cs`（`FindFirstField`） | `--shot` 自检：`[FOCUS] 07-document-dialog dialogFocused=True element=SOrButton` |
+| VD-081 | 已修复 | `MainWindow.xaml`（`PART_DialogHost` + `KeyboardNavigation.*Navigation=Cycle`）、`MainWindow.xaml.cs`（`MoveFocusIntoDialog` / `RestoreFocusAfterDialog`）、`Controls/FormField.cs`（`FindFirstField`）、`ViewTemplates.xaml`（确认 / 未保存 / 配置远端三处主按钮 `IsDefault=True`；取消不用 `IsCancel`——Esc 已由窗口 `KeyBinding` 统一走取消路径，两者并存会重复执行一次取消） | `--shot` 自检：`[FOCUS] 07-document-dialog dialogFocused=True element=SOrButton` |
 | VD-082 | 已修复 | `MainViewModel.cs`（`RecentProjects` / `RefreshRecentAsync` / `VersionLine`）、`MainWindow.xaml`（侧边栏「最近立项」+ 页脚版本行） | `01b-list-with-items.png` 侧边栏列出 3 条 |
 | VD-083 | 已修复 | `IOverlayDialogViewModel.AllowScrimClose`（默认 true）、`AddRemoteDialogViewModel`（false + `HasInput` + `ConfirmEsc`）、`MainViewModel.ScrimCloseCommand`、`MainWindow.xaml`（遮罩绑独立命令） | 单击遮罩无效；第一次 Esc 出提示「再按一次 Esc 放弃已填写的内容」 |
 
@@ -58,7 +58,7 @@
 | --- | --- | --- | --- |
 | VD-091 | 已修复 | `ProjectWizardViewModel.cs`（一次查完全部必填、`FocusRequested`、`ErrorMessage` 汇总）、`IFieldFocusSource`、`Controls/FormField.cs`（`Anchor` / `RevealAndFocus` / 抖动）、`MainWindow.xaml.cs`（`OnFieldFocusRequested`）、`SOrTextBox / SOrComboBox / SOrDatePicker.IsInvalid` | `--shot` 自检：`[FOCUS] fieldAnchor=Name element=SOrTextBox`；`05b-wizard-validation-error.png` 显示红框 + 两条字段错误 + 页脚「还有 2 项必填未完成」 |
 | VD-092 | 已修复 | `ProjectWizardViewModel`（`IsDirty` / `ConfirmLeaveAsync` / `CancelCommand`）、`MainViewModel.ConfirmLeaveCurrentAsync`（纳入向导）、`ViewTemplates.xaml` 页脚「取消」 | `Wizard_ConfirmLeave_OnlyAsksWhenDirty` |
-| VD-093 | 已修复 | `SOrButton` 新增 `Card` 变体（`Controls.Button.xaml` + `SOrButton.cs`）、模板 `PART_ActiveRing` / `PART_Check`、`ViewTemplates.xaml`（去掉 `MinHeight=340`、内容顶部对齐） | `02-wizard-step1.png` |
+| VD-093 | 已修复 | `SOrButton` 新增 `Card` 变体（`Controls.Button.xaml` + `SOrButton.cs`）、模板 `PART_ActiveRing` / `PART_Check` + `CardActiveIn/OutStoryboard`（160ms 淡入，Setter 保底）、`ViewTemplates.xaml`（去掉 `MinHeight=340`、内容顶部对齐） | `02-wizard-step1.png` |
 | VD-094 | 已修复 | `ViewTemplates.xaml`（预设圆点 +「已选 N 项」）、`ProjectWizardViewModel.SelectedTechStackCountText` | `03-wizard-step2.png` |
 | VD-095 | 已修复 | `ViewTemplates.xaml`（等分两列 +「至」）、`Strings.resx`（`Wizard_DateTo`） | `03b-wizard-step2-bottom.png` |
 | VD-096 | 已修复 | `ViewTemplates.xaml`（`IconPlus` +「添加」）、`Strings.resx`（`Wizard_TechStackAdd`） | `03-wizard-step2.png` |

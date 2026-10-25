@@ -1483,7 +1483,7 @@
                     <local:SOrButton Content="{DynamicResource Common_Cancel}" Variant="Secondary"
                                      Command="{Binding CloseCommand}" Padding="18,9" />
                     <local:SOrButton Content="{DynamicResource Git_Confirm}" Variant="Primary"
-                                     Command="{Binding ConfirmCommand}" Margin="10,0,0,0" Padding="18,9" />
+                                     Command="{Binding ConfirmCommand}" Margin="10,0,0,0" Padding="18,9" IsDefault="True" />
                 </StackPanel>
             </StackPanel>
         </Border>
@@ -1729,7 +1729,7 @@
                                         Command="{Binding CancelCommand}"
                                         Visibility="{Binding IsConfirm, Converter={StaticResource BoolToVisibilityConverter}}" />
                         <local:SOrButton Content="{Binding ConfirmText}" Variant="Primary"
-                                        Command="{Binding ConfirmCommand}" Margin="10,0,0,0" />
+                                        Command="{Binding ConfirmCommand}" Margin="10,0,0,0" IsDefault="True" />
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -1749,7 +1749,7 @@
                         <local:SOrButton Content="{Binding DiscardText}" Variant="Secondary"
                                         Command="{Binding DiscardCommand}" Margin="10,0,0,0" />
                         <local:SOrButton Content="{Binding SaveText}" Variant="Primary"
-                                        Command="{Binding SaveCommand}" Margin="10,0,0,0" />
+                                        Command="{Binding SaveCommand}" Margin="10,0,0,0" IsDefault="True" />
                     </StackPanel>
                 </StackPanel>
             </Border>

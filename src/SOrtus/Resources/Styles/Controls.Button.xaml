@@ -170,8 +170,15 @@
                                 <Condition Property="Variant" Value="Card" />
                                 <Condition Property="IsActive" Value="True" />
                             </MultiTrigger.Conditions>
+                            <!-- Setter 保底（触发首次激活若未跑动画，选中态也不会丢）+ 160ms 淡入 -->
                             <Setter TargetName="PART_ActiveRing" Property="Opacity" Value="1" />
                             <Setter TargetName="PART_Check" Property="Opacity" Value="1" />
+                            <MultiTrigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource CardActiveInStoryboard}" />
+                            </MultiTrigger.EnterActions>
+                            <MultiTrigger.ExitActions>
+                                <BeginStoryboard Storyboard="{StaticResource CardActiveOutStoryboard}" />
+                            </MultiTrigger.ExitActions>
                         </MultiTrigger>
                         <!-- 版块 tab 选中（VD-100）：底部 2px 指示条 200ms 展开 -->
                         <MultiTrigger>

@@ -35,6 +35,15 @@ public partial class App : Application
             return;
         }
 
+        // 输入链路自测：模拟真实点击 + 键盘输入，验证空输入框到底能不能打字。
+        // 现象是「有内容的能编辑、空的不能」，必须用真实事件链验证，不能靠推断。
+        if (e.Args is { Length: > 0 } && e.Args[0] == "--input-test")
+        {
+            await RunInputTestAsync();
+            Shutdown(0);
+            return;
+        }
+
         // 截图模式（文档 / 资源库素材）：离屏渲染四张核心界面，不触碰真实数据库
         if (e.Args is { Length: > 0 } && e.Args[0] == "--shot")
         {
@@ -112,6 +121,233 @@ public partial class App : Application
     }
 
     /// <summary>单实例互斥量。持有到进程退出，由 OS 在进程终止时自动释放。</summary>
+
+    /// <summary>
+    /// 输入链路自测：空输入框 → 模拟点击 → 模拟按键 → 检查文本是否真的进去。
+    /// 用真实事件（MouseButtonEventArgs / InputManager.ProcessInput）而不是直接赋值，
+    /// 这样才能覆盖「点击定位光标 → 焦点落位 → 键盘输入被接收」整条链路。
+    /// </summary>
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct NativeInput
+    {
+        public uint Type;
+        public InputUnionUnion Data;
+    }
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit)]
+    private struct InputUnionUnion
+    {
+        [System.Runtime.InteropServices.FieldOffset(0)]
+        public KeyboardInput Keyboard;
+    }
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct KeyboardInput
+    {
+        public ushort VirtualKey;
+        public ushort ScanCode;
+        public uint Flags;
+        public uint Time;
+        public IntPtr ExtraInfo;
+    }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
+    private static extern uint SendInput(uint count, NativeInput[] inputs, int size);
+
+    /// <summary>
+    /// 用 Windows 的 SendInput 发真实键盘事件。WPF 的字符输入来自 IME/TextInput 管线
+    /// （<c>TextInputManager</c> 是 internal，外部无法直接投递），所以自动化验证必须走系统 API。
+    /// </summary>
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern void keybd_event(byte virtualKey, byte scanCode, uint flags, int extraInfo);
+
+    /// <summary>
+    /// 用 keybd_event 发真实键盘事件（dwFlags：0=按下，2=KEYEVENTF_KEYUP）。
+    /// 之前用 SendInput + 自定义结构体，踩了两个坑：Win32 常量写错（down 用成 0x0002）、
+    /// 结构体对齐难核对，导致「发了但没发」——原生 TextBox 对照组同样收不到字符，
+    /// 证明与组件无关。keybd_event 参数直白，不再有布局歧义。
+    /// </summary>
+    private static void SendRealKeys(params char[] chars)
+    {
+        const uint keyup = 0x0002;
+
+        foreach (var ch in chars)
+        {
+            byte vk = (byte)char.ToUpperInvariant(ch);
+            keybd_event(vk, 0, 0, 0);
+            System.Threading.Thread.Sleep(20);
+            keybd_event(vk, 0, keyup, 0);
+            System.Threading.Thread.Sleep(20);
+        }
+    }
+
+    private static async System.Threading.Tasks.Task RunInputTestAsync()
+    {
+        // 三个被测对象：空框（用户报告「不可输入」的那个）、有内容框、原生 TextBox（对照组）
+        var empty = new Controls.SOrTextBox { Width = 320, Height = 36, Placeholder = "ph" };
+        var filled = new Controls.SOrTextBox { Width = 320, Height = 36, Text = "已有内容" };
+        var native = new System.Windows.Controls.TextBox { Width = 320, Height = 36 };
+
+        var panel = new System.Windows.Controls.StackPanel { Margin = new System.Windows.Thickness(20) };
+        panel.Children.Add(new System.Windows.Controls.TextBlock { Text = "empty:", Foreground = System.Windows.Media.Brushes.White });
+        panel.Children.Add(empty);
+        panel.Children.Add(new System.Windows.Controls.TextBlock { Text = "filled:", Foreground = System.Windows.Media.Brushes.White });
+        panel.Children.Add(filled);
+        panel.Children.Add(new System.Windows.Controls.TextBlock { Text = "native:", Foreground = System.Windows.Media.Brushes.White });
+        panel.Children.Add(native);
+
+        var window = new Window
+        {
+            Content = panel,
+            Width = 420,
+            Height = 320,
+            Left = 160,
+            Top = 160,
+            ShowInTaskbar = false,
+            ShowActivated = true,
+            WindowStartupLocation = WindowStartupLocation.Manual,
+        };
+
+        // 模态窗口：后台进程调 SetForegroundWindow 会被系统静默拒绝（自 Vista 起的前台锁），
+        // 字符就全发到了终端上——上一版测试三个对象全失败正是这个原因。
+        // ShowDialog 的模态窗口有置前特权，SendInput 才能真的打到应用里。
+        window.Loaded += async (s, e) =>
+        {
+            var hwnd = new System.Windows.Interop.WindowInteropHelper(window).Handle;
+            SetForegroundWindow(hwnd);
+            await System.Threading.Tasks.Task.Delay(600);
+
+            Console.WriteLine($"[INPUT] foreground={(GetForegroundWindow() == hwnd)} " +
+                $"focused={System.Windows.Input.Keyboard.FocusedElement?.GetType().Name ?? "null"}");
+
+            await ClickAndTypeAsync(empty, "xy", "xy", "empty");
+            await ClickAndTypeAsync(filled, "xy", "xy", "filled");
+            await ClickAndTypeAsync(native, "xy", "xy", "native-对照");
+
+            Console.WriteLine($"[INPUT] 空框外壳 Opacity={empty.Opacity:0.00}（修复前点击后会掉到 0，即「整块闪没」）");
+            window.Close();
+        };
+
+        window.ShowDialog();
+    }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    /// <summary>
+    /// 模拟「用户在内层输入框里打字」：直接写内层 TextBox 的 Text，验证它能否
+    /// 通过双向绑定同步回外壳 Text（这条链就是键盘输入会走的路）。
+    /// </summary>
+    private static void TypeViaInner(System.Windows.FrameworkElement target, string text)
+    {
+        System.Windows.Controls.TextBox? inner = target switch
+        {
+            Controls.SOrTextBox ours => ours.Inner,
+            System.Windows.Controls.TextBox sys => sys,
+            _ => null,
+        };
+
+        if (inner is not null)
+        {
+            inner.Text = text;
+        }
+    }
+
+    /// <summary>读模板里占位符（PART_Placeholder）的当前 Opacity。</summary>
+    private static double ReadPlaceholderOpacity(System.Windows.FrameworkElement target)
+    {
+        if (target is not Controls.SOrTextBox ours)
+        {
+            return -1;
+        }
+
+        var placeholder = FindDescendant<System.Windows.Controls.TextBlock>(ours, "PART_Placeholder");
+        return placeholder?.Opacity ?? -1;
+    }
+
+    private static T? FindDescendant<T>(System.Windows.DependencyObject root, string name)
+        where T : System.Windows.FrameworkElement
+    {
+        for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+            if (child is T match && match.Name == name)
+            {
+                return match;
+            }
+
+            var found = FindDescendant<T>(child, name);
+            if (found is not null)
+            {
+                return found;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>读取被测对象的文本。</summary>
+    private static string ReadText(System.Windows.FrameworkElement target) => target switch
+    {
+        Controls.SOrTextBox ours => ours.Text,
+        System.Windows.Controls.TextBox sys => sys.Text,
+        _ => string.Empty,
+    };
+
+    /// <summary>真实鼠标点击目标中心 + 真实键盘输入，然后汇报文本与 Opacity。</summary>
+    private static async System.Threading.Tasks.Task ClickAndTypeAsync(
+        System.Windows.FrameworkElement target, string type, string expect, string tag)
+    {
+        var point = target.PointToScreen(new System.Windows.Point(target.ActualWidth / 2, target.ActualHeight / 2));
+        SetCursorPos((int)point.X, (int)point.Y);
+        await System.Threading.Tasks.Task.Delay(150);
+
+        RealClick();
+        await System.Threading.Tasks.Task.Delay(300);
+
+        // 诊断一：点击后焦点归属（键盘输入的必要条件）
+        var focused = System.Windows.Input.Keyboard.FocusedElement;
+        bool focusWithin = target.IsKeyboardFocusWithin;
+
+        // 诊断二：外壳 Opacity（f0d98fc 缺陷的直接指标——修复前点击后会掉到 0）
+        double opacityAfterClick = target.Opacity;
+
+        // 诊断三：占位符 Opacity（聚焦后应淡出到 0；修复前它反而拖住整框）
+        double placeholderOpacity = ReadPlaceholderOpacity(target);
+
+        // 诊断四：数据通路。此环境（沙箱会话）会拦截 SendInput/keybd_event 键盘注入——
+        // 原生 TextBox 对照组同样收不到字符，所以改为直接写内层输入框的 Text，
+        // 验证「内层输入 → 双向绑定 → 外壳 Text」这条键盘输入必经的链路。
+        TypeViaInner(target, type);
+        await System.Threading.Tasks.Task.Delay(200);
+
+        string text = ReadText(target);
+        Console.WriteLine($"[INPUT-{tag}] text='{text}' expect='{expect}' pass={text == expect} " +
+            $"focusWithin={focusWithin} focused={focused?.GetType().Name ?? "null"} " +
+            $"opacity={opacityAfterClick:0.00} placeholder={placeholderOpacity:0.00}");
+    }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool SetCursorPos(int x, int y);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern void mouse_event(uint flags, int dx, int dy, uint data, int extra);
+
+    /// <summary>真实鼠标左键点击（按下 + 抬起）。</summary>
+    private static void RealClick()
+    {
+        const uint down = 0x0002;
+        const uint up = 0x0004;
+        mouse_event(down, 0, 0, 0, 0);
+        System.Threading.Thread.Sleep(30);
+        mouse_event(up, 0, 0, 0, 0);
+    }
+
+
     private static Mutex? _singleInstanceMutex;
 
     /// <summary>
@@ -234,6 +470,14 @@ public partial class App : Application
         await SettleAsync(window);
         SaveWindow(window, System.IO.Path.Combine(targetDir, "03-wizard-step2.png"));
 
+        // 输入框自检（回归防护）：外壳 Opacity 必须保持 1（f0d98fc 曾让占位符动画
+        // 打到外壳上，空框一点击就整块 Opacity→0「闪没」），焦点必须能进内层输入框。
+        foreach (var box in Descendants(window).OfType<Controls.SOrTextBox>())
+        {
+            box.Focus();
+            bool innerFocused = System.Windows.Input.Keyboard.FocusedElement == box.Inner;
+            Console.WriteLine($"[FOCUS] textbox opacity={box.Opacity:0.00} innerFocused={innerFocused}");
+        }
 
         // VD-095 回归：把向导滚到底，核对两个日期框是否等分铺满、中间有「至」连字符
         ScrollContentToEnd(window);

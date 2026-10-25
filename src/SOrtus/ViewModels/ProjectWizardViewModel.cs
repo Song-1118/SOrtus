@@ -76,6 +76,9 @@ internal sealed class ProjectWizardViewModel : ViewModelBase, IFieldFocusSource
     public ICommand CreateCommand { get; }
     public ICommand CancelCommand { get; }
     public ICommand NextStepCommand { get; }
+
+    /// <summary>步进器点击：跳到第 1 步 / 第 2 步。</summary>
+    public ICommand GoToStepCommand { get; }
     public ICommand PreviousStepCommand { get; }
     public ICommand SelectTypeCommand { get; }
 
@@ -356,6 +359,16 @@ internal sealed class ProjectWizardViewModel : ViewModelBase, IFieldFocusSource
         CancelCommand = new AsyncRelayCommand(CancelAsync);
         NextStepCommand = new RelayCommand(_ => Step = 2);
         PreviousStepCommand = new RelayCommand(_ => Step = 1);
+
+        // 步进器点击：直接跳到指定步骤（内容随之滑动切换）。
+        // 回退不丢数据——两步的字段都在同一个视图模型里，Step 只是当前显示哪一块。
+        GoToStepCommand = new RelayCommand(o =>
+        {
+            if (o is int step && (step == 1 || step == 2))
+            {
+                Step = step;
+            }
+        });
         SelectTypeCommand = new RelayCommand(o =>
         {
             if (o is ProjectType t)

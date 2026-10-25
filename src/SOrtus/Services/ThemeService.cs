@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using SOrtus.Core.Services;
 
 namespace SOrtus.Services;
@@ -45,6 +46,22 @@ internal sealed class ThemeService : IThemeService
     private AppSettings _settings = new();
     private string _currentTheme = "Light";
     private double _blurRadius = 12.0;
+
+    /// <summary>模糊预览节流计时器：拖动 / 轨道点击动画期间只应用最后一次值。</summary>
+    private readonly DispatcherTimer _previewTimer;
+
+    /// <summary>最近一次请求的预览半径（尚未应用的）。</summary>
+    private double _pendingPreviewRadius = 12.0;
+
+    public ThemeService()
+    {
+        _previewTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(120) };
+        _previewTimer.Tick += (_, _) =>
+        {
+            _previewTimer.Stop();
+            ApplyBlurRadius(_pendingPreviewRadius);
+        };
+    }
 
     public string CurrentTheme => _currentTheme;
 
@@ -90,12 +107,25 @@ internal sealed class ThemeService : IThemeService
     public void PreviewBlurStrength(double radius)
     {
         _blurRadius = radius;
-        ApplyBlurRadius(radius);
+        _pendingPreviewRadius = radius;
+
+        // 节流：轨道点击动画会逐帧改值，逐帧重建模糊层缓存会明显卡顿（规范负面清单第 1 条：
+        // 不要给模糊半径做动画）。这里只应用最后一次——拖动时表现为「跟手但有 120ms 延迟」，
+        // 松手（Commit）时立即落定。
+        _previewTimer.Stop();
+        _previewTimer.Start();
     }
 
     /// <summary>停手后落盘一次，并广播一次（换肤过渡等监听者只关心「真的变了」）。</summary>
     public void CommitBlurStrength()
     {
+        // 松手：把待应用的预览值立刻落定（不留给计时器）
+        if (_previewTimer.IsEnabled)
+        {
+            _previewTimer.Stop();
+            ApplyBlurRadius(_pendingPreviewRadius);
+        }
+
         if (_settings.BlurRadius is { } saved && Math.Abs(saved - _blurRadius) < 0.001)
         {
             return;

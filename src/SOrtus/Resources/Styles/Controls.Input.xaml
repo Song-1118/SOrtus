@@ -20,20 +20,23 @@
     <conv:NotMonthModeConverter x:Key="NotMonthModeConverter" />
 
     <!-- ============================ SOrTextBox ============================ -->
+    <!--
+        SOrTextBox（外壳 + 内嵌原生 TextBox）：
+        内部输入框用**系统模板**（不换模板），光标定位 / 输入 / 选中 / IME 全部走 WPF 原生实现；
+        外壳负责边框、填充、前置图标、占位符、清除按钮与校验态外观。
+        占位符与焦点环的触发条件都指向内部输入框（ElementName=PART_ContentHost），
+        因为焦点与文本都在它身上。
+    -->
     <Style TargetType="local:SOrTextBox">
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        <!-- VD-073：输入框填充比卡片低一阶 + 边界 ≥3:1（BorderStrongBrush），
-             旧版 #FFFFFF 底 + #E5E7EB 边（1.24:1）在白卡上几乎隐形，用户只能靠右侧对齐关系猜哪里能输入 -->
+        <!-- VD-073：输入框填充比卡片低一阶 + 边界 ≥3:1（BorderStrongBrush） -->
         <Setter Property="Background" Value="{DynamicResource InputSurfaceBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
-        <!-- 边框保持 1px（用户明确：不要加粗，边界靠颜色而不是粗细来表达） -->
         <Setter Property="BorderThickness" Value="1" />
-        <!-- 文本内边距由模板内的 Inset 层统一提供（12,0,12,0）；控件 Padding 置 0，
-             避免 TextBox 内部再叠加一次内边距，导致文字不是从最左侧开始输入 -->
         <Setter Property="Padding" Value="0" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
-        <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource PrimaryBrush}" />
         <Setter Property="SelectionBrush" Value="{DynamicResource PrimaryBrush}" />
         <Setter Property="MinHeight" Value="{DynamicResource ControlHeight}" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -49,11 +52,7 @@
                                 CornerRadius="{TemplateBinding CornerRadius}"
                                 SnapsToDevicePixels="True">
                             <Grid>
-                                <!-- 悬浮覆盖层（VD-011）：鼠标划过仅叠一层 HoverOverlayBrush 弱底色、不改描边；
-                                     边框说明：此处不用 TemplateBinding BorderBrush——实机截图里搜索框
-                                     根本没有可见边框像素（与下拉框的硬编码写法形成鲜明对比），
-                                     改用直接资源引用后与 ComboBox / DatePicker 行为一致。
-                                     键盘焦点由独立焦点环表达（单一焦点信号，VD-059 / VD-066） -->
+                                <!-- 悬浮覆盖层（VD-011）：鼠标划过仅叠一层 HoverOverlayBrush 弱底色、不改描边 -->
                                 <Border x:Name="PART_Hover"
                                         Background="{DynamicResource HoverOverlayBrush}"
                                         Opacity="0"
@@ -77,16 +76,25 @@
                                               VerticalAlignment="Center"
                                               HorizontalAlignment="Center"
                                               Visibility="{Binding LeadingIcon, Converter={StaticResource NotNullToVisibilityConverter}, RelativeSource={RelativeSource TemplatedParent}}" />
-                                        <!-- 内容宿主（原生约定部件，必须存在）。不额外加 Margin：
-                                             位置完全由 PART_Inset 的内边距决定 -->
-                                        <ScrollViewer x:Name="PART_ContentHost"
-                                                      Grid.Column="1"
-                                                      Foreground="{TemplateBinding Foreground}"
-                                                      VerticalAlignment="Center"
-                                                      HorizontalScrollBarVisibility="Hidden"
-                                                      VerticalScrollBarVisibility="Hidden" />
-                                        <!-- 占位符：与真实文本共用同一列与同一起点，保证左对齐一致 -->
-                                        <!-- M-21：显隐用 Opacity（0 ↔ 0.85，100ms），不用 Collapsed -->
+
+                                        <!-- 内部原生输入框：系统模板负责编辑区与光标，这里只调外观 -->
+                                        <TextBox x:Name="PART_ContentHost"
+                                                 Grid.Column="1"
+                                                 Text="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 AcceptsReturn="{Binding AcceptsReturn, RelativeSource={RelativeSource TemplatedParent}}"
+                                                 Background="Transparent"
+                                                 BorderThickness="0"
+                                                 Padding="0"
+                                                 Foreground="{TemplateBinding Foreground}"
+                                                 CaretBrush="{TemplateBinding CaretBrush}"
+                                                 SelectionBrush="{TemplateBinding SelectionBrush}"
+                                                 TextWrapping="{TemplateBinding TextWrapping}"
+                                                 FontSize="{TemplateBinding FontSize}"
+                                                 VerticalAlignment="Center"
+                                                 VerticalContentAlignment="Center" />
+
+                                        <!-- 占位符：与真实文本共用同一列与同一起点，保证左对齐一致。
+                                             M-21：显隐用 Opacity（0 ↔ 0.85，100ms），不用 Collapsed -->
                                         <TextBlock x:Name="PART_Placeholder"
                                                    Grid.Column="1"
                                                    Text="{TemplateBinding Placeholder}"
@@ -95,6 +103,7 @@
                                                    VerticalAlignment="Center"
                                                    HorizontalAlignment="Left"
                                                    IsHitTestVisible="False" />
+
                                         <!-- 清除按钮（VD-085）：搜索框有内容时出现，一键清空而不是逐字删。
                                              多行输入不显示（有换行需求，误清代价高）。 -->
                                         <local:SOrButton x:Name="PART_Clear"
@@ -112,8 +121,7 @@
                                 </Border>
                             </Grid>
                         </Border>
-                        <!-- 键盘焦点环（VD-066）：独立 1px 内描边，100ms 淡入、离开即走；
-                             不再直接切换 BorderBrush（一帧硬切在磨砂卡上像一次闪烁） -->
+                        <!-- 键盘焦点环（VD-066）：独立 1px 内描边，100ms 淡入、离开即走 -->
                         <Border x:Name="PART_FocusRing"
                                 BorderBrush="{DynamicResource FocusRingBrush}"
                                 BorderThickness="1"
@@ -122,62 +130,44 @@
                                 IsHitTestVisible="False" />
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <!-- M-21 占位符消失/出现：100ms 淡入淡出（输入第一个字符即消失，不等失焦）。
-                             显隐用 Opacity，不用 Collapsed——Setter 立即恢复会把退出动画砍掉。 -->
-                        <MultiTrigger>
-                            <MultiTrigger.Conditions>
-                                <Condition Property="Text" Value="" />
-                                <Condition Property="IsKeyboardFocusWithin" Value="False" />
-                            </MultiTrigger.Conditions>
+                        <!-- 占位符：内部输入框「为空」**且**「未聚焦」时才显示。
+                             必须用 MultiDataTrigger 把两个条件合起来——拆成两个独立 DataTrigger 时，
+                             聚焦后「文本为空」那条仍然命中，EnterActions 的淡入动画会把占位符
+                             锁在 0.85，表现为「点进空框、占位符文字还盖在光标位置上」。
+                             （MultiTrigger.Condition 不支持 ElementName，MultiDataTrigger.Condition 的
+                             Binding 支持，所以这里用 MultiDataTrigger。） -->
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding Text, ElementName=PART_ContentHost}" Value="" />
+                                <Condition Binding="{Binding IsKeyboardFocusWithin, ElementName=PART_ContentHost}" Value="False" />
+                            </MultiDataTrigger.Conditions>
                             <Setter TargetName="PART_Placeholder" Property="Opacity" Value="0.85" />
-                            <MultiTrigger.EnterActions>
+                            <MultiDataTrigger.EnterActions>
                                 <BeginStoryboard Storyboard="{StaticResource PlaceholderInStoryboard}" />
-                            </MultiTrigger.EnterActions>
-                            <MultiTrigger.ExitActions>
+                            </MultiDataTrigger.EnterActions>
+                            <MultiDataTrigger.ExitActions>
                                 <BeginStoryboard Storyboard="{StaticResource PlaceholderOutStoryboard}" />
-                            </MultiTrigger.ExitActions>
-                        </MultiTrigger>
+                            </MultiDataTrigger.ExitActions>
+                        </MultiDataTrigger>
+
                         <!-- 多行输入（简介 / 开发规划 / 约束 / 目标 / 验收 等）：
                              VD-070 统一「最小高度 + 自动增长」——不再各页写死 56/70/80，
                              内容多时框体会长到 180 后内部才滚动，短内容也不会白占 80px。 -->
-                        <Trigger Property="AcceptsReturn" Value="True">
-                            <Setter TargetName="PART_Inset" Property="Padding" Value="{DynamicResource InputInsetMultiline}" />
-                            <Setter TargetName="PART_ContentHost" Property="VerticalAlignment" Value="Stretch" />
+                        <DataTrigger Binding="{Binding AcceptsReturn, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
+                            <Setter Property="TextWrapping" Value="Wrap" />
+                            <Setter TargetName="PART_ContentHost" Property="VerticalContentAlignment" Value="Stretch" />
                             <Setter TargetName="PART_ContentHost" Property="VerticalScrollBarVisibility" Value="Auto" />
                             <Setter TargetName="PART_Placeholder" Property="VerticalAlignment" Value="Top" />
                             <Setter Property="VerticalContentAlignment" Value="Top" />
                             <Setter Property="MinHeight" Value="{DynamicResource MultilineMinHeight}" />
                             <Setter Property="MaxHeight" Value="{DynamicResource MultilineMaxHeight}" />
-                        </Trigger>
-                        <!-- 清除按钮可见性：默认折叠 → 可清除时显示 → 内容为空或多行时再折回
-                             （触发器按声明顺序生效，后声明的覆盖先声明的，因此「为空」必须写在最后） -->
-                        <DataTrigger Binding="{Binding IsClearable, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
-                            <Setter TargetName="PART_Clear" Property="Visibility" Value="Visible" />
                         </DataTrigger>
-                        <MultiDataTrigger>
-                            <MultiDataTrigger.Conditions>
-                                <Condition Binding="{Binding IsClearable, RelativeSource={RelativeSource TemplatedParent}}" Value="True" />
-                                <Condition Binding="{Binding Text, RelativeSource={RelativeSource TemplatedParent}}" Value="" />
-                            </MultiDataTrigger.Conditions>
-                            <Setter TargetName="PART_Clear" Property="Visibility" Value="Collapsed" />
-                        </MultiDataTrigger>
-                        <Trigger Property="AcceptsReturn" Value="True">
-                            <Setter TargetName="PART_Clear" Property="Visibility" Value="Collapsed" />
-                        </Trigger>
-                        <!-- 校验失败（VD-091）：边框换语义危险色，焦点环同色，
-                             与字段下方红字形成「同一件事」的视觉组 -->
-                        <Trigger Property="IsInvalid" Value="True">
-                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
-                            <Setter TargetName="PART_FocusRing" Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
-                        </Trigger>
-                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Trigger.EnterActions>
-                                <BeginStoryboard Storyboard="{StaticResource FocusRingInStoryboard}" />
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <BeginStoryboard Storyboard="{StaticResource FocusRingOutStoryboard}" />
-                            </Trigger.ExitActions>
-                        </Trigger>
+
+                        <!-- 清除按钮可见性由代码控制（SOrTextBox.UpdateClearButton）：
+                             「内部输入框有内容」这件事在模板触发器里无法用 ElementName 表达
+                             （MultiTrigger 的 Condition 不支持 ElementName） -->
+
+                        <!-- 悬浮（VD-011）：覆盖层淡入淡出，不改描边 -->
                         <Trigger Property="IsMouseOver" Value="True">
                             <Trigger.EnterActions>
                                 <BeginStoryboard Storyboard="{StaticResource MicroInStoryboard}" />
@@ -186,6 +176,23 @@
                                 <BeginStoryboard Storyboard="{StaticResource MicroOutStoryboard}" />
                             </Trigger.ExitActions>
                         </Trigger>
+
+                        <!-- 焦点环（VD-066）：条件在内部输入框上 -->
+                        <DataTrigger Binding="{Binding IsKeyboardFocusWithin, ElementName=PART_ContentHost}" Value="True">
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource FocusRingInStoryboard}" />
+                            </DataTrigger.EnterActions>
+                            <DataTrigger.ExitActions>
+                                <BeginStoryboard Storyboard="{StaticResource FocusRingOutStoryboard}" />
+                            </DataTrigger.ExitActions>
+                        </DataTrigger>
+
+                        <!-- 校验失败（VD-091）：边框转语义危险色，并保持到用户重新编辑 -->
+                        <DataTrigger Binding="{Binding IsInvalid, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
+                            <Setter TargetName="PART_Root" Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
+                            <Setter TargetName="PART_FocusRing" Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
+                        </DataTrigger>
+
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Root" Property="Opacity" Value="0.55" />
                         </Trigger>
@@ -836,7 +843,9 @@
                                 VerticalAlignment="Center" />
                         <Track x:Name="PART_Track" VerticalAlignment="Center">
                             <Track.DecreaseRepeatButton>
-                                <RepeatButton Command="{x:Static Slider.DecreaseLarge}" Focusable="False">
+                                <!-- Command 置空：轨道点击由 SOrSlider 在预览阶段接管并动画滑到点击处，
+                                     不再走 LargeChange 步进（避免与动画抢逻辑） -->
+                                <RepeatButton Command="{x:Null}" Focusable="False">
                                     <RepeatButton.Template>
                                         <ControlTemplate TargetType="RepeatButton">
                                             <!-- 已填充段：与底轨同高同圆角，左端圆头、右端直角，与拖块无缝衔接 -->
@@ -863,7 +872,7 @@
                                 </Thumb>
                             </Track.Thumb>
                             <Track.IncreaseRepeatButton>
-                                <RepeatButton Command="{x:Static Slider.IncreaseLarge}" Focusable="False">
+                                <RepeatButton Command="{x:Null}" Focusable="False">
                                     <RepeatButton.Template>
                                         <ControlTemplate TargetType="RepeatButton">
                                             <Border Background="Transparent" />
@@ -939,18 +948,9 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
-                            <Trigger.EnterActions>
-                                <BeginStoryboard Storyboard="{StaticResource ToggleOnStoryboard}" />
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <BeginStoryboard Storyboard="{StaticResource ToggleOffStoryboard}" />
-                            </Trigger.ExitActions>
-                            <!-- Setter 保底：首次渲染（尚未跑动画）时开启态也不会显示成关闭 -->
-                            <Setter TargetName="PART_Thumb" Property="RenderTransform">
-                                <Setter.Value>
-                                    <TranslateTransform X="24" />
-                                </Setter.Value>
-                            </Setter>
+                            <!-- 动画由 SOrToggleSwitch 代码侧播放（模板 Setter 若替换 RenderTransform
+                                 对象会让 Storyboard 目标失效，表现为「一点就跳」）。
+                                 这里的 Setter 只作保底：动画未运行时开启态也显示正确。 -->
                             <Setter TargetName="PART_TrackOn" Property="Opacity" Value="1" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">

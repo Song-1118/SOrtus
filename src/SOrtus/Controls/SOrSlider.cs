@@ -43,22 +43,26 @@ public sealed class SOrSlider : Slider
         DefaultStyleKeyProperty.OverrideMetadata(typeof(SOrSlider), new FrameworkPropertyMetadata(typeof(SOrSlider)));
     }
 
-    protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+    /// <summary>
+    /// 轨道点击必须在**预览（隧道）阶段**拦截：若在冒泡阶段处理，Track 里的 RepeatButton
+    /// 已经先一步执行了 <c>Slider.DecreaseLarge</c> / <c>IncreaseLarge</c>（那正是「点一下动一下」，
+    /// 表现为偶尔只减少/增加 1）。隧道阶段先于所有冒泡处理者，Handled=true 能真正掐断步进命令。
+    /// </summary>
+    protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
     {
         // 拖块本体：交给默认的拖动逻辑
         if (IsOnThumb(e.OriginalSource as DependencyObject))
         {
-            base.OnMouseLeftButtonDown(e);
+            base.OnPreviewMouseLeftButtonDown(e);
             return;
         }
 
         if (!IsAnimatedTrackClick || !TryGetTrackTarget(e, out var target))
         {
-            base.OnMouseLeftButtonDown(e);
+            base.OnPreviewMouseLeftButtonDown(e);
             return;
         }
 
-        // 接管这次点击：不再走 LargeChange 步进（那正是「点一下动一下」）
         e.Handled = true;
         AnimateTo(target);
     }
@@ -114,63 +118,29 @@ public sealed class SOrSlider : Slider
     }
 
     /// <summary>
-    /// 拖块视觉滑到目标位置：只动画 RenderTransform 偏移，动画结束时才写回 Value。
-    /// 这样绑定在实时预览上的场景（如模糊强度）不会逐帧重建缓存。
+    /// 动画滑到目标值：直接动画 <see cref="RangeBase.ValueProperty"/>，
+    /// 这样拖块与已填充段同步推进（此前只动画视觉偏移，填充段原地不动，看上去像「原点瞬移、进度条滞后」）。
+    /// <para>
+    /// 绑定实时预览的场景（如模糊强度）会逐帧收到值——由 <c>ThemeService.PreviewBlurStrength</c>
+    /// 的节流兜底，避免逐帧重建模糊缓存（规范负面清单第 1 条）。
+    /// </para>
     /// </summary>
     private void AnimateTo(double target)
     {
-        var track = Template?.FindName("PART_Track", this) as Track;
-        var thumb = track?.Thumb;
-        if (track is null || thumb is null)
+        if (Math.Abs(Value - target) < 0.001)
         {
-            Value = target;
             return;
         }
-
-        double trackWidth = track.ActualWidth;
-        double thumbWidth = thumb.ActualWidth;
-        if (trackWidth <= 0)
-        {
-            Value = target;
-            return;
-        }
-
-        double usable = Math.Max(1, trackWidth - thumbWidth);
-        double currentRatio = (Value - Minimum) / Math.Max(0.0001, Maximum - Minimum);
-        double targetRatio = (target - Minimum) / Math.Max(0.0001, Maximum - Minimum);
-        double dx = (targetRatio - currentRatio) * usable;
-
-        if (Math.Abs(dx) < 0.5)
-        {
-            Value = target;
-            return;
-        }
-
-        var transform = thumb.RenderTransform as TranslateTransform;
-        if (transform is null)
-        {
-            transform = new TranslateTransform();
-            thumb.RenderTransform = transform;
-        }
-
-        transform.X = dx;
 
         var animation = new DoubleAnimation
         {
-            From = dx,
-            To = 0,
+            From = Value,
+            To = target,
             Duration = new Duration(TimeSpan.FromMilliseconds(240)),
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
         };
 
-        var handler = new EventHandler((_, _) =>
-        {
-            transform.X = 0;
-            Value = target;
-        });
-
-        animation.Completed += handler;
-        thumb.BeginAnimation(TranslateTransform.XProperty, animation);
+        BeginAnimation(ValueProperty, animation);
     }
 
     public CornerRadius CornerRadius

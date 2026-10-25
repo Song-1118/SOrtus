@@ -138,6 +138,16 @@
 - **文档预览滚轮灵敏度**：新增 `MouseWheelScroll` 附加属性，文档阅读区每格滚轮 6 行（系统默认 3），按正文行高 24px 换算像素并接管事件，避免系统再滚一次造成双倍位移。
 - **全局非线性缓动**：补齐 8 处仍为线性插值的动画——类型卡淡出、tab 指示条收起、开关轨道色、占位符淡入淡出、加载指示器退出、进度条 400ms 填充（改 Exit 缓动）。规范令牌 `Std / Enter / Exit / Back` 已在 `Animations.xaml` 统一提供；仅加载指示的匀速旋转与 0ms 的焦点环失焦保持原语义。
 
+### 输入框不可输入——「改动画改坏了输入框」的根因与修复（f0d98fc 缺陷）
+
+- **根因（git 考古定位到具体提交）**：`f0d98fc`（动效规范 M-21）给占位符淡入淡出加 `EnterActions/ExitActions` 时，**漏写了 `Storyboard.TargetName`**。模板触发器里没有 TargetName 的动画，作用对象是**模板宿主——整个输入框外壳自己**。于是：空框未聚焦时触发淡入 → 外壳 Opacity 被锁到 0.85；一点击（失焦/聚焦态翻转）→ 触发淡出 → **外壳 Opacity 被动画到 0**，整块输入框「闪一下就黑/消失」，光标也在 Opacity=0 的元素里看不见。有内容的框 `Text==""` 条件不成立、动画从不播放，所以一直正常——与用户观察完全一致。
+- **修复一（根因）**：`PlaceholderInStoryboard` / `PlaceholderOutStoryboard` 补 `Storyboard.TargetName="PART_Placeholder"`，动画只作用于占位符本身。
+- **审计（同类坑全局排查）**：扫描全仓在模板/Style 触发器里引用的动画资源，共 12 处「无 TargetName」——其中 11 处宿主语义正确（更新提示条、遮罩、弹窗面板、保存按钮、未保存徽标本就该动宿主），仅占位符这 1 处错误。
+- **修复二（结构加固）**：`SOrTextBox` 由「继承 TextBox + 自定义模板」改为「外壳 ContentControl + **内嵌系统原生 TextBox**」。此前自定义模板下 TextBox 内部编辑区（`TextBoxView`）的输入焦点接不上（实测 `editorFocused=False`），且用系统色绘制导致「点击发黑」；现在光标定位、输入、选中、IME、撤销全部走 WPF 原生实现，外壳只负责边框/占位符/前置图标/清除按钮/校验态外观。对外 API 与页面绑定不变。
+- **修复三（重构中发现的第二个真 bug）**：占位符触发器原为「空文本 **且** 未聚焦」的 MultiTrigger，重构时拆成两个独立 DataTrigger，导致聚焦后「文本为空」那条仍命中、淡入动画把占位符锁在 0.85（占位符文字盖在光标位置上）。合成 `MultiDataTrigger`（`MultiTrigger.Condition` 不支持 ElementName，`MultiDataTrigger.Condition` 的 Binding 支持）。
+- **验证（确定性）**：新增 `--input-test` 端到端自测——空框 / 有内容框 / 原生 TextBox 对照组三项全部 `pass=True`、`focusWithin=True`、`opacity=1.00`、聚焦后占位符淡出到 `0.00`；发布版产物复测同样通过。`--shot` 内置输入框自检（4/4 `opacity=1.00 innerFocused=True`）。
+- **测试方法上的两个坑（已修正并留注释）**：① 此沙箱会话会拦截 `SendInput`/`keybd_event` 键盘注入（原生 TextBox 对照组同样收不到字符），键盘链路改用「焦点归属 + 外壳 Opacity + 内层写入双向绑定」三重验证，真实键盘输入请以本机实测为准；② `SendInput` 版实现的 Win32 常量写错（KEYDOWN 用了 `0x0002` 实际是 KEYUP），曾造成「三个对象全失败」的假阴性。
+
 ### 修复（本轮自查发现的回归）
 
 - **确认弹窗主按钮整颗消失**：模板里用内联 `<Style TargetType="local:SOrButton">` 覆盖 `Variant`，但控件模板只存在于隐式样式（无 `generic.xaml`），内联样式顶掉隐式样式后按钮无 `Template` → 不可见。改为控件属性 `IsDestructive` + 隐式样式内 `Trigger`，不再在模板里写样式。

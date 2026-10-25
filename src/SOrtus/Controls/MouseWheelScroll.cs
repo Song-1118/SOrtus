@@ -54,7 +54,7 @@ public static class MouseWheelScroll
             return;
         }
 
-        double lineHeight = viewer is FlowDocumentScrollViewer ? DocumentLineHeight : DefaultLineHeight;
+        double lineHeight = viewer.GetType() == typeof(FlowDocumentScrollViewer) ? DocumentLineHeight : DefaultLineHeight;
         double step = Math.Max(1, GetLinesPerNotch(element)) * lineHeight;
 
         // 一格滚轮 = 120 单位的 Delta

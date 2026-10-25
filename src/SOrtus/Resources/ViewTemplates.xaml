@@ -218,23 +218,52 @@
                                 </StackPanel>
                             </StackPanel>
 
-                            <!-- 步进器：当前步实心 + 主色文字，另一步空心 + 次要色 -->
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" Margin="16,6,0,0"
-                                        Visibility="{Binding IsStepType, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <Border Width="18" Height="18" CornerRadius="9" Background="{DynamicResource PrimaryBrush}">
-                                    <TextBlock Text="1" FontSize="{DynamicResource FontSizeCaption}" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource TextOnAccentBrush}"
-                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                </Border>
+                            <!-- 步进器：当前步实心高亮，另一步可点击直接跳过去（切换时内容滑动）。
+                                 两步都显示——此前只在第 1 步显示，用户在第 2 步看不到自己处在哪。 -->
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" Margin="16,6,0,0">
+                                <Button Width="18" Height="18" Focusable="False" Cursor="Hand"
+                                        Command="{Binding GoToStepCommand}" CommandParameter="1"
+                                        ToolTip="{DynamicResource Wizard_StepType}"
+                                        Background="Transparent" BorderThickness="0" Padding="0">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Grid>
+                                                <Border Width="18" Height="18" CornerRadius="9"
+                                                        Background="{DynamicResource PrimaryBrush}"
+                                                        Visibility="{Binding IsStepType, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                                <Border Width="18" Height="18" CornerRadius="9" BorderThickness="1"
+                                                        BorderBrush="{DynamicResource BorderStrongBrush}"
+                                                        Visibility="{Binding IsStepInfo, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                                <TextBlock Text="1" FontSize="{DynamicResource FontSizeCaption}" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource TextOnAccentBrush}"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Grid>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
                                 <TextBlock Text="{DynamicResource Wizard_StepType}" Margin="6,0,0,0" VerticalAlignment="Center"
                                            FontSize="{DynamicResource FontSizeCaption}" />
                                 <Rectangle Width="24" Height="1" Fill="{DynamicResource BorderStrongBrush}" Margin="8,0" VerticalAlignment="Center" />
-                                <Border Width="18" Height="18" CornerRadius="9" BorderThickness="1"
-                                        BorderBrush="{DynamicResource BorderStrongBrush}">
-                                    <TextBlock Text="2" FontSize="{DynamicResource FontSizeCaption}"
-                                               Foreground="{DynamicResource TextSecondaryBrush}"
-                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                </Border>
+                                <Button Width="18" Height="18" Focusable="False" Cursor="Hand"
+                                        Command="{Binding GoToStepCommand}" CommandParameter="2"
+                                        ToolTip="{DynamicResource Wizard_StepInfo}"
+                                        Background="Transparent" BorderThickness="0" Padding="0">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Grid>
+                                                <Border Width="18" Height="18" CornerRadius="9"
+                                                        Background="{DynamicResource PrimaryBrush}"
+                                                        Visibility="{Binding IsStepInfo, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                                <Border Width="18" Height="18" CornerRadius="9" BorderThickness="1"
+                                                        BorderBrush="{DynamicResource BorderStrongBrush}"
+                                                        Visibility="{Binding IsStepType, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                                <TextBlock Text="2" FontSize="{DynamicResource FontSizeCaption}"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Grid>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
                                 <TextBlock Text="{DynamicResource Wizard_StepInfo}" Margin="6,0,0,0" VerticalAlignment="Center"
                                            FontSize="{DynamicResource FontSizeCaption}" Foreground="{DynamicResource TextSecondaryBrush}" />
                             </StackPanel>
@@ -1647,8 +1676,11 @@
                                     <ColumnDefinition Width="160" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
+                                <!-- 标签与右侧「开关」那一行对齐（VerticalAlignment=Top + 2px 上边距）：
+                                     此前用 Center，标签落在「开关 + 说明文字」整块的正中间，
+                                     视觉上像是跟下面的说明文字对齐，而不是跟开关对齐 -->
                                 <TextBlock Grid.Column="0" Text="{DynamicResource Settings_FocusRing}" FontWeight="Medium"
-                                           FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                                           FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Top" Margin="2,0,12,0" />
                                 <StackPanel Grid.Column="1">
                                     <StackPanel Orientation="Horizontal">
                                         <local:SOrToggleSwitch IsChecked="{Binding ShowFocusRing, Mode=TwoWay}"
@@ -1755,7 +1787,7 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="{DynamicResource Settings_AutoCheck}" FontWeight="Medium"
-                                           FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                                           FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Top" Margin="2,0,12,0" />
                                 <StackPanel Grid.Column="1">
                                     <StackPanel Orientation="Horizontal">
                                         <local:SOrToggleSwitch IsChecked="{Binding AutoCheckForUpdates, Mode=TwoWay}"

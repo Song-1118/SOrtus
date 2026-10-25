@@ -364,12 +364,17 @@
 
 <!-- M-21 占位符消失/出现：Opacity 1→0 / 0→1，100ms -->
     <Storyboard x:Key="PlaceholderOutStoryboard">
-        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+        <DoubleAnimation Storyboard.TargetName="PART_Placeholder"
+                         Storyboard.TargetProperty="Opacity"
                          From="0.85" To="0" EasingFunction="{StaticResource ExitEase}"
                          Duration="0:0:0.10" />
     </Storyboard>
+    <!-- M-21：占位符淡入。**必须写 TargetName="PART_Placeholder"**——
+         模板触发器的 EnterActions 里若省略 TargetName，动画作用的是模板宿主（整个输入框外壳），
+         表现为「空框一点击就整块闪没」（f0d98fc 引入的缺陷，现象：空框不可输入、有内容却正常）。 -->
     <Storyboard x:Key="PlaceholderInStoryboard">
-        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+        <DoubleAnimation Storyboard.TargetName="PART_Placeholder"
+                         Storyboard.TargetProperty="Opacity"
                          From="0" To="0.85" EasingFunction="{StaticResource StdEase}"
                          Duration="0:0:0.10" />
     </Storyboard>

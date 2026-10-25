@@ -1,5 +1,7 @@
 using System.Windows;
 using System.Windows.Controls.Primitives;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 
 namespace SOrtus.Controls;
 
@@ -28,6 +30,59 @@ public sealed class SOrToggleSwitch : ToggleButton
         DefaultStyleKeyProperty.OverrideMetadata(
             typeof(SOrToggleSwitch),
             new FrameworkPropertyMetadata(typeof(SOrToggleSwitch)));
+    }
+
+    /// <summary>
+    /// 开关切换动画在这里播，而不是写在模板的 Trigger 里。
+    /// <para>
+    /// 原因：模板 Trigger 里的 <c>Setter</c> 若整体替换 <c>PART_Thumb</c> 的
+    /// <c>RenderTransform</c> 对象，Storyboard 里的目标路径
+    /// <c>(UIElement.RenderTransform).(TranslateTransform.X)</c> 就会指向**被换掉的那个旧对象**，
+    /// 动画静默失效——表现是「开关一点就跳，没有滑动」。
+    /// 代码侧直接取模板里那个 <c>TranslateTransform</c> 实例改它的 X，动画才真正作用在可见元素上。
+    /// </para>
+    /// </summary>
+    protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+
+        if (e.Property == IsCheckedProperty)
+        {
+            PlayToggleAnimation(e.NewValue is true);
+        }
+    }
+
+    public override void OnApplyTemplate()
+    {
+        base.OnApplyTemplate();
+
+        // 初始就处于开启态（绑定初值）时没有状态变化，动画不会触发——这里补一次，
+        // 保证圆点落在开启位置而不是停在关闭端。
+        if (IsChecked == true && Template?.FindName("PART_Thumb", this) is FrameworkElement thumb)
+        {
+            if (thumb.RenderTransform is TranslateTransform transform)
+            {
+                transform.X = 24;
+            }
+        }
+    }
+
+    private void PlayToggleAnimation(bool isOn)
+    {
+        if (Template?.FindName("PART_Thumb", this) is not FrameworkElement thumb)
+        {
+            return;
+        }
+
+        var key = isOn ? "ToggleOnStoryboard" : "ToggleOffStoryboard";
+        if (Application.Current?.TryFindResource(key) is not Storyboard storyboard)
+        {
+            return;
+        }
+
+        // 克隆后在本控件的模板命名作用域里播放，才能解析到 PART_Thumb / PART_TrackOn
+        var clone = storyboard.Clone();
+        clone.Begin(this);
     }
 
     public CornerRadius TrackCornerRadius

@@ -68,6 +68,14 @@ public static class Motion
     /// </summary>
     public static int ActiveAnimations;
 
+    /// <summary>
+    /// 是否正处于滚动中（M-33：滚动时列表项不做入场，否则每次滚动都掉帧）。
+    /// 由祖先 ScrollViewer 的 ScrollChanged 维护。
+    /// </summary>
+    public static bool IsScrolling { get; private set; }
+
+    private static System.Windows.Threading.DispatcherTimer? _scrollIdleTimer;
+
     #region PageEnter（M-07 / M-08 / M-09 / M-11 / M-12）
 
     /// <summary>
@@ -150,8 +158,17 @@ public static class Motion
 
         fe.Loaded += (_, _) =>
         {
+            TrackScrollState(fe);
+
             // M-27：最多错开 8 项（40ms 步长）；第 9 项起同时出现
             if (index >= 8)
+            {
+                fe.Opacity = 1;
+                return;
+            }
+
+            // M-33：滚动中不播入场动画——滚动时逐条飞入必然掉帧
+            if (IsScrolling)
             {
                 fe.Opacity = 1;
                 return;
@@ -258,6 +275,42 @@ public static class Motion
     }
 
     #endregion
+
+    /// <summary>
+    /// 监听祖先 ScrollViewer 的滚动状态：滚动中 <see cref="IsScrolling"/> 为 true，
+    /// 停止 120ms 后复位（M-33）。只在有错开动画的元素上订阅，不给每个元素都挂。
+    /// </summary>
+    private static void TrackScrollState(FrameworkElement fe)
+    {
+        System.Windows.Controls.ScrollViewer? viewer = null;
+        for (var parent = VisualTreeHelper.GetParent(fe); parent is not null; parent = VisualTreeHelper.GetParent(parent))
+        {
+            if (parent is System.Windows.Controls.ScrollViewer found)
+            {
+                viewer = found;
+                break;
+            }
+        }
+
+        if (viewer is null)
+        {
+            return;
+        }
+
+        viewer.ScrollChanged += (_, _) =>
+        {
+            // 任何滚动事件都算「正在滚」，停止 120ms 后由 idle 计时器复位
+            IsScrolling = true;
+            _scrollIdleTimer ??= new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(120),
+            };
+            _scrollIdleTimer.Stop();
+            _scrollIdleTimer.Tick -= (_, _) => IsScrolling = false;
+            _scrollIdleTimer.Tick += (_, _) => IsScrolling = false;
+            _scrollIdleTimer.Start();
+        };
+    }
 
     /// <summary>
     /// 注入 TransformGroup[Scale, Translate]——规范 §7 说写死 RenderTransform 的 Storyboard

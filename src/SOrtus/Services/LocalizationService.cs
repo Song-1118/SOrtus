@@ -26,12 +26,14 @@ internal sealed class LocalizationService : ILocalizationService
     public void Initialize()
     {
         _settings = AppSettings.Load();
-        _culture = _settings.Culture;
+        _culture = string.IsNullOrWhiteSpace(_settings.Culture) ? AppSettings.DefaultCulture : _settings.Culture;
         ApplyCulture(_culture);
     }
 
-    public void SetCulture(string cultureName)
+    public void SetCulture(string? cultureName)
     {
+        cultureName = string.IsNullOrWhiteSpace(cultureName) ? AppSettings.DefaultCulture : cultureName;
+
         if (string.Equals(_culture, cultureName, StringComparison.OrdinalIgnoreCase))
         {
             return;
@@ -49,9 +51,10 @@ internal sealed class LocalizationService : ILocalizationService
         return Manager.GetString(key, CultureInfo.CurrentUICulture) ?? key;
     }
 
-    private void ApplyCulture(string cultureName)
+    private void ApplyCulture(string? cultureName)
     {
-        var ci = new CultureInfo(cultureName);
+        // 兜底：设置文件里 Culture 为 null 时 new CultureInfo(null) 会抛，程序直接起不来
+        var ci = new CultureInfo(string.IsNullOrWhiteSpace(cultureName) ? AppSettings.DefaultCulture : cultureName);
         CultureInfo.CurrentUICulture = ci;
         CultureInfo.CurrentCulture = ci;
 

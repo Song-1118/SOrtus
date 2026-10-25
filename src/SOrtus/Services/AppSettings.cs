@@ -17,7 +17,21 @@ internal sealed class AppSettings
     /// </summary>
     public double? BlurRadius { get; set; }
 
-    public string Culture { get; set; } = "zh-CN";
+    /// <summary>
+    /// 语言。写入端必须经过 setter 兜底：设置页语言下拉在选中项为 null 时会回写 null，
+    /// 直接落盘成 <c>"Culture": null</c>，下次启动 <c>new CultureInfo(null)</c> 直接抛
+    /// ArgumentNullException（整个应用起不来）。这里把空值一律归到默认语言。
+    /// </summary>
+    public string Culture
+    {
+        get => _culture;
+        set => _culture = string.IsNullOrWhiteSpace(value) ? DefaultCulture : value;
+    }
+
+    private string _culture = DefaultCulture;
+
+    /// <summary>默认语言（应用只内置中英两本资源）。</summary>
+    public const string DefaultCulture = "zh-CN";
 
     /// <summary>
     /// 是否在启动时自动检查更新（默认开启）。
@@ -48,8 +62,16 @@ internal sealed class AppSettings
             }
 
             var json = File.ReadAllText(SettingsPath);
-            var settings = JsonSerializer.Deserialize<AppSettings>(json);
-            return settings ?? new AppSettings();
+            var settings = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+
+            // 自我修复：历史版本可能把 Culture 写成 null（语言下拉回写 null 所致）。
+            // 内存里已兜底成默认语言，这里顺手把文件改回正常值，避免每次启动都读到脏数据。
+            if (json.Contains("\"Culture\": null", StringComparison.OrdinalIgnoreCase))
+            {
+                settings.Save();
+            }
+
+            return settings;
         }
         catch
         {

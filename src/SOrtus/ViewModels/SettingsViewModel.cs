@@ -266,6 +266,13 @@ internal sealed class SettingsViewModel : ViewModelBase
         get => _localization.CurrentCulture;
         set
         {
+            // 下拉在未选中 / 选中项为 null 时会回写 null：直接忽略，
+            // 否则会把 settings.json 写成 "Culture": null，下次启动 CultureInfo(null) 直接崩
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return;
+            }
+
             if (!string.Equals(value, _localization.CurrentCulture, StringComparison.OrdinalIgnoreCase))
             {
                 _localization.SetCulture(value);

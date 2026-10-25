@@ -630,6 +630,21 @@ public class ViewModelTests
     }
 
     [Fact]
+    public void AppSettings_NullCulture_FallsBackToDefault()
+    {
+        // 回归：设置页语言下拉在选中项为 null 时会把 settings.json 写成 "Culture": null，
+        // 下次启动 new CultureInfo(null) 直接抛 ArgumentNullException——应用起不来。
+        var settings = new SOrtus.Services.AppSettings { Culture = null! };
+        Assert.Equal("zh-CN", settings.Culture);
+
+        settings.Culture = string.Empty;
+        Assert.Equal("zh-CN", settings.Culture);
+
+        settings.Culture = "en-US";
+        Assert.Equal("en-US", settings.Culture);
+    }
+
+    [Fact]
     public void FocusRingSettings_TogglesWithoutApplicationInstance()
     {
         // 单测进程没有 Application.Current：开关仍要能记录状态且不抛

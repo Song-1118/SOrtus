@@ -70,8 +70,12 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <Path Grid.Column="0"
-                                          Data="{TemplateBinding Icon}"
+                                    <!--
+                                        图标按钮（只有图标、没有文字）此前图标独占 Auto 列，
+                                        右侧 * 列空着 → 图标贴在按钮左侧而不是居中。
+                                        这里在「内容为空」时让图标跨两列，整颗按钮水平居中。
+                                    -->
+                                    <Path Data="{TemplateBinding Icon}"
                                           Fill="{TemplateBinding Foreground}"
                                           Width="{TemplateBinding IconSize}"
                                           Height="{TemplateBinding IconSize}"
@@ -79,7 +83,22 @@
                                           Margin="{DynamicResource IconGap}"
                                           VerticalAlignment="Center"
                                           HorizontalAlignment="Center"
-                                          Visibility="{Binding Icon, Converter={StaticResource NotNullToVisibilityConverter}, RelativeSource={RelativeSource TemplatedParent}}" />
+                                          Visibility="{Binding Icon, Converter={StaticResource NotNullToVisibilityConverter}, RelativeSource={RelativeSource TemplatedParent}}">
+                                        <Path.Style>
+                                            <Style TargetType="Path">
+                                                <Setter Property="Grid.Column" Value="0" />
+                                                <Setter Property="Grid.ColumnSpan" Value="1" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}" Value="{x:Null}">
+                                                        <Setter Property="Grid.ColumnSpan" Value="2" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}" Value="">
+                                                        <Setter Property="Grid.ColumnSpan" Value="2" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Path.Style>
+                                    </Path>
                                     <ContentPresenter Grid.Column="1"
                                                       VerticalAlignment="Center"
                                                       HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />

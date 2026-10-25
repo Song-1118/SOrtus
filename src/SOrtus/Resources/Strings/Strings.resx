@@ -321,6 +321,7 @@
   <data name="Git_Branches" xml:space="preserve">
     <value>分支</value>
   </data>
+  <data name="Git_Loading" xml:space="preserve"><value>正在读取仓库…</value></data>
   <data name="Git_Timeline" xml:space="preserve">
     <value>提交时间线</value>
   </data>

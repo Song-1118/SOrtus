@@ -87,6 +87,7 @@
                          EasingFunction="{StaticResource CubicEaseOut}" />
     </Storyboard>
 
+    <!-- 失焦立即归零（0ms）：焦点环要「说走就走」，不留残影，因此这里刻意不给缓动 -->
     <Storyboard x:Key="FocusRingOutStoryboard">
         <DoubleAnimation Storyboard.TargetName="PART_FocusRing"
                          Storyboard.TargetProperty="Opacity"
@@ -108,10 +109,12 @@
     <Storyboard x:Key="CardActiveOutStoryboard">
         <DoubleAnimation Storyboard.TargetName="PART_ActiveRing"
                          Storyboard.TargetProperty="Opacity"
-                         To="0" Duration="0:0:0.16" />
+                         To="0" EasingFunction="{StaticResource ExitEase}"
+                         Duration="0:0:0.16" />
         <DoubleAnimation Storyboard.TargetName="PART_Check"
                          Storyboard.TargetProperty="Opacity"
-                         To="0" Duration="0:0:0.16" />
+                         To="0" EasingFunction="{StaticResource ExitEase}"
+                         Duration="0:0:0.16" />
     </Storyboard>
 
     <!-- ===== 版块 tab 指示条（VD-100）：200ms 从中间展开，离开 100ms 收起 ===== -->
@@ -129,7 +132,8 @@
     <Storyboard x:Key="TabIndicatorOutStoryboard">
         <DoubleAnimation Storyboard.TargetName="PART_TabIndicator"
                          Storyboard.TargetProperty="Opacity"
-                         To="0" Duration="0:0:0.10" />
+                         To="0" EasingFunction="{StaticResource ExitEase}"
+                         Duration="0:0:0.10" />
     </Storyboard>
 
 <Storyboard x:Key="SlideUpStoryboard">
@@ -176,11 +180,12 @@
     <Storyboard x:Key="ToggleOnStoryboard">
         <DoubleAnimation Storyboard.TargetName="PART_Thumb"
                          Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
-                         To="20" Duration="0:0:0.12"
+                         To="24" Duration="0:0:0.12"
                          EasingFunction="{StaticResource CubicEaseOut}" />
         <DoubleAnimation Storyboard.TargetName="PART_TrackOn"
                          Storyboard.TargetProperty="Opacity"
-                         To="1" Duration="0:0:0.12" />
+                         To="1" EasingFunction="{StaticResource StdEase}"
+                         Duration="0:0:0.12" />
     </Storyboard>
 
     <Storyboard x:Key="ToggleOffStoryboard">
@@ -190,21 +195,44 @@
                          EasingFunction="{StaticResource CubicEaseOut}" />
         <DoubleAnimation Storyboard.TargetName="PART_TrackOn"
                          Storyboard.TargetProperty="Opacity"
-                         To="0" Duration="0:0:0.12" />
+                         To="0" EasingFunction="{StaticResource ExitEase}"
+                         Duration="0:0:0.12" />
     </Storyboard>
 
-    <Style x:Key="SectionFadeInStyle" TargetType="FrameworkElement">
+    <!--
+        加载指示：亮弧匀速旋转（规范负面清单第 7 条——全站唯一允许的循环动画），
+        匀速用线性是合理的（旋转没有「起步/收尾」语义）。
+    -->
+    <Storyboard x:Key="SpinnerRotateStoryboard">
+        <DoubleAnimation Storyboard.TargetName="PART_Arc"
+                         Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                         From="0" To="360" Duration="0:0:1"
+                         RepeatBehavior="Forever" />
+    </Storyboard>
+
+    <!--
+        版块 / 步骤切换：淡入 + 8px 上移（180ms Enter）。
+        旧版只有透明度变化，内容像「啪」地换上去；加一点位移后能看出「这一块是从下面升上来的」。
+    -->
+    <Storyboard x:Key="SectionSwitchInStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.18"
+                         EasingFunction="{StaticResource EnterEase}" />
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                         From="8" To="0" Duration="0:0:0.18"
+                         EasingFunction="{StaticResource EnterEase}" />
+    </Storyboard>
+
+    <Style x:Key="SectionSwitchInStyle" TargetType="FrameworkElement">
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <TranslateTransform Y="8" />
+            </Setter.Value>
+        </Setter>
         <Style.Triggers>
             <Trigger Property="Visibility" Value="Visible">
                 <Trigger.EnterActions>
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <!-- M-34：内容交叉淡化 180ms（指示条 200ms 已由 TabIndicatorInStoryboard 承担，先动） -->
-                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                             From="0" To="1" Duration="0:0:0.18"
-                                             EasingFunction="{StaticResource EnterEase}" />
-                        </Storyboard>
-                    </BeginStoryboard>
+                    <BeginStoryboard Storyboard="{StaticResource SectionSwitchInStoryboard}" />
                 </Trigger.EnterActions>
             </Trigger>
         </Style.Triggers>
@@ -337,11 +365,13 @@
 <!-- M-21 占位符消失/出现：Opacity 1→0 / 0→1，100ms -->
     <Storyboard x:Key="PlaceholderOutStoryboard">
         <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                         From="0.85" To="0" Duration="0:0:0.10" />
+                         From="0.85" To="0" EasingFunction="{StaticResource ExitEase}"
+                         Duration="0:0:0.10" />
     </Storyboard>
     <Storyboard x:Key="PlaceholderInStoryboard">
         <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                         From="0" To="0.85" Duration="0:0:0.10" />
+                         From="0" To="0.85" EasingFunction="{StaticResource StdEase}"
+                         Duration="0:0:0.10" />
     </Storyboard>
 
     <!--

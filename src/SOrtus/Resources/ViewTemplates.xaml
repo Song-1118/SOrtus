@@ -85,7 +85,7 @@
                          留着只会让人以为「有数据但没显示出来」。空列表时整条工具栏隐藏，
                          页面只保留「新建」与引导句。 -->
                     <Grid Margin="0,0,0,12"
-                          Style="{StaticResource SectionFadeInStyle}"
+                          Style="{StaticResource SectionSwitchInStyle}"
                           Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -265,7 +265,9 @@
                         <!-- ============ 第 1 步：选择类型 ============ -->
                         <!-- VD-093：去掉 MinHeight=340——三张卡按最高的那张自适应，
                              不再让内容只占上面 60%、下面空 40% -->
-                        <Grid Visibility="{Binding IsStepType, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <!-- 步骤切换动画：淡入 + 8px 上移（180ms），旧版是瞬间替换 -->
+                        <Grid Visibility="{Binding IsStepType, Converter={StaticResource BoolToVisibilityConverter}}"
+                              Style="{StaticResource SectionSwitchInStyle}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
@@ -376,7 +378,8 @@
                         </Grid>
 
                         <!-- ============ 第 2 步：填写信息（VD-059：全宽 + 两张分组卡，卡内行式字段） ============ -->
-                        <StackPanel Visibility="{Binding IsStepInfo, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <StackPanel Visibility="{Binding IsStepInfo, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    Style="{StaticResource SectionSwitchInStyle}">
                             <!-- 分组卡：基本信息 -->
                             <Border Style="{StaticResource GroupCardStyle}">
                                 <StackPanel>
@@ -722,7 +725,7 @@
                     <StackPanel MaxWidth="{DynamicResource ContentMaxWidth}" Margin="0,14,4,0">
 
                         <!-- ===== 基础信息 ===== -->
-                        <StackPanel Style="{StaticResource SectionFadeInStyle}" Visibility="{Binding ShowBasicSection, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <StackPanel Style="{StaticResource SectionSwitchInStyle}" Visibility="{Binding ShowBasicSection, Converter={StaticResource BoolToVisibilityConverter}}">
                             <!-- 分组卡：基本信息 -->
                             <Border Style="{StaticResource GroupCardStyle}">
                                 <StackPanel>
@@ -882,7 +885,7 @@
                         </StackPanel>
 
                         <!-- ===== 开发管理 ===== -->
-                        <StackPanel Style="{StaticResource SectionFadeInStyle}" Visibility="{Binding ShowDevSection, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <StackPanel Style="{StaticResource SectionSwitchInStyle}" Visibility="{Binding ShowDevSection, Converter={StaticResource BoolToVisibilityConverter}}">
                             <!-- 分组卡：规划与目标（VD-103：卡片标题不再与首字段标签同为「开发规划」，
                                  旧版连续两行同一个词，一行灰一行黑，读者以为是「分组 + 字段」，其实两句话一样） -->
                             <Border Style="{StaticResource GroupCardStyle}">
@@ -1090,7 +1093,7 @@
                         <!-- ===== GIT 管理 ===== -->
                         <Border Style="{StaticResource GroupCardStyle}"
                                 Visibility="{Binding ShowGitSection, Converter={StaticResource BoolToVisibilityConverter}}">
-                            <StackPanel Style="{StaticResource SectionFadeInStyle}">
+                            <StackPanel Style="{StaticResource SectionSwitchInStyle}">
                                 <Border Style="{StaticResource CardTitleBorderStyle}">
                                         <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Detail_SectionGit}" />
                                     </Border>
@@ -1119,7 +1122,7 @@
                         <!-- ===== 剪辑 / 待办：按类型派生版块（VD-059：废弃「遗留单栏」全字段平铺；
                              标签按类型派生——剪辑=剪辑类型/素材文件夹（SO-009）；
                              技术栈不再以分号串文本框编辑，剪辑/待办不展示该字段（SO-014）） ===== -->
-                        <StackPanel Style="{StaticResource SectionFadeInStyle}" Visibility="{Binding ShowLegacySection, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <StackPanel Style="{StaticResource SectionSwitchInStyle}" Visibility="{Binding ShowLegacySection, Converter={StaticResource BoolToVisibilityConverter}}">
                             <!-- 分组卡：基本信息 -->
                             <Border Style="{StaticResource GroupCardStyle}">
                                 <StackPanel>
@@ -1393,6 +1396,14 @@
             </ItemsControl>
 
             <!-- 时间线（VD-006：不再内嵌 ScrollViewer + MaxHeight 双层滚动，统一由外层页面滚动承载） -->
+            <!-- GIT 读取中：旋转指示器（全站唯一允许的循环动画，规范负面清单第 7 条） -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10"
+                        Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}">
+                <local:SOrSpinner Size="14" />
+                <TextBlock Text="{DynamicResource Git_Loading}" Margin="8,0,0,0" VerticalAlignment="Center"
+                           FontSize="{DynamicResource FontSizeCaption}" Foreground="{DynamicResource TextSecondaryBrush}" />
+            </StackPanel>
+
             <TextBlock Text="{DynamicResource Git_Timeline}" FontWeight="Medium" FontSize="{DynamicResource FontSizeLabel}" Margin="0,4,0,8" />
             <!-- M-51：时间线每条 180ms 入场，stagger 30ms 最多 8 条（其余直接显示） -->
             <ItemsControl ItemsSource="{Binding Timeline}" AlternationCount="8">
@@ -1505,7 +1516,9 @@
                      M-45 文档弹窗内容载入：正文 0→1，160ms Std（只淡入一次，滚动时不再触发） -->
                 <Border Grid.Row="1" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,1" Padding="0,14"
                             local:Motion.PlayOnLoad="DocContentInStoryboard">
+                    <!-- 滚轮灵敏度：每格 6 行（默认 3），文档阅读区滚动更跟手 -->
                     <FlowDocumentScrollViewer Document="{Binding Document}"
+                                              local:MouseWheelScroll.LinesPerNotch="6"
                                               VerticalScrollBarVisibility="Auto"
                                               HorizontalScrollBarVisibility="Disabled"
                                               IsToolBarVisible="False"

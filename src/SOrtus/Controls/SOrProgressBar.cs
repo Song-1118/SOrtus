@@ -117,7 +117,8 @@ public sealed class SOrProgressBar : RangeBase
             // M-49：220ms → 400ms，让「追上」看得出来（规范明确由 220 提到 400）
             var animation = new DoubleAnimation(width, new Duration(System.TimeSpan.FromMilliseconds(400)))
             {
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+                // M-49 + 规范 §3：进度填充用 Exit 缓动（起步缓、收尾快），此前是 EaseOut
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn },
             };
             _fill.BeginAnimation(Border.WidthProperty, animation);
         }

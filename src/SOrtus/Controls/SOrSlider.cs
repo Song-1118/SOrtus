@@ -1,5 +1,9 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 
 namespace SOrtus.Controls;
 
@@ -15,9 +19,158 @@ public sealed class SOrSlider : Slider
             nameof(CornerRadius), typeof(CornerRadius), typeof(SOrSlider),
             new PropertyMetadata(new CornerRadius(3)));
 
+    /// <summary>
+    /// 点击轨道是否「动画滑到点击处」（用户反馈：点一下动一下的步进感很别扭）。
+    /// <para>
+    /// 实现只动拖块的视觉位置（RenderTransform 偏移动画），<b>不逐帧改 Value</b>——
+    /// 模糊强度滑块绑的是实时预览，逐帧改值会逐帧重建模糊缓存（规范负面清单第 1 条：
+    /// 不要给模糊半径做动画）。动画结束时才提交一次目标值。
+    /// </para>
+    /// </summary>
+    public static readonly DependencyProperty IsAnimatedTrackClickProperty =
+        DependencyProperty.Register(
+            nameof(IsAnimatedTrackClick), typeof(bool), typeof(SOrSlider),
+            new PropertyMetadata(true));
+
+    public bool IsAnimatedTrackClick
+    {
+        get => (bool)GetValue(IsAnimatedTrackClickProperty);
+        set => SetValue(IsAnimatedTrackClickProperty, value);
+    }
+
     static SOrSlider()
     {
         DefaultStyleKeyProperty.OverrideMetadata(typeof(SOrSlider), new FrameworkPropertyMetadata(typeof(SOrSlider)));
+    }
+
+    protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+    {
+        // 拖块本体：交给默认的拖动逻辑
+        if (IsOnThumb(e.OriginalSource as DependencyObject))
+        {
+            base.OnMouseLeftButtonDown(e);
+            return;
+        }
+
+        if (!IsAnimatedTrackClick || !TryGetTrackTarget(e, out var target))
+        {
+            base.OnMouseLeftButtonDown(e);
+            return;
+        }
+
+        // 接管这次点击：不再走 LargeChange 步进（那正是「点一下动一下」）
+        e.Handled = true;
+        AnimateTo(target);
+    }
+
+    /// <summary>命中点是否落在拖块上。</summary>
+    private bool IsOnThumb(DependencyObject? source)
+    {
+        var thumb = (Template?.FindName("PART_Track", this) as Track)?.Thumb;
+        if (thumb is null || source is null)
+        {
+            return false;
+        }
+
+        for (var current = VisualTreeHelper.GetParent(source); current is not null; current = VisualTreeHelper.GetParent(current))
+        {
+            if (ReferenceEquals(current, thumb))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>按点击位置算出目标值（按拖块中心对齐，与浏览器滑轨一致）。</summary>
+    private bool TryGetTrackTarget(MouseButtonEventArgs e, out double target)
+    {
+        target = Value;
+        var track = Template?.FindName("PART_Track", this) as Track;
+        if (track is null)
+        {
+            return false;
+        }
+
+        var point = e.GetPosition(track);
+        double trackWidth = track.ActualWidth;
+        if (trackWidth <= 0)
+        {
+            return false;
+        }
+
+        double thumbWidth = track.Thumb?.ActualWidth ?? 0;
+        double usable = Math.Max(1, trackWidth - thumbWidth);
+        double ratio = Math.Clamp((point.X - thumbWidth / 2) / usable, 0, 1);
+
+        target = Minimum + ratio * (Maximum - Minimum);
+        if (IsSnapToInteger)
+        {
+            target = Math.Round(target);
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 拖块视觉滑到目标位置：只动画 RenderTransform 偏移，动画结束时才写回 Value。
+    /// 这样绑定在实时预览上的场景（如模糊强度）不会逐帧重建缓存。
+    /// </summary>
+    private void AnimateTo(double target)
+    {
+        var track = Template?.FindName("PART_Track", this) as Track;
+        var thumb = track?.Thumb;
+        if (track is null || thumb is null)
+        {
+            Value = target;
+            return;
+        }
+
+        double trackWidth = track.ActualWidth;
+        double thumbWidth = thumb.ActualWidth;
+        if (trackWidth <= 0)
+        {
+            Value = target;
+            return;
+        }
+
+        double usable = Math.Max(1, trackWidth - thumbWidth);
+        double currentRatio = (Value - Minimum) / Math.Max(0.0001, Maximum - Minimum);
+        double targetRatio = (target - Minimum) / Math.Max(0.0001, Maximum - Minimum);
+        double dx = (targetRatio - currentRatio) * usable;
+
+        if (Math.Abs(dx) < 0.5)
+        {
+            Value = target;
+            return;
+        }
+
+        var transform = thumb.RenderTransform as TranslateTransform;
+        if (transform is null)
+        {
+            transform = new TranslateTransform();
+            thumb.RenderTransform = transform;
+        }
+
+        transform.X = dx;
+
+        var animation = new DoubleAnimation
+        {
+            From = dx,
+            To = 0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(240)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+        };
+
+        var handler = new EventHandler((_, _) =>
+        {
+            transform.X = 0;
+            Value = target;
+        });
+
+        animation.Completed += handler;
+        thumb.BeginAnimation(TranslateTransform.XProperty, animation);
     }
 
     public CornerRadius CornerRadius

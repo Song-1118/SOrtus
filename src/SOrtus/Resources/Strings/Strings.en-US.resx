@@ -321,6 +321,7 @@
   <data name="Git_Branches" xml:space="preserve">
     <value>Branches</value>
   </data>
+  <data name="Git_Loading" xml:space="preserve"><value>Reading repository…</value></data>
   <data name="Git_Timeline" xml:space="preserve">
     <value>Commit timeline</value>
   </data>

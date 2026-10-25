@@ -42,7 +42,10 @@ public partial class App : Application
             var width = e.Args.Length > 2 && double.TryParse(e.Args[2], out var w) ? w : 1180;
             var height = e.Args.Length > 3 && double.TryParse(e.Args[3], out var h) ? h : 760;
             await RunShotsAsync(target, width, height);
-            Shutdown(0);
+
+            // 强制退出：GIT 加载指示器是无限循环动画，Dispatcher 始终有活，
+            // Shutdown 之后进程仍会驻留并锁住 exe（后续构建会报文件被占用）
+            Environment.Exit(0);
             return;
         }
 
@@ -230,6 +233,7 @@ public partial class App : Application
 
         await SettleAsync(window);
         SaveWindow(window, System.IO.Path.Combine(targetDir, "03-wizard-step2.png"));
+
 
         // VD-095 回归：把向导滚到底，核对两个日期框是否等分铺满、中间有「至」连字符
         ScrollContentToEnd(window);

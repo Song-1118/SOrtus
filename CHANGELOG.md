@@ -127,6 +127,17 @@
 - **断言层**：新增 `build/check_animation_wiring.py`——要求 `Animations.xaml` 每个 `x:Key` 至少被引用一次（VD-062 的原始事故就是「3 组 Storyboard 全仓 0 引用」）。当前 **48 个动画资源全部接线**；未接线且无场景的资源已删除，不留「做了没接」的空转。
 - **修掉三个真实缺陷**：① 页面内联 `<Style TargetType="local:SOr*">` 顶掉隐式样式导致控件无模板（确认弹窗主按钮整颗消失）——统一改为在控件字典里定义 keyed 样式并让页面字典合并；② 弹窗退场动画未走完就开下一个弹窗会被 `DialogService` 吞掉（截图 07 空白）——截图顺序已调整；③ **启动即崩溃**——设置页语言下拉在选中项为 null 时把 `settings.json` 写成 `"Culture": null`，下次启动 `new CultureInfo(null)` 抛异常，应用完全起不来；`AppSettings.Culture` setter、`LocalizationService` 与 `SettingsViewModel` 三处兜底，并让 `AppSettings.Load` 读到历史脏数据时自我修复（已补单测）。
 
+### 用户反馈批次（暗黑边框 / 切换动画 / 加载动画 / 滑块 / 开关 / 图标居中 / 滚轮 / 非线性缓动）
+
+- **暗黑主题输入框边框不可见**：实机取样发现输入框虽有 1px 边框，但深色下 `#6E7681` 对 `#1B1E23` 填充只有 3.73:1，主观上「与背景同色」。修法是**只改颜色不改粗细**（用户明确不要加粗）：深色 `ColorBorderStrong` → `#9AA4B2`（约 6.1:1），浅色 → `#98A1AE`；同时把 `SOrTextBox` 模板的边框引用由 `TemplateBinding BorderBrush` 改为直接取 `BorderStrongBrush`（前者实测未画出），日期框边框由弱 `BorderBrush` 升到强 `BorderStrongBrush`。
+- **界面切换动画**：新增 `SectionSwitchInStyle`（淡入 + 8px 上移，180ms Enter），替换原先只做透明度变化的 `SectionFadeInStyle`（后者已无引用，删除以免「做了没接」）。接入四处：左侧菜单切换（页面级 `Motion.PageEnter`）、项目详情三个版块 tab、向导第 1/2 步、进入项目（列表→详情 +12px 上浮、返回 −8px 下落）。
+- **GIT 加载动画**：新增 `SOrSpinner`（旋转弧线）+「正在读取仓库…」提示，绑定 `GitViewModel.IsBusy`。这是全站唯一允许的循环动画（规范负面清单第 7 条）。
+- **滑块点击改为动画滑到点击处**：`SOrSlider` 覆写鼠标按下，命中拖块本体仍走默认拖动，命中轨道则接管——计算目标值后**只动画拖块的视觉偏移**（240ms CubicEaseOut），动画结束才写回 `Value`。这样绑定实时预览的场景（高斯模糊强度）不会逐帧改值、不会逐帧重建模糊缓存（规范负面清单第 1 条）。
+- **开关高度收窄**：轨道 24 → 20px，滑块圆点 18 → 14px，开启位移 20 → 24px（动画与 Setter 保底同步）。
+- **纯图标按钮图标居中**：按钮模板此前是「图标列 Auto + 内容列 *」，只有图标时图标贴在左侧；现改为内容为空时图标跨两列，整颗按钮水平居中。
+- **文档预览滚轮灵敏度**：新增 `MouseWheelScroll` 附加属性，文档阅读区每格滚轮 6 行（系统默认 3），按正文行高 24px 换算像素并接管事件，避免系统再滚一次造成双倍位移。
+- **全局非线性缓动**：补齐 8 处仍为线性插值的动画——类型卡淡出、tab 指示条收起、开关轨道色、占位符淡入淡出、加载指示器退出、进度条 400ms 填充（改 Exit 缓动）。规范令牌 `Std / Enter / Exit / Back` 已在 `Animations.xaml` 统一提供；仅加载指示的匀速旋转与 0ms 的焦点环失焦保持原语义。
+
 ### 修复（本轮自查发现的回归）
 
 - **确认弹窗主按钮整颗消失**：模板里用内联 `<Style TargetType="local:SOrButton">` 覆盖 `Variant`，但控件模板只存在于隐式样式（无 `generic.xaml`），内联样式顶掉隐式样式后按钮无 `Template` → 不可见。改为控件属性 `IsDestructive` + 隐式样式内 `Trigger`，不再在模板里写样式。

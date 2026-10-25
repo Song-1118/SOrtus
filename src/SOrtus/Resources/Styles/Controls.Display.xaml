@@ -84,6 +84,53 @@
     </Style>
 
     <!-- ============================ SOrProgressBar ============================ -->
+    <!-- 加载指示器（旋转弧线）：GIT 读取等异步操作进行中显示 -->
+    <Style TargetType="local:SOrSpinner">
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Width" Value="{Binding Size, RelativeSource={RelativeSource Self}}" />
+        <Setter Property="Height" Value="{Binding Size, RelativeSource={RelativeSource Self}}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:SOrSpinner">
+                    <Grid Background="Transparent">
+                        <!-- 底环：弱灰虚线，暗示「还有一圈没走完」 -->
+                        <Ellipse Stroke="{DynamicResource TextSecondaryBrush}"
+                                 StrokeThickness="2" Opacity="0.35"
+                                 StrokeDashArray="2 3" />
+                        <!-- 亮弧：主色，被旋转 -->
+                        <Ellipse x:Name="PART_Arc"
+                                 Stroke="{DynamicResource PrimaryBrush}"
+                                 StrokeThickness="2"
+                                 StrokeDashArray="10 16"
+                                 RenderTransformOrigin="0.5,0.5">
+                            <Ellipse.RenderTransform>
+                                <RotateTransform Angle="0" />
+                            </Ellipse.RenderTransform>
+                        </Ellipse>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsVisible" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource SpinnerRotateStoryboard}" />
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="PART_Arc"
+                                                         Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                         To="0" Duration="0:0:0.15"
+                                                         EasingFunction="{StaticResource StdEase}" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- 未保存徽标出现（M-48）：Scale 0.9→1 / 0→1，180ms Back（幅度小，不抢标题注意力）。
          同样不能写在页面里：SOrTag 的模板也只存在于隐式样式。 -->
     <Style x:Key="UnsavedBadgeStyle" TargetType="local:SOrTag"

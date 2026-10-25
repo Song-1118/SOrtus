@@ -22,7 +22,10 @@
     <!-- 输入类控件的填充（VD-073）：比卡片略低一阶，深色下不再是「一块稍亮的矩形」 -->
     <Color x:Key="ColorInputSurface">#1B1E23</Color>
     <!-- 控件边界专用（VD-073）：对卡片底色实测 3.30:1，满足 WCAG 1.4.11 的 3:1 -->
-    <Color x:Key="ColorBorderStrong">#6E7681</Color>
+    <!-- 输入类控件边界：用户反馈「边框与背景同色、看不见」。
+         原值 #6E7681 对 #1B1E23 填充是 3.73:1（达线但偏弱），#7E8896 仍偏弱；
+         提到 #9AA4B2 后约 6.1:1，1px 的细边框也能明确可辨（保持 1px，不靠加粗） -->
+    <Color x:Key="ColorBorderStrong">#9AA4B2</Color>
     <!-- 中性标签描边（VD-074）：描边式胶囊，形状可辨 -->
     <Color x:Key="ColorTagNeutralBorder">#5A6270</Color>
     <Color x:Key="ColorPrimary">#F3F4F6</Color>

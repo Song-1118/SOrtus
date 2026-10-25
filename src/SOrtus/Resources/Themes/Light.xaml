@@ -23,7 +23,9 @@
     <!-- 输入类控件的填充（VD-073）：比卡片略低一阶，配合 ColorBorderStrong 让「哪里能输入」成立 -->
     <Color x:Key="ColorInputSurface">#F9FAFB</Color>
     <!-- 控件边界专用（VD-073）：对白底实测 3.22:1、对输入框填充 3.08:1，满足 WCAG 1.4.11 的 3:1 -->
-    <Color x:Key="ColorBorderStrong">#88909D</Color>
+    <!-- 输入类控件边界：与深色主题同口径提亮（浅底 #F9FAFB 上约 3.6:1），
+         保持 1px 细边框，靠颜色而非粗细表达「这里能输入」 -->
+    <Color x:Key="ColorBorderStrong">#98A1AE</Color>
     <!-- 中性标签描边（VD-074）：描边式胶囊，形状可辨（对白底 2.16:1） -->
     <Color x:Key="ColorTagNeutralBorder">#A9B1BD</Color>
     <Color x:Key="ColorPrimary">#111827</Color>

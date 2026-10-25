@@ -27,6 +27,7 @@
         <Setter Property="Background" Value="{DynamicResource InputSurfaceBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
+        <!-- 边框保持 1px（用户明确：不要加粗，边界靠颜色而不是粗细来表达） -->
         <Setter Property="BorderThickness" Value="1" />
         <!-- 文本内边距由模板内的 Inset 层统一提供（12,0,12,0）；控件 Padding 置 0，
              避免 TextBox 内部再叠加一次内边距，导致文字不是从最左侧开始输入 -->
@@ -43,12 +44,15 @@
                     <Grid>
                         <Border x:Name="PART_Root"
                                 Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderBrush="{DynamicResource BorderStrongBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="{TemplateBinding CornerRadius}"
                                 SnapsToDevicePixels="True">
                             <Grid>
                                 <!-- 悬浮覆盖层（VD-011）：鼠标划过仅叠一层 HoverOverlayBrush 弱底色、不改描边；
+                                     边框说明：此处不用 TemplateBinding BorderBrush——实机截图里搜索框
+                                     根本没有可见边框像素（与下拉框的硬编码写法形成鲜明对比），
+                                     改用直接资源引用后与 ComboBox / DatePicker 行为一致。
                                      键盘焦点由独立焦点环表达（单一焦点信号，VD-059 / VD-066） -->
                                 <Border x:Name="PART_Hover"
                                         Background="{DynamicResource HoverOverlayBrush}"
@@ -670,7 +674,9 @@
     <Style x:Key="SOrCalendarStyle" TargetType="Calendar">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <!-- 日期框此前用弱 BorderBrush（深色下 #363B42 vs #1B1E23 仅约 1.5:1，等于没有边框），
+             改用 BorderStrongBrush 与其它输入类控件同档（≥3:1） -->
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="CalendarDayButtonStyle" Value="{StaticResource SOrCalendarDayButtonStyle}" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -893,14 +899,16 @@
     <Style TargetType="local:SOrToggleSwitch">
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Width" Value="44" />
-        <Setter Property="Height" Value="24" />
+        <!-- 轨道高度 24 → 20（用户反馈「开关的宽度（上下）降低一点」）：thumb 同步 18 → 14，
+             开启位移 20 → 24（44 - 3 - 14 - 3） -->
+        <Setter Property="Height" Value="20" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SOrToggleSwitch">
-                    <Grid Width="44" Height="24">
+                    <Grid Width="44" Height="20">
                         <!-- 关闭态轨道：与输入框边界同档，保证「这是个可操作控件」而不是一条淡线 -->
                         <Border x:Name="PART_TrackOff"
                                 Background="{DynamicResource BorderStrongBrush}"
@@ -911,10 +919,10 @@
                                 CornerRadius="{TemplateBinding TrackCornerRadius}"
                                 Opacity="0" />
                         <!-- 圆点：反色，随 IsChecked 在轨道内平移 20px -->
-                        <Border x:Name="PART_Thumb" Width="18" Height="18" Margin="3"
+                        <Border x:Name="PART_Thumb" Width="14" Height="14" Margin="3"
                                 HorizontalAlignment="Left" VerticalAlignment="Center"
                                 Background="{DynamicResource TextOnAccentBrush}"
-                                CornerRadius="9">
+                                CornerRadius="7">
                             <Border.RenderTransform>
                                 <TranslateTransform X="0" />
                             </Border.RenderTransform>
@@ -926,7 +934,7 @@
                         <!-- 焦点框：与其它控件同一支画刷，设置里可一键关闭 -->
                         <Border x:Name="PART_FocusRing" Margin="-3"
                                 BorderBrush="{DynamicResource FocusRingBrush}"
-                                BorderThickness="1" CornerRadius="15"
+                                BorderThickness="1" CornerRadius="11"
                                 Opacity="0" IsHitTestVisible="False" />
                     </Grid>
                     <ControlTemplate.Triggers>
@@ -940,7 +948,7 @@
                             <!-- Setter 保底：首次渲染（尚未跑动画）时开启态也不会显示成关闭 -->
                             <Setter TargetName="PART_Thumb" Property="RenderTransform">
                                 <Setter.Value>
-                                    <TranslateTransform X="20" />
+                                    <TranslateTransform X="24" />
                                 </Setter.Value>
                             </Setter>
                             <Setter TargetName="PART_TrackOn" Property="Opacity" Value="1" />

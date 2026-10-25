@@ -31,3 +31,6 @@ _ReSharper.Caches/
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# WPF 临时项目文件（构建中间产物，勿入库）
+*_wpftmp.csproj

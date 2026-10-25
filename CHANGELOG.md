@@ -138,6 +138,20 @@
 - **文档预览滚轮灵敏度**：新增 `MouseWheelScroll` 附加属性，文档阅读区每格滚轮 6 行（系统默认 3），按正文行高 24px 换算像素并接管事件，避免系统再滚一次造成双倍位移。
 - **全局非线性缓动**：补齐 8 处仍为线性插值的动画——类型卡淡出、tab 指示条收起、开关轨道色、占位符淡入淡出、加载指示器退出、进度条 400ms 填充（改 Exit 缓动）。规范令牌 `Std / Enter / Exit / Back` 已在 `Animations.xaml` 统一提供；仅加载指示的匀速旋转与 0ms 的焦点环失焦保持原语义。
 
+### 用户反馈批次二（P0 崩溃 + 下拉遮挡 + 滑块 + 搜索 + 五项优化）
+
+**P0 崩溃（任何界面点击设置直接崩）**——根因是「Style Setter 的 `TranslateTransform` 被 WPF 冻结共享」：
+- `SectionSwitchInStyle` / `OverlayInOnLoadStyle` 在 Setter 里放 `TranslateTransform Y=8`，WPF 会把该实例**冻结并共享给所有应用该样式的元素**；第一个元素动画成功后对象进入只读态，第二个元素再对它做动画即抛 `InvalidOperationException: 无法对 TranslateTransform 进行动画处理`——表现为「第一次进向导/设置正常，再次进入直接崩溃」。已迁移到 `Motion.PlayOnShow`（代码为每个元素注入独立 `TransformGroup`）并删除两个会冻结的样式；`SOrToggleSwitch` 同样改为「每次替换新变换实例」，且切换动画不再走 `Storyboard.Begin(this)`（模板 NameScope 未就绪时会抛「找不到 PART_Thumb」）。
+- **入场动画初始态一律归一为 Y=0**：动画只提供 From→To 的位移，Setter 不再预留偏移，避免「动画没播」时残留 8px。
+
+**筛选下拉遮挡触发器 / 选不回「全部」**：`Popup` 缺省 `PlacementTarget` 会 fallback 到模板内 28px 高的 ToggleButton，浮层整体上偏压住触发器，第一行「全部类型」被遮住点不到。修复：显式 `PlacementTarget` 指向 ComboBox 本体 + `VerticalOffset=12`（8px PopupRoot 固有边距补偿 + 4px 视觉间距）。`--shot` 内置回归断言（浮层不遮挡）。
+
+**滑块拖动数值与圆点脱钩**：实测当前构建滑块本身正常（Track 原生管理圆点位置）；按「强绑定」建议加固——轨道点击动画改 `FillBehavior.Stop` + 结束时 `SetCurrentValue` 固化终值，消除 HoldEnd 期间动画持有 Value 的窗口期。
+
+**搜索功能无效**：`SOrTextBox.Text` 自定义 DP 元数据缺少 `BindsTwoWayByDefault`——系统 TextBox.Text 自带该标志所以页面省略 `Mode=TwoWay` 也是双向，自定义 DP 不写就是 OneWay：用户打字只传到外壳，视图模型的 `SearchText` 永远收不到。已补上该标志，`--input-test` 新增「省略 Mode 回传 VM」用例守住（`回传正常=True`）。
+
+**五项优化**：① 按钮内容居中——`HorizontalContentAlignment` 默认 Left→Center；纯图标按钮跨两列时清掉 `IconGap` 边距，实测偏差=0。② 向导工期「至」改用两行 Grid 与日期框同行居中（原为硬编码 `Margin=20`）。③ 日期框 Calendar 月/年视图接入 `CalendarButtonStyle`（原来是系统白底 + 系统蓝高亮）；顺带删除会 OOM 的自定义 `CalendarItem` 模板死代码。④ 弹窗光晕收敛——模糊半径 20→10、覆盖层 0.9→0.96。⑤ 遮罩点击不可关闭的弹窗时弹窗左右抖动 260ms（原来静默 return，像卡死）。
+
 ### 输入框不可输入——「改动画改坏了输入框」的根因与修复（f0d98fc 缺陷）
 
 - **根因（git 考古定位到具体提交）**：`f0d98fc`（动效规范 M-21）给占位符淡入淡出加 `EnterActions/ExitActions` 时，**漏写了 `Storyboard.TargetName`**。模板触发器里没有 TargetName 的动画，作用对象是**模板宿主——整个输入框外壳自己**。于是：空框未聚焦时触发淡入 → 外壳 Opacity 被锁到 0.85；一点击（失焦/聚焦态翻转）→ 触发淡出 → **外壳 Opacity 被动画到 0**，整块输入框「闪一下就黑/消失」，光标也在 Opacity=0 的元素里看不见。有内容的框 `Text==""` 条件不成立、动画从不播放，所以一直正常——与用户观察完全一致。

@@ -132,19 +132,25 @@ public sealed class SOrSlider : Slider
             return;
         }
 
-        // FillBehavior=Stop + Completed 时固化终值：默认的 HoldEnd 会让动画在结束后
-        // 仍「持有」Value 属性，那 240ms 窗口内（以及之后任何时刻）Thumb 拖动设值
-        // 都可能被动画值覆盖——表现为「数值变了圆点不动」。Stop 让动画一结束就释放属性。
+        // HoldEnd（默认）保持到动画结束，Completed 里**同一帧内**先摘掉动画再固化终值。
+        // 不要用 FillBehavior.Stop：它的语义是动画一结束属性立即弹回动画前的旧值，
+        // Completed 回调要到下一帧才执行——用户看到的就是「进度条到 A 又缩回去，
+        // 再点一次才过来」。摘动画（BeginAnimation(null)）后属性短暂回到本地值，
+        // 紧接着 SetCurrentValue 写回目标值，两步之间没有渲染帧，视觉上无回跳。
         var animation = new DoubleAnimation
         {
             From = Value,
             To = target,
             Duration = new Duration(TimeSpan.FromMilliseconds(240)),
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
-            FillBehavior = FillBehavior.Stop,
         };
 
-        animation.Completed += (_, _) => SetCurrentValue(ValueProperty, target);
+        animation.Completed += (_, _) =>
+        {
+            BeginAnimation(ValueProperty, null);
+            SetCurrentValue(ValueProperty, target);
+        };
+
         BeginAnimation(ValueProperty, animation);
     }
 

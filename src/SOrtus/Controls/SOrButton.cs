@@ -125,6 +125,48 @@ public sealed class SOrButton : System.Windows.Controls.Button
         System.Windows.Controls.Primitives.ButtonBase.DefaultStyleKeyProperty.OverrideMetadata(
             typeof(SOrButton),
             new System.Windows.FrameworkPropertyMetadata(typeof(SOrButton)));
+
+        // 图标间距由代码控制而不是 XAML Trigger：元素本地属性优先级高于 Style Trigger，
+        // 写在 <Path> 上的 Margin 会让 Trigger 的「清零」永远失效（纯图标按钮一直偏左）。
+        ContentProperty.OverrideMetadata(
+            typeof(SOrButton),
+            new System.Windows.FrameworkPropertyMetadata(OnContentChanged));
+    }
+
+    private static void OnContentChanged(System.Windows.DependencyObject d, System.Windows.DependencyPropertyChangedEventArgs e)
+    {
+        if (d is SOrButton button)
+        {
+            button.UpdateIconMargin();
+        }
+    }
+
+    /// <summary>
+    /// 有文字时图标带 8px 右间距；纯图标按钮清零——否则图标带着右间距「假居中」，
+    /// 在 24~36px 的小按钮里偏左约半个间距，肉眼可见。
+    /// </summary>
+    private void UpdateIconMargin()
+    {
+        if (Template?.FindName("PART_Icon", this) is not System.Windows.FrameworkElement icon)
+        {
+            return;
+        }
+
+        bool hasText = Content is string text ? !string.IsNullOrEmpty(text) : Content is not null;
+        if (hasText && TryFindResource("IconGap") is System.Windows.Thickness gap)
+        {
+            icon.Margin = gap;
+        }
+        else
+        {
+            icon.Margin = new System.Windows.Thickness(0);
+        }
+    }
+
+    public override void OnApplyTemplate()
+    {
+        base.OnApplyTemplate();
+        UpdateIconMargin();
     }
 
     public SOrButtonVariant Variant

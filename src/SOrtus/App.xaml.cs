@@ -144,34 +144,48 @@ public partial class App : Application
     /// </summary>
     private static void RunButtonTest()
     {
-        var results = new List<string>();
+        var icon = System.Windows.Media.Geometry.Parse("M 0,0 L 8,8 M 8,0 L 0,8");
 
-        void Measure(string tag, Controls.SOrButton button)
+        // 按页面真实配置：GIT 刷新（Ghost / Padding=10,8,10,8 / IconSize=15 / 无固定尺寸）、
+        // 标签删除（Ghost / 24×24 / Padding=0 / IconSize=10）、图标+文字（对照组）。
+        // 三个按钮放同一个窗口一次测完——连续 ShowDialog 时后续窗口的 Loaded 不触发。
+        var buttons = new (string Tag, Controls.SOrButton Button)[]
         {
-            var window = new Window
-            {
-                Content = button,
-                Width = 240,
-                Height = 80,
-                Left = 300,
-                Top = 300,
-                ShowInTaskbar = false,
-                WindowStartupLocation = WindowStartupLocation.Manual,
-            };
+            ("GIT刷新配置", new Controls.SOrButton { Variant = Controls.SOrButtonVariant.Ghost, Padding = new Thickness(10, 8, 10, 8), Icon = icon }),
+            ("标签删除配置", new Controls.SOrButton { Variant = Controls.SOrButtonVariant.Ghost, Width = 24, Height = 24, Padding = new Thickness(0), Icon = icon }),
+            ("图标加文字", new Controls.SOrButton { Width = 140, Height = 36, Content = "推送", Icon = icon }),
+        };
 
-            window.Loaded += (s, e) =>
+        var panel = new System.Windows.Controls.StackPanel { Margin = new System.Windows.Thickness(20) };
+        foreach (var (_, button) in buttons)
+        {
+            panel.Children.Add(button);
+        }
+
+        var window = new Window
+        {
+            Content = panel,
+            Width = 420,
+            Height = 220,
+            Left = 320,
+            Top = 320,
+            ShowInTaskbar = false,
+            WindowStartupLocation = WindowStartupLocation.Manual,
+        };
+
+        window.Loaded += (s, e) =>
+        {
+            window.UpdateLayout();
+            foreach (var (tag, button) in buttons)
             {
-                window.UpdateLayout();
                 double buttonCenter = button.ActualWidth / 2;
-
-                // 图标（Path）或 ContentPresenter 的中心
-                var icon = FindDescendant<System.Windows.Shapes.Path>(button, null);
+                var iconPath = FindDescendant<System.Windows.Shapes.Path>(button, "PART_Icon");
                 var presenter = FindContentPresenter(button);
                 double contentCenter;
                 string what;
-                if (icon is not null && icon.IsVisible)
+                if (iconPath is not null && iconPath.IsVisible)
                 {
-                    contentCenter = icon.TranslatePoint(new System.Windows.Point(icon.ActualWidth / 2, 0), button).X;
+                    contentCenter = iconPath.TranslatePoint(new System.Windows.Point(iconPath.ActualWidth / 2, 0), button).X;
                     what = "图标";
                 }
                 else if (presenter is not null)
@@ -186,23 +200,44 @@ public partial class App : Application
                 }
 
                 double offset = contentCenter - buttonCenter;
-                results.Add($"[BUTTON-{tag}] {what}中心={contentCenter:0.##} 按钮中心={buttonCenter:0.##} " +
-                    $"偏差={offset:0.##} 居中={Math.Abs(offset) <= 1.5}");
-                window.Close();
-            };
+                var iconForHost = FindDescendant<System.Windows.Shapes.Path>(button, "PART_Icon");
+                var host2 = (iconForHost is null ? button : System.Windows.Media.VisualTreeHelper.GetParent(iconForHost)) as System.Windows.FrameworkElement;
+                Console.WriteLine($"[BUTTON-{tag}] HCA={button.HorizontalContentAlignment} " +
+                    $"宿主对齐={host2?.HorizontalAlignment} 宿主宽={host2?.ActualWidth:0.##} 按钮宽={button.ActualWidth:0.##}");
+                Console.WriteLine($"[BUTTON-{tag}] {what}中心={contentCenter:0.##} 按钮中心={buttonCenter:0.##} " +
+                    $"按钮尺寸={button.ActualWidth:0.##}x{button.ActualHeight:0.##} 偏差={offset:0.##} 居中={Math.Abs(offset) <= 1.5}");
+            }
 
-            window.ShowDialog();
-        }
+            // 内部布局数据：图标相对按钮的左边缘 / Margin / 宿主 StackPanel 位置
+            foreach (var (tag, button) in buttons)
+            {
+                var iconPath = FindDescendant<System.Windows.Shapes.Path>(button, "PART_Icon");
+                if (iconPath is null)
+                {
+                    continue;
+                }
 
-        Measure("纯图标", new Controls.SOrButton { Width = 24, Height = 24, Padding = new Thickness(0), Icon = System.Windows.Media.Geometry.Parse("M 0,0 L 8,8 M 8,0 L 0,8") });
-        Measure("纯文字", new Controls.SOrButton { Width = 120, Height = 36, Content = "创 建" });
-        Measure("图标加文字", new Controls.SOrButton { Width = 140, Height = 36, Content = "推送", Icon = System.Windows.Media.Geometry.Parse("M 0,0 L 8,8") });
+                double left = iconPath.TranslatePoint(new System.Windows.Point(0, 0), button).X;
+                var host = System.Windows.Media.VisualTreeHelper.GetParent(iconPath) as System.Windows.FrameworkElement;
+                double hostLeft = host is null ? -1 : host.TranslatePoint(new System.Windows.Point(0, 0), button).X;
+                Console.WriteLine($"[BUTTON-{tag}] 图标左边缘={left:0.##} Margin={iconPath.Margin} " +
+                    $"宿主={host?.GetType().Name} 宿主左边缘={hostLeft:0.##} 宿主宽={host?.ActualWidth:0.##}");
+            }
 
-        foreach (var r in results)
-        {
-            Console.WriteLine(r);
-        }
+            // 保存截图供目视核对
+            var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(
+                420, 220, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            bitmap.Render(window);
+            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+            using var stream = System.IO.File.Create("F:/S_/Sortus/outputs/tmp-button-test.png");
+            encoder.Save(stream);
+            Console.WriteLine("[BUTTON] 截图已保存 outputs/tmp-button-test.png");
 
+            window.Close();
+        };
+
+        window.ShowDialog();
         Environment.Exit(0);
     }
 
@@ -672,12 +707,15 @@ public partial class App : Application
         await SettleAsync(window);
         SaveWindow(window, System.IO.Path.Combine(targetDir, "01b-list-with-items.png"));
 
-        // 诊断：打开「全部类型」下拉，核对浮层是否与触发器重叠、选项是否可读可点
-        var combo = Descendants(window).OfType<Controls.SOrComboBox>().FirstOrDefault();
-        if (combo is not null)
+        // 诊断：逐个打开筛选栏的每个下拉，核对浮层是否与触发器重叠
+        // （此前只测了第一个，「全部状态」的位置从未验证）
+        int comboIndex = 0;
+        foreach (var combo in Descendants(window).OfType<Controls.SOrComboBox>().Take(2))
         {
+            comboIndex++;
             combo.IsDropDownOpen = true;
             await SettleAsync(window);
+            Console.WriteLine($"[COMBO] 第{comboIndex}个下拉（宽{combo.ActualWidth:0}）");
 
             var popup = combo.Template?.FindName("PART_Popup", combo) as System.Windows.Controls.Primitives.Popup;
             var origin = combo.PointToScreen(new System.Windows.Point(0, 0));

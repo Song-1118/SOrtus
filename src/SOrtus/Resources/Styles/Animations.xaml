@@ -146,14 +146,6 @@
     </Storyboard>
 
 <!-- ===== 下拉 / 日历浮层：8px 上移 + 150ms 淡入（VD-068） ===== -->
-    <!-- 浮层入场：只淡入（150ms）。刻意不做位移——Popup 出现极快，位移感知不强，
-         且位移动画与 Popup 定位互相干扰（实测会让浮层相对触发器的间距多出 8px 且不稳定）。 -->
-    <Storyboard x:Key="OverlayInStoryboard">
-        <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                         From="0" To="1" Duration="0:0:0.15"
-                         EasingFunction="{StaticResource CubicEaseOut}" />
-    </Storyboard>
-
 <!-- 浮层入场（下拉 / 日历）：引用者需自带 TranslateTransform.Y=8（VD-068） -->
 <!--
         弹窗拒绝关闭时的抖动（用户反馈：点遮罩没反应像卡死）。

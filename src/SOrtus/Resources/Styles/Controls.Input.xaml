@@ -310,8 +310,7 @@
                                StaysOpen="False"
                                PopupAnimation="None"
                                IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
-                            <Border local:Motion.PlayOnShow="OverlayInStoryboard"
-                                    Background="{DynamicResource SurfaceBrush}"
+                            <Border Background="{DynamicResource SurfaceBrush}"
                                     BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1"
                                     CornerRadius="{DynamicResource CornerRadiusMedium}"

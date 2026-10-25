@@ -138,6 +138,14 @@
 - **文档预览滚轮灵敏度**：新增 `MouseWheelScroll` 附加属性，文档阅读区每格滚轮 6 行（系统默认 3），按正文行高 24px 换算像素并接管事件，避免系统再滚一次造成双倍位移。
 - **全局非线性缓动**：补齐 8 处仍为线性插值的动画——类型卡淡出、tab 指示条收起、开关轨道色、占位符淡入淡出、加载指示器退出、进度条 400ms 填充（改 Exit 缓动）。规范令牌 `Std / Enter / Exit / Back` 已在 `Animations.xaml` 统一提供；仅加载指示的匀速旋转与 0ms 的焦点环失焦保持原语义。
 
+### 用户反馈批次三（滑块回跳回归 / 下拉动画移除 / 按钮居中 / hover 残留）
+
+- **滑块「点击到 A 又缩回去」**：上一轮为消除「动画持有 Value」把填充行为改成 `FillBehavior.Stop`——它的语义是动画一结束属性**立即弹回动画前旧值**，Completed 回调要到下一帧才写回目标值，用户看到的就是「进度条到 A 又缩回去、再点一次才过来」。改为默认 HoldEnd 保持到结束，Completed 里**同一帧内**先 `BeginAnimation(prop, null)` 摘掉动画再 `SetCurrentValue` 固化终值——两步之间没有渲染帧，既不留持有也不回跳。
+- **下拉框动画移除**（用户要求）：删除 `OverlayInStoryboard` 及其在 Popup 上的引用，下拉框现在直接出现不做淡入。
+- **刷新 / 标签删除按钮不居中**：根因是图标间距 `Margin` 写在 `<Path>` **元素本地属性**上——本地属性优先级高于 Style Trigger，Trigger 里的「清零」永远失效，纯图标按钮一直带着 8px 右间距；且 TemplateBinding 传 `HorizontalContentAlignment` 到容器实测不生效（回落 Stretch 导致内容贴左）。修复：容器 `StackPanel` 硬编码 `Center`（图标+文字整体居中），图标间距改由 `SOrButton` 代码按「有无文字」设置（`ContentProperty.OverrideMetadata` + `OnApplyTemplate`）。实测 GIT 刷新配置与标签删除配置**偏差均为 0**。
+- **hover 背景残留**（鼠标滑过留下悬停底色）：动画（HoldEnd）在元素复用 / 状态快速翻转时可能把覆盖层 Opacity 遗留在 1。新增 `IsMouseOver=False` 的**保底 Setter**（PART_Hover / PART_Press 归零），与动画状态无关恒定兜底。
+- 筛选下拉遮挡复验：类型 / 状态两个下拉实测浮层均在触发器下方 12px、不遮挡（`--shot` 内置断言两个都过）。
+
 ### 用户反馈批次二（P0 崩溃 + 下拉遮挡 + 滑块 + 搜索 + 五项优化）
 
 **P0 崩溃（任何界面点击设置直接崩）**——根因是「Style Setter 的 `TranslateTransform` 被 WPF 冻结共享」：

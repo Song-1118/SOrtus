@@ -68,48 +68,33 @@
                                 <!-- 图标列自适应、内容列吃满剩余宽度：按钮被拉伸时（如向导三张类型卡）
                                      内容才能拿到确定的可用宽度并正确换行；按钮自适应宽度时该列等于内容宽度，
                                      图标与文字仍作为一个整体居中。 -->
-                                <Grid VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Margin="{TemplateBinding Padding}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
+                                <!-- 图标与文字作为整体居中（硬编码 Center：
+                                     TemplateBinding HorizontalContentAlignment 实测传不过来，
+                                     StackPanel 回落 Stretch 导致内容贴左）。
+                                     类型卡（Variant=Card）的内容是垂直流，不依赖水平铺满，
+                                     因此这里不需要跟随 HorizontalContentAlignment 变化。 -->
+                                <StackPanel Orientation="Horizontal"
+                                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                            HorizontalAlignment="Center"
+                                            Margin="{TemplateBinding Padding}">
                                     <!--
                                         图标按钮（只有图标、没有文字）此前图标独占 Auto 列，
                                         右侧 * 列空着 → 图标贴在按钮左侧而不是居中。
                                         这里在「内容为空」时让图标跨两列，整颗按钮水平居中。
                                     -->
-                                    <Path Data="{TemplateBinding Icon}"
+                                    <Path x:Name="PART_Icon"
+                                          Data="{TemplateBinding Icon}"
                                           Fill="{TemplateBinding Foreground}"
                                           Width="{TemplateBinding IconSize}"
                                           Height="{TemplateBinding IconSize}"
                                           Stretch="Uniform"
-                                          Margin="{DynamicResource IconGap}"
                                           VerticalAlignment="Center"
                                           HorizontalAlignment="Center"
                                           Visibility="{Binding Icon, Converter={StaticResource NotNullToVisibilityConverter}, RelativeSource={RelativeSource TemplatedParent}}">
-                                        <Path.Style>
-                                            <Style TargetType="Path">
-                                                <Setter Property="Grid.Column" Value="0" />
-                                                <Setter Property="Grid.ColumnSpan" Value="1" />
-                                                <Style.Triggers>
-                                                    <!-- 纯图标按钮：跨两列 + 清空边距，图标才真正落在按钮中心
-                                                         （IconGap 的右边距会让 24px 小按钮里的图标偏左约 4px） -->
-                                                    <DataTrigger Binding="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}" Value="{x:Null}">
-                                                        <Setter Property="Grid.ColumnSpan" Value="2" />
-                                                        <Setter Property="Margin" Value="0" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}" Value="">
-                                                        <Setter Property="Grid.ColumnSpan" Value="2" />
-                                                        <Setter Property="Margin" Value="0" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Path.Style>
                                     </Path>
-                                    <ContentPresenter Grid.Column="1"
-                                                      VerticalAlignment="Center"
-                                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
-                                </Grid>
+                                    <!-- 图标与文字同处一个水平容器：整体居中，不再「图标贴左 + 文字另居」 -->
+                                    <ContentPresenter VerticalAlignment="Center" />
+                                </StackPanel>
                             </Grid>
                         </Border>
                         <!-- 键盘焦点环（VD-059）：默认透明，仅 IsKeyboardFocusWithin 时显示；
@@ -196,6 +181,14 @@
                             <Trigger.ExitActions>
                                 <BeginStoryboard Storyboard="{StaticResource EnableFadeStoryboard}" />
                             </Trigger.ExitActions>
+                        </Trigger>
+                        <!-- hover 保底（VD-125）：非悬停态显式把覆盖层 Opacity 归零。
+                             只靠 MicroOut 动画不够——HoldEnd 动画在元素复用 / 状态快速
+                             翻转等路径下可能把 Opacity 遗留在 1，鼠标划过后留下一层
+                             悬停背景（用户报「标签栏滑过导致背景遗留」）。 -->
+                        <Trigger Property="IsMouseOver" Value="False">
+                            <Setter TargetName="PART_Hover" Property="Opacity" Value="0" />
+                            <Setter TargetName="PART_Press" Property="Opacity" Value="0" />
                         </Trigger>
                         <!-- 类型卡选中（VD-093）：2px 主色环 + 右上角对勾 -->
                         <MultiTrigger>

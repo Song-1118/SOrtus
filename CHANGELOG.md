@@ -138,6 +138,12 @@
 - **文档预览滚轮灵敏度**：新增 `MouseWheelScroll` 附加属性，文档阅读区每格滚轮 6 行（系统默认 3），按正文行高 24px 换算像素并接管事件，避免系统再滚一次造成双倍位移。
 - **全局非线性缓动**：补齐 8 处仍为线性插值的动画——类型卡淡出、tab 指示条收起、开关轨道色、占位符淡入淡出、加载指示器退出、进度条 400ms 填充（改 Exit 缓动）。规范令牌 `Std / Enter / Exit / Back` 已在 `Animations.xaml` 统一提供；仅加载指示的匀速旋转与 0ms 的焦点环失焦保持原语义。
 
+### 用户反馈批次五（下拉框选中后占位符与选中内容重叠）
+
+- **根因（实测复现）**：`--combo-test` 验证——选中枚举项（Programming）后，模板里 `SelectedItem==null` 的 `DataTrigger` **不退出**，`PART_Placeholder`（占位符「全部类型」）保持 `Visible`，与 `PART_ContentSite` 的选中内容**同时显示在框里**，正是用户报的「选择后选择的内容和原始内容全部留在框里造成重叠」。此前几轮修的都是浮层位置（间距 12px）与打开期间隐藏，未命中这个真因。
+- **修复**：占位符可见性改由 `SOrComboBox` 代码控制——`SelectedItemProperty.OverrideMetadata` 监听选中变化 + `OnApplyTemplate` 初始同步，有选中项即 `Collapsed`、无选中项即 `Visible`；删除模板里不可靠的 `DataTrigger`，避免双源竞争。实测选中后 `占位符可见=Collapsed` 通过。
+- 新增 `--combo-test` 自测（选中态 + 占位符可见性），守住该回归。
+
 ### 用户反馈批次四（导航悬停灰 / 下拉动画恢复 / 打开下拉收起旧文字）
 
 - **左侧菜单栏悬停颜色**：原来导航复用全站 `HoverOverlayBrush`——深色主题下它是**白色 8% 叠加（悬停变亮）**，与「悬停变灰、移走恢复」的预期不符；该画刷全站共用不能直接改。新增 `NavHoverBrush`（深色 `#262A2F` / 浅色 `#EDEFF2`，均比各自的选中态弱一档，避免「悬停和选中看起来一样」），经模板触发器只对 Nav 变体替换覆盖层背景（`Style.Triggers` 的 Setter 不能设 TargetName，必须放 `ControlTemplate.Triggers`）；恢复由 `IsMouseOver=False` 保底 Setter 保证，与动画终值无关。

@@ -33,6 +33,40 @@ public sealed class SOrComboBox : System.Windows.Controls.ComboBox
         System.Windows.Controls.ComboBox.DefaultStyleKeyProperty.OverrideMetadata(
             typeof(SOrComboBox),
             new System.Windows.FrameworkPropertyMetadata(typeof(SOrComboBox)));
+
+        // 占位符可见性由代码控制，不用模板 DataTrigger：实测选中枚举项后
+        // DataTrigger（SelectedItem==null）不退出，占位符「全部类型」与选中内容
+        // 同时显示在框里——用户报的「选择后选择的内容和原始内容重叠」正是这个。
+        SelectedItemProperty.OverrideMetadata(
+            typeof(SOrComboBox),
+            new System.Windows.FrameworkPropertyMetadata(OnSelectedItemChanged));
+    }
+
+    private static void OnSelectedItemChanged(System.Windows.DependencyObject d, System.Windows.DependencyPropertyChangedEventArgs e)
+    {
+        if (d is SOrComboBox combo)
+        {
+            combo.UpdatePlaceholder();
+        }
+    }
+
+    /// <summary>有选中项时隐藏占位符，无选中项时显示。</summary>
+    private void UpdatePlaceholder()
+    {
+        if (Template?.FindName("PART_Placeholder", this) is not System.Windows.FrameworkElement placeholder)
+        {
+            return;
+        }
+
+        placeholder.Visibility = SelectedItem is null
+            ? System.Windows.Visibility.Visible
+            : System.Windows.Visibility.Collapsed;
+    }
+
+    public override void OnApplyTemplate()
+    {
+        base.OnApplyTemplate();
+        UpdatePlaceholder();
     }
 
     public string Placeholder

@@ -37,6 +37,12 @@ public partial class App : Application
 
         // 输入链路自测：模拟真实点击 + 键盘输入，验证空输入框到底能不能打字。
         // 现象是「有内容的能编辑、空的不能」，必须用真实事件链验证，不能靠推断。
+        if (e.Args is { Length: > 0 } && e.Args[0] == "--combo-test")
+        {
+            RunComboTest();
+            return;
+        }
+
         if (e.Args is { Length: > 0 } && e.Args[0] == "--button-test")
         {
             RunButtonTest();
@@ -411,6 +417,76 @@ public partial class App : Application
         using var stream = System.IO.File.Create(path);
         encoder.Save(stream);
         Console.WriteLine($"[COMBO] 真实桌面截图 {width}x{height} -> {System.IO.Path.GetFileName(path)}");
+    }
+
+
+    /// <summary>
+    /// ComboBox 选中态实测（VD-128）：选中枚举项后，占位符必须消失、只显示选中内容。
+    /// 用户报「选择后选择的内容和原始内容全部留在框里造成重叠」——即占位符
+    /// （全部类型）在选中后没有隐藏，与新选中项叠在一起。
+    /// </summary>
+    private static void RunComboTest()
+    {
+        var combo = new Controls.SOrComboBox
+        {
+            Width = 200,
+            Height = 36,
+            ItemsSource = new System.Collections.Generic.List<SOrtus.Core.Models.ProjectType?>
+            {
+                null,
+                SOrtus.Core.Models.ProjectType.Programming,
+                SOrtus.Core.Models.ProjectType.Clip,
+            },
+        };
+        // 与列表页一致：ItemTemplate 用转换器取显示文字，Placeholder 是「全部类型」
+        combo.ItemTemplate = (System.Windows.DataTemplate)System.Windows.Application.Current.FindResource("TypeItemTemplate");
+        combo.Placeholder = "全部类型";
+
+        var window = new Window
+        {
+            Content = combo,
+            Width = 320,
+            Height = 140,
+            Left = 400,
+            Top = 400,
+            ShowInTaskbar = false,
+            WindowStartupLocation = WindowStartupLocation.Manual,
+        };
+
+        window.Loaded += (s, e) =>
+        {
+            window.UpdateLayout();
+            var placeholder = combo.Template?.FindName("PART_Placeholder", combo) as System.Windows.FrameworkElement;
+            var contentSite = combo.Template?.FindName("PART_ContentSite", combo) as System.Windows.Controls.ContentPresenter;
+
+            Console.WriteLine($"[COMBO-TEST] 初始(未选中): SelectedItem={(combo.SelectedItem?.ToString() ?? "null")} " +
+                $"占位符可见={placeholder?.Visibility} 选中内容可见={contentSite?.Visibility}");
+
+            combo.SelectedItem = SOrtus.Core.Models.ProjectType.Programming;
+            window.UpdateLayout();
+
+            // 排除时序：等 Dispatcher 完全空闲后再读（Trigger 绑定理论上同步，
+            // 但要确认不是绑定刷新延后造成的假象）
+            window.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+            window.UpdateLayout();
+            Console.WriteLine($"[COMBO-TEST] 选中Programming(空闲后): SelectedItem={combo.SelectedItem} " +
+                $"占位符可见={placeholder?.Visibility}（应为 Collapsed） " +
+                $"占位符文字='{(placeholder as System.Windows.Controls.TextBlock)?.Text}' " +
+                $"选中内容可见={contentSite?.Visibility} " +
+                $"选中内容Content={(contentSite?.Content?.ToString() ?? "null")}");
+
+            // 选中项文字内容（经 ItemTemplate 渲染后取文本）
+            if (contentSite is not null)
+            {
+                var tb = FindDescendant<System.Windows.Controls.TextBlock>(contentSite, null);
+                Console.WriteLine($"[COMBO-TEST] 选中内容文字='{(tb is null ? "null" : tb.Text)}'");
+            }
+
+            window.Close();
+        };
+
+        window.ShowDialog();
+        Environment.Exit(0);
     }
 
     /// 输入链路自测：空输入框 → 模拟点击 → 模拟按键 → 检查文本是否真的进去。

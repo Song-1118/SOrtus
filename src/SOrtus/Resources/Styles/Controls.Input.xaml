@@ -375,9 +375,8 @@
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
                         </Trigger>
-                        <DataTrigger Binding="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}}" Value="{x:Null}">
-                            <Setter TargetName="PART_Placeholder" Property="Visibility" Value="Visible" />
-                        </DataTrigger>
+                        <!-- 占位符可见性由 SOrComboBox.UpdatePlaceholder 代码控制
+                            （原 DataTrigger 选中后不退出，占位符与选中内容重叠显示） -->
                         <!-- 浮层打开期间收起触发器里的选中文字（VD-127）：否则原来的
                              「编程开发」与浮层第一行「全部类型」在视觉上叠在一起。
                              用 Hidden 而非 Collapsed——保留布局空间，关闭后文字位置不跳。 -->

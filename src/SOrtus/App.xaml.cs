@@ -359,6 +359,60 @@ public partial class App : Application
         public string SearchText { get; set; } = string.Empty;
     }
 
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern IntPtr GetDesktopWindow();
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern IntPtr GetWindowDC(IntPtr hWnd);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern IntPtr CreateCompatibleDC(IntPtr hdc);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern IntPtr CreateCompatibleBitmap(IntPtr hdc, int nWidth, int nHeight);
+
+    [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+    private static extern IntPtr SelectObject(IntPtr hdc, IntPtr hObject);
+
+    [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+    private static extern bool BitBlt(IntPtr hdcDest, int nXDest, int nYDest, int nWidth, int nHeight, IntPtr hdcSrc, int nXSrc, int nYSrc, int dwRop);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool DeleteObject(IntPtr hObject);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern int GetSystemMetrics(int nIndex);
+
+    private const int SRCCOPY = 0x00CC0020;
+    private const int SM_CXSCREEN = 0;
+    private const int SM_CYSCREEN = 1;
+
+    /// <summary>截取真实桌面（含 Popup 独立窗口）并保存为 PNG。</summary>
+    private static void CaptureScreen(string path)
+    {
+        int width = GetSystemMetrics(SM_CXSCREEN);
+        int height = GetSystemMetrics(SM_CYSCREEN);
+        IntPtr desktopDc = GetWindowDC(GetDesktopWindow());
+        IntPtr memDc = CreateCompatibleDC(desktopDc);
+        IntPtr bitmap = CreateCompatibleBitmap(desktopDc, width, height);
+        IntPtr old = SelectObject(memDc, bitmap);
+        BitBlt(memDc, 0, 0, width, height, desktopDc, 0, 0, SRCCOPY);
+
+        var source = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
+            bitmap, IntPtr.Zero, System.Windows.Int32Rect.Empty,
+            System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions());
+        SelectObject(memDc, old);
+        DeleteObject(bitmap);
+        DeleteObject(memDc);
+
+        var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(source));
+        using var stream = System.IO.File.Create(path);
+        encoder.Save(stream);
+        Console.WriteLine($"[COMBO] 真实桌面截图 {width}x{height} -> {System.IO.Path.GetFileName(path)}");
+    }
+
     /// 输入链路自测：空输入框 → 模拟点击 → 模拟按键 → 检查文本是否真的进去。
     /// 用真实事件（MouseButtonEventArgs / InputManager.ProcessInput）而不是直接赋值，
     /// 这样才能覆盖「点击定位光标 → 焦点落位 → 键盘输入被接收」整条链路。

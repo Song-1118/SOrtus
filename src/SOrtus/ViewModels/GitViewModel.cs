@@ -32,6 +32,15 @@ internal sealed class GitViewModel : ViewModelBase
     private string? _errorMessage;
     private string? _rawOutput;
 
+    /// <summary>时间线分页（VD-107）：默认 10 条，点「查看更早」每次再取 10 条。</summary>
+    private const int TimelinePageSize = 10;
+
+    /// <summary>一次快照最多抓多少条提交。不足此数即「这就是全部提交」。</summary>
+    private const int TimelineWindow = 50;
+
+    private readonly List<GitCommitInfo> _allCommits = new();
+    private int _visibleCommitCount = TimelinePageSize;
+
     public GitViewModel(
         IGitService git,
         ILocalizationService localization,
@@ -46,6 +55,7 @@ internal sealed class GitViewModel : ViewModelBase
         _refreshCommand = new AsyncRelayCommand(RefreshAsync, () => !IsBusy);
         _pushCommand = new AsyncRelayCommand(PushAsync, () => !IsBusy && HasRemote && IsRepository);
         _addRemoteCommand = new AsyncRelayCommand(AddRemoteAsync, () => !IsBusy && IsRepository);
+        ShowMoreCommitsCommand = new RelayCommand(_ => ShowMoreCommits(), _ => HasMoreCommits);
     }
 
     public ObservableCollection<GitBranchItemViewModel> Branches { get; } = new();
@@ -133,6 +143,64 @@ internal sealed class GitViewModel : ViewModelBase
 
     public ICommand AddRemoteCommand => _addRemoteCommand;
 
+    /// <summary>展开更早的提交（VD-107）。</summary>
+    public ICommand ShowMoreCommitsCommand { get; }
+
+    /// <summary>还有更早的提交没显示出来。</summary>
+    public bool HasMoreCommits => _allCommits.Count > _visibleCommitCount;
+
+    /// <summary>「查看更早的 N 条」。</summary>
+    public string MoreCommitsText => string.Format(
+        _localization.GetString("Git_TimelineMore"),
+        Math.Min(TimelinePageSize, _allCommits.Count - _visibleCommitCount));
+
+    /// <summary>
+    /// 时间线末尾计数（VD-107）。
+    /// 一次快照最多抓 <see cref="TimelineWindow"/> 条：抓不满说明这就是全部提交，给「共 N 条」；
+    /// 抓满了就只能说「已显示最近 N 条」，不能把窗口当成总数——那是假信息。
+    /// </summary>
+    public string TimelineSummaryText
+    {
+        get
+        {
+            if (_allCommits.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var last = _allCommits[0].When == DateTimeOffset.MinValue
+                ? string.Empty
+                : _allCommits[0].When.ToLocalTime().ToString("MM-dd HH:mm");
+            var key = _allCommits.Count < TimelineWindow ? "Git_TimelineCount" : "Git_TimelineCountWindow";
+            return string.Format(_localization.GetString(key), _allCommits.Count, last);
+        }
+    }
+
+    private void ShowMoreCommits()
+    {
+        _visibleCommitCount = Math.Min(_visibleCommitCount + TimelinePageSize, _allCommits.Count);
+        RebuildTimeline();
+    }
+
+    private void RebuildTimeline()
+    {
+        Timeline.Clear();
+        for (var i = 0; i < _visibleCommitCount && i < _allCommits.Count; i++)
+        {
+            Timeline.Add(new GitTimelineItemViewModel(
+                _allCommits[i],
+                isFirst: i == 0,
+                isLast: i == _allCommits.Count - 1 || i == _visibleCommitCount - 1));
+        }
+
+        OnPropertyChanged(nameof(HasMoreCommits));
+        OnPropertyChanged(nameof(MoreCommitsText));
+        OnPropertyChanged(nameof(TimelineSummaryText));
+        OnPropertyChanged(nameof(HasCommits));
+        OnPropertyChanged(nameof(IsEmptyRepository));
+        CommandManager.InvalidateRequerySuggested();
+    }
+
     /// <summary>首次进入 GIT 版块时加载（重复调用无副作用）。</summary>
     public Task ActivateAsync()
     {
@@ -167,7 +235,7 @@ internal sealed class GitViewModel : ViewModelBase
             ErrorMessage = null;
             try
             {
-                Apply(await _git.InspectAsync(folder));
+                Apply(await _git.InspectAsync(folder, TimelineWindow));
                 if (!_info.IsRepository)
                 {
                     ErrorMessage = _localization.GetString("Git_NotRepository");
@@ -205,7 +273,7 @@ internal sealed class GitViewModel : ViewModelBase
             if (result.Success)
             {
                 StatusMessage = _localization.GetString("Git_PushSuccess");
-                Apply(await _git.InspectAsync(_folderPathProvider()));
+                Apply(await _git.InspectAsync(_folderPathProvider(), TimelineWindow));
             }
             else
             {
@@ -279,13 +347,13 @@ internal sealed class GitViewModel : ViewModelBase
             Branches.Add(new GitBranchItemViewModel(branch));
         }
 
-        Timeline.Clear();
-        var index = 0;
-        foreach (var commit in info.RecentCommits)
-        {
-            Timeline.Add(new GitTimelineItemViewModel(commit, isFirst: index == 0, isLast: index == info.RecentCommits.Count - 1));
-            index++;
-        }
+        // VD-107：时间线默认只渲染 10 条，剩下放进「查看更早」——
+        // 旧版一次性铺满（长仓库上百条），卡片下方还要留 400px 空白，
+        // 用户既不知道「是只有这些提交」还是「被截断了」，首屏也被拖慢。
+        _allCommits.Clear();
+        _allCommits.AddRange(info.RecentCommits);
+        _visibleCommitCount = Math.Min(TimelinePageSize, _allCommits.Count);
+        RebuildTimeline();
 
         Remotes.Clear();
         foreach (var remote in info.Remotes)

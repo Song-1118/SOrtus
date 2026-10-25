@@ -44,7 +44,9 @@ internal sealed class UpdateViewModel : ViewModelBase, IClosableOverlayDialogVie
         RetryCommand = new RelayCommand(_ => ResetAfterFailure());
         PrimaryActionCommand = new AsyncRelayCommand(_ => RunPrimaryAsync(), _ => !IsBusy);
         SkipCommand = new RelayCommand(_ => Skip());
-        LaterCommand = new RelayCommand(_ => RequestClose());
+        // VD-116：「稍后提醒」不能只是关闭——它承诺了「以后还会再提」，
+        // 因此写入 snooze 时间窗，到期前启动检查发现同一版本就不再打扰。
+        LaterCommand = new RelayCommand(_ => Snooze());
         CloseCommand = new RelayCommand(_ => RequestClose());
         OpenPageCommand = new RelayCommand(_ => OpenReleasePage(), _ => _info.ReleasePageUri is not null);
 
@@ -177,6 +179,17 @@ internal sealed class UpdateViewModel : ViewModelBase, IClosableOverlayDialogVie
     private void Skip()
     {
         _updates.SkipVersion(_info.Version);
+        RequestClose();
+    }
+
+    /// <summary>「稍后提醒」：记住这个版本 + 24 小时窗口，到期后重新提示。</summary>
+    private void Snooze()
+    {
+        var state = UpdateState.Load();
+        state.SnoozedVersion = _info.Version.ToString();
+        state.SnoozedUntilUtc = DateTime.UtcNow.Add(UpdateState.SnoozeDuration);
+        state.Save();
+        UpdateService.Log($"用户选择稍后提醒 {state.SnoozedVersion}，{state.SnoozedUntilUtc:u} 之前不再提示");
         RequestClose();
     }
 

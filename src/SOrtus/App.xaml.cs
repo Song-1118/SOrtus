@@ -73,6 +73,9 @@ public partial class App : Application
         themeService.Initialize();
         ILocalizationService localizationService = new LocalizationService();
         localizationService.Initialize();
+        // 键盘焦点框总开关：按持久化设置初始化（默认开）。必须在窗口创建前生效，
+        // 否则首帧会先画出焦点环再被掩掉，形成可见闪烁。
+        FocusRingSettings.Apply(AppSettings.Load().ShowFocusRing);
         INavigationService navigation = new NavigationService();
         IDialogService dialogService = new DialogService(localizationService);
         IDocumentImportService importService = new DocumentImportService();
@@ -95,7 +98,12 @@ public partial class App : Application
         window.Show();
 
         // VD-067：换肤过渡由窗口承载（淡出→换字典→淡入），服务只负责换字典与广播
-        themeService.ThemeChanged += (_, _) => window.PlayThemeTransition(themeService.CurrentTheme);
+        themeService.ThemeChanged += (_, _) =>
+        {
+            // 磨砂层的 BitmapCache 缓存的是旧主题渲染结果，必须清掉，否则卡片底色不跟随
+            Controls.BlurPanel.InvalidateCaches();
+            window.PlayThemeTransition(themeService.CurrentTheme);
+        };
 
         ScheduleStartupUpdateCheck(mainViewModel);
     }
@@ -155,10 +163,14 @@ public partial class App : Application
 
         var themeService = new ThemeService();
         themeService.Initialize();
+        // 与正式启动同一套行为：换肤后清掉磨砂层缓存，避免卡片底色停留在上一套主题
+        themeService.ThemeChanged += (_, _) => Controls.BlurPanel.InvalidateCaches();
         // 换肤验证会写回用户设置，结束时必须还原成进来时的主题
         var originalTheme = themeService.CurrentTheme;
         var localization = new LocalizationService();
         localization.Initialize();
+        // 截图要反映真实设置（焦点框开关默认开），否则截出的图与用户实际看到的不一致
+        FocusRingSettings.Apply(AppSettings.Load().ShowFocusRing);
 
         var projectService = new SmokeProjectService();
         var navigation = new NavigationService();
@@ -274,6 +286,33 @@ public partial class App : Application
             detail.SelectSectionCommand.Execute(ProjectDetailViewModel.SectionDev);
             await SettleAsync(window);
 
+            // 第三批 VD-101/102 回归：开发管理滚到底，核对保存按钮文案与「危险区」卡
+            ScrollContentToEnd(window);
+            await SettleAsync(window);
+            SaveWindow(window, System.IO.Path.Combine(targetDir, "05a-detail-dev-bottom.png"));
+            ScrollContentToEnd(window, false);
+
+            // 第三批 VD-107 回归：点「查看更早提交」后时间线应续显下一页
+            detail.SelectSectionCommand.Execute(ProjectDetailViewModel.SectionGit);
+            await SettleAsync(window);
+            if (detail.Git?.ShowMoreCommitsCommand.CanExecute(null) == true)
+            {
+                detail.Git.ShowMoreCommitsCommand.Execute(null);
+                await SettleAsync(window);
+            }
+            SaveWindow(window, System.IO.Path.Combine(targetDir, "06b-detail-git-more.png"));
+
+            // 第三批 VD-117 回归：破坏性确认弹窗（红色警示 + 明确动作文案）
+            var confirmTask = dialogService.ConfirmDestructiveAsync("删除这个立项？", "立项及其全部文档将被永久删除，此操作无法撤销。");
+            await SettleAsync(window);
+            SaveWindow(window, System.IO.Path.Combine(targetDir, "13-destructive-confirm.png"));
+            mainViewModel.CloseDialogCommand.Execute(null);
+            await confirmTask;
+            await SettleAsync(window);
+
+            detail.SelectSectionCommand.Execute(ProjectDetailViewModel.SectionDev);
+            await SettleAsync(window);
+
             var document = detail.PrdDocument ?? detail.OtherDocuments.FirstOrDefault();
             if (document is not null)
             {
@@ -307,13 +346,39 @@ public partial class App : Application
         await SettleAsync(window);
         SaveWindow(window, System.IO.Path.Combine(targetDir, "08-settings.png"));
 
+        // 第三批 VD-108/109/110 + 用户需求（焦点框开关、更新开关）：设置页下半段
+        ScrollContentToEnd(window);
+        await SettleAsync(window);
+        SaveWindow(window, System.IO.Path.Combine(targetDir, "08b-settings-bottom.png"));
+        ScrollContentToEnd(window, true);
+        await SettleAsync(window);
+
         // VD-061 回归用：运行时整本换肤（不是启动即深色），验证分组卡 / 文字 / 边框是否一起跟随。
         // 09 = 切到浅色后的设置页，10 = 再切回深色后的同一页——两张都会进交付证据。
-        themeService.SetTheme("Light");
+        // 这里刻意走「设置页下拉」的真实路径（SettingsViewModel.CurrentTheme），而不是直接调服务：
+        // 否则下拉框里的值不会跟着变，截出来的图会自相矛盾（浅色页面 + 标签写着深色）。
+        var settingsVm = navigation.Current as SettingsViewModel;
+        if (settingsVm is not null)
+        {
+            settingsVm.CurrentTheme = "Light";
+        }
+        else
+        {
+            themeService.SetTheme("Light");
+        }
+
         await SettleAsync(window);
         SaveWindow(window, System.IO.Path.Combine(targetDir, "09-settings-after-theme-switch-light.png"));
 
-        themeService.SetTheme("Dark");
+        if (settingsVm is not null)
+        {
+            settingsVm.CurrentTheme = "Dark";
+        }
+        else
+        {
+            themeService.SetTheme("Dark");
+        }
+
         await SettleAsync(window);
         SaveWindow(window, System.IO.Path.Combine(targetDir, "10-settings-after-theme-switch-dark.png"));
 
@@ -423,14 +488,28 @@ public partial class App : Application
         return false;
     }
 
-    /// <summary>把当前页面滚动到底（截图核对页面下半部分用）。</summary>
-    private static void ScrollContentToEnd(Window window)    {
+    /// <summary>把当前页面滚动到底（截图核对页面下半部分用）。reset 为 true 时滚回顶部。</summary>
+    private static void ScrollContentToEnd(Window window, bool reset = false)
+    {
         if (window.FindName("PART_ContentHost") is not DependencyObject host)
         {
             return;
         }
 
-        Descendants(host).OfType<System.Windows.Controls.ScrollViewer>().FirstOrDefault()?.ScrollToEnd();
+        var viewer = Descendants(host).OfType<System.Windows.Controls.ScrollViewer>().FirstOrDefault();
+        if (viewer is null)
+        {
+            return;
+        }
+
+        if (reset)
+        {
+            viewer.ScrollToTop();
+        }
+        else
+        {
+            viewer.ScrollToEnd();
+        }
     }
 
     private static async Task SettleAsync(Window window)
@@ -620,6 +699,12 @@ internal sealed class SmokeDialogService : IDialogService
 {
     public event System.Action<object?>? ActiveDialogChanged;
     public Task<bool> ConfirmAsync(string title, string message)
+    {
+        ActiveDialogChanged?.Invoke(null);
+        return Task.FromResult(false);
+    }
+
+    public Task<bool> ConfirmDestructiveAsync(string title, string message)
     {
         ActiveDialogChanged?.Invoke(null);
         return Task.FromResult(false);

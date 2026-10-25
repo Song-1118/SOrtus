@@ -68,6 +68,9 @@ public class MvpFlowTests : IDisposable
 
         public Task<bool> ConfirmAsync(string title, string message) => Task.FromResult(true);
 
+        /// <summary>破坏性确认（VD-117）：测试里一律放行，模拟用户点了确认。</summary>
+        public Task<bool> ConfirmDestructiveAsync(string title, string message) => Task.FromResult(true);
+
         public Task<UnsavedChangesChoice> ConfirmUnsavedAsync(string title, string message) =>
             Task.FromResult(UnsavedChangesChoice.Discard);
 

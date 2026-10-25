@@ -12,6 +12,12 @@ public interface IDialogService
     /// <summary>确认对话框（确认 / 取消），返回用户是否确认。</summary>
     Task<bool> ConfirmAsync(string title, string message);
 
+    /// <summary>
+    /// 破坏性操作的确认对话框（VD-117）：主按钮用危险色、默认焦点落在「取消」，
+    /// 只用于「删了就回不来」的动作（删除立项 / 删除文档），不用于「覆盖导入」这类可恢复操作。
+    /// </summary>
+    Task<bool> ConfirmDestructiveAsync(string title, string message);
+
     /// <summary>未保存更改三选对话框（保存 / 不保存 / 取消），返回用户选择（验收 A12）。</summary>
     Task<ViewModels.UnsavedChangesChoice> ConfirmUnsavedAsync(string title, string message);
 

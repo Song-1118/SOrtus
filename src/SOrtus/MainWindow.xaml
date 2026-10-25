@@ -76,16 +76,18 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <!-- 品牌标记（母题：圆角矩形窗框 + 左上偏置光点，与 app.ico 同构）+ 标题 -->
+            <!--
+                品牌标记 + 标题。
+                这里不再手绘几何，而是**直接引用应用图标本体**（pack URI 指向 Resources/icon/app.ico，
+                与 csproj ApplicationIcon / 安装器 SetupIconFile 同一份文件）。
+                历史教训：旧版是手绘近似图形，与 ico 不同源，于是「更新过图标但界面没变」；
+                现在只有一处图标源，改 ico 即全局同步，无需改这段 XAML。
+            -->
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center"
                         Margin="26,0,0,0" IsHitTestVisible="False">
-                <Grid Width="20" Height="18" VerticalAlignment="Center">
-                    <Border Width="17" Height="13" CornerRadius="3.5"
-                            BorderBrush="{DynamicResource TextPrimaryBrush}" BorderThickness="1.4"
-                            HorizontalAlignment="Left" VerticalAlignment="Bottom" />
-                    <Ellipse Width="5" Height="5" Fill="{DynamicResource TextPrimaryBrush}"
-                             HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0.5,0.5,0,0" />
-                </Grid>
+                <Image Width="24" Height="24" VerticalAlignment="Center"
+                       Source="pack://application:,,,/Resources/icon/app.ico"
+                       RenderOptions.BitmapScalingMode="HighQuality" />
                 <TextBlock Text="{DynamicResource App_Title}" Margin="10,0,0,0" VerticalAlignment="Center"
                            FontSize="{DynamicResource FontSizeCaption}" FontWeight="Medium"
                            Foreground="{DynamicResource TextSecondaryBrush}" />

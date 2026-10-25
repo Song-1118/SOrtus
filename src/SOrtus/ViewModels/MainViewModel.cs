@@ -109,6 +109,19 @@ internal sealed class MainViewModel : ViewModelBase
         OpenRecentCommand = new AsyncRelayCommand(OpenRecentAsync);
 
         Updates = new UpdatesViewModel(dialogService, localization);
+
+        // VD-110：语言切换只重建了 XAML 侧字符串字典，视图模型里拼好的文案不会自己刷新。
+        // 主视图模型在进程内只有一个实例，由它统一转发给「当前页」与常驻复用的列表页，
+        // 避免每个页面各自订阅（导航一次泄漏一次）。
+        _localization.CultureChanged += (_, _) => RefreshLocalizedText();
+    }
+
+    /// <summary>把语言变更转发给需要重算文案的视图模型（VD-110）。</summary>
+    private void RefreshLocalizedText()
+    {
+        OnCultureChanged();
+        _listViewModel?.OnCultureChanged();
+        CurrentView.OnCultureChanged();
     }
 
     /// <summary>

@@ -90,6 +90,9 @@ public class ViewModelTests
 
         public Task<bool> ConfirmAsync(string title, string message) => Task.FromResult(ConfirmResult);
 
+        /// <summary>破坏性确认（VD-117）走同一个桩结果，便于用例既覆盖普通确认也覆盖删除确认。</summary>
+        public Task<bool> ConfirmDestructiveAsync(string title, string message) => Task.FromResult(ConfirmResult);
+
         public Task<UnsavedChangesChoice> ConfirmUnsavedAsync(string title, string message)
         {
             UnsavedPrompts++;
@@ -376,6 +379,14 @@ public class ViewModelTests
         public void SetTheme(string themeName) => CurrentTheme = themeName;
 
         public void SetBlurStrength(double radius) => GlobalBlurRadius = radius;
+
+        /// <summary>拖动滑块时的临时预览（VD-109）：桩只记录最近一次值，不落盘。</summary>
+        public void PreviewBlurStrength(double radius) => GlobalBlurRadius = radius;
+
+        /// <summary>松手提交（VD-109）：桩无需额外动作。</summary>
+        public void CommitBlurStrength()
+        {
+        }
     }
 
     [Fact]
@@ -552,6 +563,110 @@ public class ViewModelTests
         public Task<GitRepositoryInfo> InspectAsync(string folderPath, int commitCount = 30) =>
             Task.FromResult(new GitRepositoryInfo(false, folderPath, string.Empty, false, false, 0, 0,
                 new List<GitBranchInfo>(), new List<GitCommitInfo>(), new List<GitRemoteInfo>()));
+
+        public Task<GitOperationResult> AddOrSetRemoteAsync(string folderPath, string name, string url) =>
+            Task.FromResult(GitOperationResult.Ok());
+
+        public Task<GitOperationResult> PushAsync(string folderPath, string branch, string remote, bool setUpstream) =>
+            Task.FromResult(GitOperationResult.Ok());
+    }
+
+    #endregion
+
+    #region 第三批（VD-101～120）
+
+    [Fact]
+    public async Task Git_Timeline_ShowsTenAtFirst_ThenGrowsAndStops()
+    {
+        var vm = new GitViewModel(
+            new FixedCommitsGitService(25),
+            new StubLocalization(),
+            new StubDialogService(),
+            new Project { Id = 1, Name = "P", FolderPath = @"D:\repo" });
+
+        await vm.ActivateAsync();
+
+        // VD-107：一进版块只放 10 条，避免 50 条提交一次铺满整页
+        Assert.Equal(10, vm.Timeline.Count);
+        Assert.True(vm.HasMoreCommits);
+
+        vm.ShowMoreCommitsCommand.Execute(null);
+        Assert.Equal(20, vm.Timeline.Count);
+
+        vm.ShowMoreCommitsCommand.Execute(null);
+        Assert.Equal(25, vm.Timeline.Count);
+        Assert.False(vm.HasMoreCommits);
+
+        // 没有更多了就必须禁用命令，否则按钮可点但毫无反应
+        Assert.False(vm.ShowMoreCommitsCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task Git_Timeline_UnderTen_ShowsNoMoreButton()
+    {
+        var vm = new GitViewModel(
+            new FixedCommitsGitService(4),
+            new StubLocalization(),
+            new StubDialogService(),
+            new Project { Id = 1, Name = "P", FolderPath = @"D:\repo" });
+
+        await vm.ActivateAsync();
+
+        Assert.Equal(4, vm.Timeline.Count);
+        Assert.False(vm.HasMoreCommits);
+    }
+
+    [Fact]
+    public void ConfirmDialog_Destructive_IsFlaggedForDangerStyling()
+    {
+        // VD-117：破坏性确认必须带上标记，界面据此用实心危险按钮 + 标题警示图标，
+        // 且默认焦点不在确认键上（ISDestructive 为 true 时不设 IsDefault）。
+        var destructive = new ConfirmDialogViewModel("删除立项", "不可撤销", isConfirm: true, new StubLocalization(), isDestructive: true);
+        var normal = new ConfirmDialogViewModel("重命名", "确认吗？", isConfirm: true, new StubLocalization());
+
+        Assert.True(destructive.IsDestructive);
+        Assert.True(destructive.IsConfirm);
+        Assert.False(normal.IsDestructive);
+    }
+
+    [Fact]
+    public void FocusRingSettings_TogglesWithoutApplicationInstance()
+    {
+        // 单测进程没有 Application.Current：开关仍要能记录状态且不抛
+        FocusRingSettings.Apply(false);
+        Assert.False(FocusRingSettings.IsEnabled);
+
+        FocusRingSettings.Apply(true);
+        Assert.True(FocusRingSettings.IsEnabled);
+    }
+
+    /// <summary>固定条数的 Git 桩（时间线分页用）。</summary>
+    private sealed class FixedCommitsGitService : IGitService
+    {
+        private readonly int _count;
+
+        public FixedCommitsGitService(int count) => _count = count;
+
+        public Task<GitRepositoryInfo> InspectAsync(string folderPath, int commitCount = 30)
+        {
+            var commits = Enumerable.Range(0, _count)
+                .Select(i => new GitCommitInfo(
+                    $"sha{i:D4}",
+                    $"sha{i:D4}",
+                    "Song",
+                    DateTimeOffset.Now.AddMinutes(-i),
+                    $"feat: 第 {i} 条提交",
+                    Array.Empty<string>()))
+                .ToList();
+
+            var branches = new List<GitBranchInfo>
+            {
+                new("master", true, false, commits[0].Sha, commits[0].Subject, commits[0].When, 0, 0),
+            };
+
+            return Task.FromResult(new GitRepositoryInfo(
+                true, folderPath, "master", true, true, 0, 0, branches, commits, new List<GitRemoteInfo>()));
+        }
 
         public Task<GitOperationResult> AddOrSetRemoteAsync(string folderPath, string name, string url) =>
             Task.FromResult(GitOperationResult.Ok());

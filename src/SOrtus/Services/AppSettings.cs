@@ -26,6 +26,13 @@ internal sealed class AppSettings
     /// </summary>
     public bool AutoCheckForUpdates { get; set; } = true;
 
+    /// <summary>
+    /// 是否显示键盘焦点框（默认开启）。
+    /// 键盘操作时它是唯一的「焦点在哪」信号，因此默认不能关；
+    /// 但鼠标为主的用户会觉得那圈灰环抢注意力（尤其叠在磨砂卡片上），所以给出开关。
+    /// </summary>
+    public bool ShowFocusRing { get; set; } = true;
+
     private static readonly string SettingsPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "SOrtus",

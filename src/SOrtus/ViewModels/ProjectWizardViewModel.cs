@@ -234,6 +234,23 @@ internal sealed class ProjectWizardViewModel : ViewModelBase, IFieldFocusSource
         }
     }
 
+    /// <summary>技术细节（VD-119）：与主文案分开，不进主句。</summary>
+    public string? ErrorDetail
+    {
+        get => _errorDetail;
+        private set
+        {
+            if (SetProperty(ref _errorDetail, value))
+            {
+                OnPropertyChanged(nameof(HasErrorDetail));
+            }
+        }
+    }
+
+    public bool HasErrorDetail => !string.IsNullOrEmpty(_errorDetail);
+
+    private string? _errorDetail;
+
     public string ErrorMessage
     {
         get => _errorMessage;
@@ -549,6 +566,7 @@ internal sealed class ProjectWizardViewModel : ViewModelBase, IFieldFocusSource
         }
 
         ErrorMessage = string.Empty;
+        ErrorDetail = null;
 
         var project = new Project
         {
@@ -570,7 +588,10 @@ internal sealed class ProjectWizardViewModel : ViewModelBase, IFieldFocusSource
         catch (Exception ex)
         {
             // 写库失败必须让用户看到，不能静默吞掉（SO-010）
-            ErrorMessage = string.Format(_localization.GetString("Common_SaveFailed"), ex.Message);
+            // VD-119：主文案只说「保存失败，请重试」，技术细节写日志并另起一行展示
+            Services.AppLog.Write("Wizard.Create", ex);
+            ErrorMessage = _localization.GetString("Common_SaveFailed");
+            ErrorDetail = ex.Message;
             return;
         }
 

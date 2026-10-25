@@ -123,6 +123,12 @@
   <data name="Settings_CheckNow" xml:space="preserve"><value>Check now</value></data>
   <data name="Settings_AutoCheckOn" xml:space="preserve"><value>On</value></data>
   <data name="Settings_AutoCheckOff" xml:space="preserve"><value>Off</value></data>
+  <data name="Settings_CopyPath" xml:space="preserve"><value>Copy path</value></data>
+  <data name="Settings_CheckNowLabel" xml:space="preserve"><value>Manual check</value></data>
+  <data name="Settings_PathCopied" xml:space="preserve"><value>Path copied to clipboard</value></data>
+  <!-- Appearance · keyboard focus ring (on by default) -->
+  <data name="Settings_FocusRing" xml:space="preserve"><value>Show focus ring</value></data>
+  <data name="Settings_FocusRingHint" xml:space="preserve"><value>Draws an emphasis ring around the focused control during keyboard navigation. When off, the field border and caret remain as the focus cue.</value></data>
   <data name="Update_Checking" xml:space="preserve"><value>Checking…</value></data>
   <data name="Update_UpToDate" xml:space="preserve"><value>You are on the latest version ({0})</value></data>
   <data name="Update_CheckFailed" xml:space="preserve"><value>Check failed: {0}</value></data>
@@ -147,6 +153,10 @@
   <data name="Common_OK" xml:space="preserve"><value>OK</value></data>
   <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Common_Delete" xml:space="preserve"><value>Delete</value></data>
+  <!-- Failure banners (VD-116): plain-language headline, raw reason goes into ErrorDetail -->
+  <data name="Common_LoadFailed" xml:space="preserve"><value>Could not load the document</value></data>
+  <data name="Common_ImportFailed" xml:space="preserve"><value>Import failed — the file may be in use or in an unsupported format</value></data>
+  <data name="Common_DeleteFailed" xml:space="preserve"><value>Delete failed, please try again</value></data>
   <data name="Common_Yes" xml:space="preserve"><value>Yes</value></data>
   <data name="Common_No" xml:space="preserve"><value>No</value></data>
   <data name="Common_Close" xml:space="preserve"><value>Close</value></data>
@@ -216,6 +226,22 @@
   </data>
   <data name="Detail_TechRemove" xml:space="preserve">
     <value>Remove</value>
+  </data>
+  <!-- Danger zone (VD-101): destructive delete moved out of the footer -->
+  <data name="Detail_DangerZoneTitle" xml:space="preserve">
+    <value>Danger zone</value>
+  </data>
+  <data name="Detail_DangerZoneHint" xml:space="preserve">
+    <value>Deleting removes this project and all of its documents from the local database. This cannot be undone.</value>
+  </data>
+  <data name="Detail_CardDevPlan" xml:space="preserve">
+    <value>Release plan</value>
+  </data>
+  <data name="Detail_UndoRemove" xml:space="preserve">
+    <value>Undo</value>
+  </data>
+  <data name="Detail_TechRemoved" xml:space="preserve">
+    <value>Removed {0}</value>
   </data>
   <data name="Doc_PrdTitle" xml:space="preserve">
     <value>Product requirements</value>
@@ -297,6 +323,15 @@
   </data>
   <data name="Git_Timeline" xml:space="preserve">
     <value>Commit timeline</value>
+  </data>
+  <data name="Git_TimelineCount" xml:space="preserve">
+    <value>{0} commits in total · latest {1}</value>
+  </data>
+  <data name="Git_TimelineCountWindow" xml:space="preserve">
+    <value>Showing latest {0} commits · latest {1}</value>
+  </data>
+  <data name="Git_TimelineMore" xml:space="preserve">
+    <value>Show {0} earlier commits</value>
   </data>
   <data name="Git_Remote" xml:space="preserve">
     <value>Remote</value>

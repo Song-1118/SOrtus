@@ -67,6 +67,15 @@ public sealed class SOrButton : System.Windows.Controls.Button
             nameof(IsActive), typeof(bool), typeof(SOrButton),
             new System.Windows.PropertyMetadata(false));
 
+    /// <summary>
+    /// 破坏性最终动作（VD-117）：二次确认弹窗里的「删除 / 清空」用实心危险底 + 反色文字，
+    /// 与页面内的软危险按钮（Variant=Danger，浅底深字）拉开层级，避免整屏出现两个同重量红块。
+    /// </summary>
+    public static readonly System.Windows.DependencyProperty IsDestructiveProperty =
+        System.Windows.DependencyProperty.Register(
+            nameof(IsDestructive), typeof(bool), typeof(SOrButton),
+            new System.Windows.PropertyMetadata(false));
+
     static SOrButton()
     {
         System.Windows.Controls.Primitives.ButtonBase.DefaultStyleKeyProperty.OverrideMetadata(
@@ -102,5 +111,11 @@ public sealed class SOrButton : System.Windows.Controls.Button
     {
         get => (bool)GetValue(IsActiveProperty);
         set => SetValue(IsActiveProperty, value);
+    }
+
+    public bool IsDestructive
+    {
+        get => (bool)GetValue(IsDestructiveProperty);
+        set => SetValue(IsDestructiveProperty, value);
     }
 }

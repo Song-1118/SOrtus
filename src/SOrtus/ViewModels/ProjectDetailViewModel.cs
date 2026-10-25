@@ -57,7 +57,12 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
     private string? _documentError;
     private string? _documentStatus;
     private string? _statusMessage;
+    private string? _errorMessage;
+    private string? _errorDetail;
     private readonly DispatcherTimer _statusTimer;
+    private readonly DispatcherTimer _savedFlashTimer;
+    private bool _isJustSaved;
+    private string? _removedTechStack;
     private ProjectDocument? _prdDocument;
     private ProjectDocument? _planDocument;
 
@@ -107,10 +112,17 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
         _deleteDocumentCommand = new AsyncRelayCommand(DeleteDocumentAsync, _ => !IsBusy);
         _addTechStackCommand = new AsyncRelayCommand(AddTechStackAsync);
         _removeTechStackCommand = new RelayCommand(RemoveTechStack);
+        UndoRemoveTechStackCommand = new RelayCommand(_ => UndoRemoveTechStack());
 
         // 状态提示自动消失定时器（VD-009：保存 / 删除成功反馈展示约 2 秒）
         _statusTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
         _statusTimer.Tick += OnStatusTimerTick;
+
+        // VD-102：保存反馈内联到保存按钮上，2 秒后回落。
+        // 旧版是页脚闪一句「已保存」，而用户最可能正看着表单中部——
+        // 页脚状态行与标题旁的未保存徽标都在视野外，只能靠「按钮没变灰」猜结果。
+        _savedFlashTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        _savedFlashTimer.Tick += OnSavedFlashTick;
 
         if (CanUseDocuments())
         {
@@ -315,6 +327,19 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
 
     public bool HasStatusMessage => !string.IsNullOrEmpty(_statusMessage);
 
+    /// <summary>
+    /// 保存按钮文案（VD-102）：保存成功后 2 秒内显示「已保存」，之后回落为「保存」。
+    /// 反馈贴在用户会按的那颗按钮上，视线不必横跨整页去数页脚状态行。
+    /// </summary>
+    public string SaveButtonText => _isJustSaved
+        ? _localization.GetString("Common_Saved")
+        : _localization.GetString("Detail_Save");
+
+    /// <summary>技术栈删除后的撤销入口（VD-104）：给 3 秒窗口，不再「误删一个技术栈就再也找不回」。</summary>
+    public bool CanUndoRemoveTechStack => _removedTechStack is not null;
+
+    public ICommand UndoRemoveTechStackCommand { get; private set; } = null!;
+
     /// <summary>展示状态提示并重置自动消失定时器（VD-009）。</summary>
     private void ShowStatus(string message)
     {
@@ -327,6 +352,13 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
     {
         _statusTimer.Stop();
         StatusMessage = null;
+    }
+
+    private void OnSavedFlashTick(object? sender, EventArgs e)
+    {
+        _savedFlashTimer.Stop();
+        _isJustSaved = false;
+        OnPropertyChanged(nameof(SaveButtonText));
     }
 
     /// <summary>
@@ -540,7 +572,10 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            DocumentError = ex.Message;
+            // VD-119：技术细节进日志，界面只给用户能执行的下一步
+            AppLog.Write("ProjectDetail.LoadDocuments", ex);
+            DocumentError = _localization.GetString("Common_LoadFailed");
+            ErrorDetail = ex.Message;
         }
     }
 
@@ -612,11 +647,14 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
         }
         catch (DocumentImportException ex)
         {
+            // 导入器自带用户可读文案（缺什么格式、哪一步不行），直接用
             DocumentError = ex.UserMessage;
         }
         catch (Exception ex)
         {
-            DocumentError = ex.Message;
+            AppLog.Write("ProjectDetail.Import", ex);
+            DocumentError = _localization.GetString("Common_ImportFailed");
+            ErrorDetail = ex.Message;
         }
     }
 
@@ -643,7 +681,7 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
             return;
         }
 
-        var confirmed = await _dialogService.ConfirmAsync(
+        var confirmed = await _dialogService.ConfirmDestructiveAsync(
             _localization.GetString("Doc_DeleteTitle"),
             string.Format(_localization.GetString("Doc_DeleteMessage"), document.Title));
 
@@ -660,7 +698,9 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            DocumentError = ex.Message;
+            AppLog.Write("ProjectDetail.DeleteDocument", ex);
+            DocumentError = _localization.GetString("Common_DeleteFailed");
+            ErrorDetail = ex.Message;
         }
     }
 
@@ -691,9 +731,49 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
             return;
         }
 
+        _removedTechStack = value;
         _project.SetTechStack(_project.TechStackItems
             .Where(item => !string.Equals(item, value, StringComparison.OrdinalIgnoreCase)));
         IsDirty = true;
+        OnPropertyChanged(nameof(CanUndoRemoveTechStack));
+
+        // 3 秒内允许撤销；超时后按钮消失（不会留下一个永远点不到的入口）
+        _statusTimer.Stop();
+        StatusMessage = string.Format(_localization.GetString("Detail_TechRemoved"), value);
+        _statusTimer.Start();
+        _undoTimer ??= new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        _undoTimer.Stop();
+        _undoTimer.Tick -= OnUndoTimerTick;
+        _undoTimer.Tick += OnUndoTimerTick;
+        _undoTimer.Start();
+    }
+
+    private DispatcherTimer? _undoTimer;
+
+    private void OnUndoTimerTick(object? sender, EventArgs e)
+    {
+        _undoTimer?.Stop();
+        _removedTechStack = null;
+        OnPropertyChanged(nameof(CanUndoRemoveTechStack));
+    }
+
+    private void UndoRemoveTechStack()
+    {
+        if (_removedTechStack is not { } value)
+        {
+            return;
+        }
+
+        if (!_project.TechStackItems.Any(item => string.Equals(item, value, StringComparison.OrdinalIgnoreCase)))
+        {
+            _project.SetTechStack(_project.TechStackItems.Append(value));
+        }
+
+        _removedTechStack = null;
+        _undoTimer?.Stop();
+        IsDirty = true;
+        StatusMessage = null;
+        OnPropertyChanged(nameof(CanUndoRemoveTechStack));
     }
 
     private void RebuildTechStackChips()
@@ -744,17 +824,67 @@ internal sealed class ProjectDetailViewModel : ViewModelBase
             _project.SetTechStack(_project.TechStack.Split(
                 ';',
                 StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
-            await _service.SaveAsync(_project);
+            try
+            {
+                await _service.SaveAsync(_project);
+            }
+            catch (Exception ex)
+            {
+                // VD-119：主文案只说「保存失败，请重试」，技术细节写日志并另起一行展示。
+                // 旧版把 SQLite 异常原文拼进主句（「UNIQUE constraint failed: projects.name」），
+                // 既读不懂也拿不到可执行的下一步，还把卡片撑变形。
+                AppLog.Write("ProjectDetail.Save", ex);
+                ErrorMessage = _localization.GetString("Common_SaveFailed");
+                ErrorDetail = ex.Message;
+                return;
+            }
+
+            ErrorMessage = null;
+            ErrorDetail = null;
             IsDirty = false;
             OnPropertyChanged(nameof(UpdatedText));
-            // VD-009：保存成功就近反馈（页脚状态行，约 2 秒后自动消失）
-            ShowStatus(_localization.GetString("Common_Saved"));
+            // VD-102：反馈内联在保存按钮上（2 秒回落），页脚状态行只留给删除这类一次性结果
+            _isJustSaved = true;
+            OnPropertyChanged(nameof(SaveButtonText));
+            _savedFlashTimer.Stop();
+            _savedFlashTimer.Start();
         });
     }
 
+    /// <summary>主错误文案（用户看得懂、可执行的那一句）。</summary>
+    public string? ErrorMessage
+    {
+        get => _errorMessage;
+        private set
+        {
+            if (SetProperty(ref _errorMessage, value))
+            {
+                OnPropertyChanged(nameof(HasError));
+            }
+        }
+    }
+
+    public bool HasError => !string.IsNullOrEmpty(_errorMessage);
+
+    /// <summary>技术细节（VD-119）：与主文案分开，写日志并在界面次要位置展示，不进主句。</summary>
+    public string? ErrorDetail
+    {
+        get => _errorDetail;
+        private set
+        {
+            if (SetProperty(ref _errorDetail, value))
+            {
+                OnPropertyChanged(nameof(HasErrorDetail));
+            }
+        }
+    }
+
+    public bool HasErrorDetail => !string.IsNullOrEmpty(_errorDetail);
+
     private async Task DeleteAsync()
     {
-        var confirmed = await _dialogService.ConfirmAsync(
+        // VD-117：删除不可撤销，必须用破坏性确认（危险色主按钮 + 默认焦点在「取消」）
+        var confirmed = await _dialogService.ConfirmDestructiveAsync(
             _localization.GetString("Dialog_DeleteTitle"),
             string.Format(_localization.GetString("Dialog_DeleteMessage"), _project.Name));
 

@@ -47,6 +47,45 @@ internal sealed class DocumentDialogViewModel : ViewModelBase, IClosableOverlayD
 
         var markdown = MarkdownParser.Parse(_content);
         Document = _renderer.Render(markdown, OnTodoToggled);
+        DropDuplicateLeadingTitle();
+    }
+
+    /// <summary>
+    /// VD-113：弹窗标题栏已经写了文档标题，正文第一块若又是同一个一级标题，
+    /// 同一句话会在 60px 内出现两遍、第二遍还更大更粗，视觉重心落在重复信息上。
+    /// 这里只在渲染结果里摘掉那一块（不动原文、不改待办索引）——
+    /// 索引是按 Markdown 块号存的，摘掉渲染块不会影响其余块的回写映射。
+    /// </summary>
+    private void DropDuplicateLeadingTitle()
+    {
+        if (Document.Blocks.FirstBlock is not Paragraph paragraph)
+        {
+            return;
+        }
+
+        var text = new System.Text.StringBuilder();
+        foreach (var inline in paragraph.Inlines)
+        {
+            if (inline is Run run)
+            {
+                text.Append(run.Text);
+            }
+            else if (inline is Span span)
+            {
+                foreach (var child in span.Inlines)
+                {
+                    if (child is Run inner)
+                    {
+                        text.Append(inner.Text);
+                    }
+                }
+            }
+        }
+
+        if (string.Equals(text.ToString().Trim(), Title.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            Document.Blocks.Remove(paragraph);
+        }
     }
 
     public event Action? Closed;

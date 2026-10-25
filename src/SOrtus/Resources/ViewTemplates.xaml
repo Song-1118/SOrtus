@@ -635,9 +635,14 @@
                                          Visibility="{Binding IsStepInfo, Converter={StaticResource BoolToVisibilityConverter}}" />
                     </StackPanel>
 
-                    <TextBlock Grid.Column="1" Text="{Binding ErrorMessage}" Margin="14,0"
-                               Foreground="{DynamicResource DangerBrush}" FontWeight="SemiBold"
-                               VerticalAlignment="Center" TextWrapping="Wrap" />
+                    <StackPanel Grid.Column="1" Margin="14,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding ErrorMessage}"
+                                   Foreground="{DynamicResource DangerBrush}" FontWeight="SemiBold"
+                                   TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding ErrorDetail}" FontSize="{DynamicResource FontSizeCaption}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"
+                                   Visibility="{Binding HasErrorDetail, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    </StackPanel>
 
                     <local:SOrButton Grid.Column="2" Variant="Primary" Content="{DynamicResource Wizard_Next}"
                                     Command="{Binding NextStepCommand}" Padding="28,10" MinWidth="120"
@@ -661,20 +666,21 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <!-- 头部：返回 + 标题 + 未保存徽标 -->
+                <!-- 头部：返回 + 标题。
+                     VD-105：名称超长会省略，必须给 ToolTip，否则页面最重要的识别信息
+                     （这是哪个立项）一旦被截断就再也看不全。
+                     VD-102：未保存徽标已移到页脚保存按钮左侧——它与保存动作在同一条视线里，
+                     不再与标题绑在一起、又离页脚状态行 700px。 -->
                 <Grid Grid.Row="0" Margin="0,0,0,12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <local:SOrButton Grid.Column="0" Variant="Ghost" Icon="{DynamicResource IconBack}"
                                      Command="{Binding BackCommand}" Padding="12,9" />
                     <TextBlock Grid.Column="1" Text="{Binding Project.Name}" FontSize="{DynamicResource FontSizeTitle}" FontWeight="SemiBold"
-                               VerticalAlignment="Center" Margin="10,0,0,0" TextTrimming="CharacterEllipsis" />
-                    <local:SOrTag Grid.Column="2" Tone="Warning" Content="{DynamicResource Detail_UnsavedBadge}"
-                                  Visibility="{Binding IsDirty, Converter={StaticResource BoolToVisibilityConverter}}"
-                                  VerticalAlignment="Center" />
+                               VerticalAlignment="Center" Margin="10,0,0,0" TextTrimming="CharacterEllipsis"
+                               ToolTip="{Binding Project.Name}" />
                 </Grid>
 
                 <!-- 版块切换（仅编程类型）
@@ -835,8 +841,12 @@
                                                     <StackPanel Orientation="Horizontal">
                                                         <TextBlock Text="{Binding}" FontSize="{DynamicResource FontSizeCaption}" VerticalAlignment="Center"
                                                                    Foreground="{DynamicResource TagAccentAFgBrush}" />
-                                                        <local:SOrButton Variant="Ghost" Content="×" FontSize="{DynamicResource FontSizeLabel}" Padding="6,0"
-                                                                         Margin="6,-2,0,0" ToolTip="{DynamicResource Detail_TechRemove}"
+                                                        <!-- VD-104：删除命中区补到 24×24，用图标而非「×」字符。
+                                                             旧版是 13px 小字 + 负 margin 压住 chip 边缘，
+                                                             手指/触控板很难点准，误删又没有撤销。 -->
+                                                        <local:SOrButton Variant="Ghost" Icon="{DynamicResource IconClose}" IconSize="10"
+                                                                         Width="24" Height="24" Padding="0"
+                                                                         Margin="4,-2,0,0" ToolTip="{DynamicResource Detail_TechRemove}"
                                                                          Command="{Binding DataContext.RemoveTechStackCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                          CommandParameter="{Binding}" />
                                                     </StackPanel>
@@ -863,11 +873,12 @@
 
                         <!-- ===== 开发管理 ===== -->
                         <StackPanel Style="{StaticResource SectionFadeInStyle}" Visibility="{Binding ShowDevSection, Converter={StaticResource BoolToVisibilityConverter}}">
-                            <!-- 分组卡：开发规划 -->
+                            <!-- 分组卡：规划与目标（VD-103：卡片标题不再与首字段标签同为「开发规划」，
+                                 旧版连续两行同一个词，一行灰一行黑，读者以为是「分组 + 字段」，其实两句话一样） -->
                             <Border Style="{StaticResource GroupCardStyle}">
                                 <StackPanel>
                                     <Border Style="{StaticResource CardTitleBorderStyle}">
-                                        <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Detail_DevPlan}" />
+                                        <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Detail_CardDevPlan}" />
                                     </Border>
 
                                     <Grid Margin="0,0,0,12">
@@ -1077,6 +1088,24 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- ===== 危险区（VD-101）：删除移出页脚 =====
+                             旧版把红色实心「删除」和最高频的「保存」放进同一条 40px 页脚、
+                             中间只隔时间戳——鼠标从保存滑到删除只差 600px，而删除不可撤销。
+                             现在删除沉到页面最底部：分隔线 + 一句「影响与不可撤销」的说明 + 描边红按钮，
+                             页脚只保留保存与状态。 -->
+                        <Border Style="{StaticResource GroupCardStyle}" Margin="0,14,0,0">
+                            <StackPanel>
+                                <Border Style="{StaticResource CardTitleBorderStyle}">
+                                    <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Detail_DangerZoneTitle}" />
+                                </Border>
+                                <TextBlock Text="{DynamicResource Detail_DangerZoneHint}" FontSize="{DynamicResource FontSizeCaption}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"
+                                           Margin="0,0,0,12" MaxWidth="560" />
+                                <local:SOrButton Content="{DynamicResource Detail_Delete}" Variant="Danger"
+                                                 Command="{Binding DeleteCommand}" HorizontalAlignment="Left" Padding="18,9" />
+                            </StackPanel>
+                        </Border>
+
                         <!-- ===== 剪辑 / 待办：按类型派生版块（VD-059：废弃「遗留单栏」全字段平铺；
                              标签按类型派生——剪辑=剪辑类型/素材文件夹（SO-009）；
                              技术栈不再以分号串文本框编辑，剪辑/待办不展示该字段（SO-014）） ===== -->
@@ -1218,29 +1247,47 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- 页脚：保存（左）/ 状态提示（中）/ 时间戳 + 删除（右）——各版块共用，不随滚动丢失。
-                     VD-020：删除按钮与保存按钮拉开距离；VD-009：保存 / 删除成功后就近反馈。 -->
+                <!-- 页脚（VD-101 / VD-102）：保存（左）+ 未保存徽标（紧邻保存）/ 状态 + 撤销（中）/ 时间戳（右）。
+                     删除已移出页脚进页面底部危险区，这里只保留「日常高频」的那一组动作与状态。 -->
                 <Grid Grid.Row="3" Margin="0,12,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <local:SOrButton Grid.Column="0" Content="{DynamicResource Detail_Save}" Variant="Primary"
+                    <local:SOrButton Grid.Column="0" Content="{Binding SaveButtonText}" Variant="Primary"
                                      Command="{Binding SaveCommand}" Padding="22,10" VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" Margin="14,0"
-                               Foreground="{DynamicResource SuccessBrush}" FontSize="{DynamicResource FontSizeCaption}"
-                               VerticalAlignment="Center" TextWrapping="Wrap"
-                               Visibility="{Binding HasStatusMessage, Converter={StaticResource BoolToVisibilityConverter}}" />
-                    <TextBlock Grid.Column="2" FontSize="{DynamicResource FontSizeCaption}" VerticalAlignment="Center"
-                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,0">
+                    <local:SOrTag Grid.Column="1" Tone="Warning" Content="{DynamicResource Detail_UnsavedBadge}"
+                                  Margin="10,0,0,0" VerticalAlignment="Center"
+                                  Visibility="{Binding IsDirty, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <StackPanel Grid.Column="2" Margin="14,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding StatusMessage}"
+                                       Foreground="{DynamicResource SuccessBrush}" FontSize="{DynamicResource FontSizeCaption}"
+                                       VerticalAlignment="Center" TextWrapping="Wrap"
+                                       Visibility="{Binding HasStatusMessage, Converter={StaticResource BoolToVisibilityConverter}}" />
+                            <local:SOrButton Content="{DynamicResource Detail_UndoRemove}" Variant="Ghost"
+                                             FontSize="{DynamicResource FontSizeCaption}" Padding="8,4" Margin="8,0,0,0"
+                                             Command="{Binding UndoRemoveTechStackCommand}"
+                                             Visibility="{Binding CanUndoRemoveTechStack, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        </StackPanel>
+                        <!-- VD-119：主文案一句话 + 技术细节降级为小字，不把异常原文塞进主句 -->
+                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0"
+                                    Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="{Binding ErrorMessage}" FontSize="{DynamicResource FontSizeCaption}"
+                                       Foreground="{DynamicResource DangerBrush}" TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding ErrorDetail}" FontSize="{DynamicResource FontSizeCaption}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" MaxWidth="360"
+                                       Visibility="{Binding HasErrorDetail, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        </StackPanel>
+                    </StackPanel>
+                    <TextBlock Grid.Column="3" FontSize="{DynamicResource FontSizeCaption}" VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,4,0">
                         <Run Text="{Binding CreatedText, Mode=OneWay}" />
                         <Run Text=" · " />
                         <Run Text="{Binding UpdatedText, Mode=OneWay}" />
                     </TextBlock>
-                    <local:SOrButton Grid.Column="3" Content="{DynamicResource Detail_Delete}" Variant="Danger"
-                                     Command="{Binding DeleteCommand}" Padding="22,10" VerticalAlignment="Center" />
                 </Grid>
             </Grid>
         </local:SOrCard>
@@ -1387,6 +1434,16 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
+            <!-- VD-107：时间线末尾补「查看更早 + 共 N 条」。
+                 旧版时间线渲染完就留 400px 空白，用户分不清「只有这些提交」还是「加载失败/被截断」。 -->
+            <StackPanel Orientation="Horizontal" Margin="0,4,0,0"
+                        Visibility="{Binding HasMoreCommits, Converter={StaticResource BoolToVisibilityConverter}}">
+                <local:SOrButton Content="{Binding MoreCommitsText}" Variant="Ghost"
+                                 Command="{Binding ShowMoreCommitsCommand}" Padding="12,8" />
+            </StackPanel>
+            <TextBlock Text="{Binding TimelineSummaryText}" FontSize="{DynamicResource FontSizeCaption}"
+                       Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,8,0,0"
+                       Visibility="{Binding HasCommits, Converter={StaticResource BoolToVisibilityConverter}}" />
             <TextBlock Text="{DynamicResource Git_EmptyRepo}" FontSize="{DynamicResource FontSizeCaption}" Margin="0,8,0,0"
                        Foreground="{DynamicResource TextSecondaryBrush}"
                        Visibility="{Binding IsEmptyRepository, Converter={StaticResource BoolToVisibilityConverter}}" />
@@ -1418,8 +1475,9 @@
                         <TextBlock Text="{Binding SourceFileText}" FontSize="{DynamicResource FontSizeCaption}" Margin="0,3,0,0"
                                    Foreground="{DynamicResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
+                    <!-- VD-114：右上角 × 从 16px 提到 20px（16px 在磨砂底上几乎与背景同色） -->
                     <local:SOrButton Grid.Column="2" Variant="Ghost" Icon="{DynamicResource IconClose}"
-                                     IconSize="16" Command="{Binding CloseCommand}"
+                                     IconSize="20" Command="{Binding CloseCommand}"
                                      ToolTip="{DynamicResource Common_Close}" Padding="10,8"
                                      VerticalAlignment="Top" />
                 </Grid>
@@ -1436,19 +1494,23 @@
                                               ScrollViewer.IsDeferredScrollingEnabled="False" />
                 </Border>
 
-                <!-- 页脚：自动保存状态 + 错误提示 -->
+                <!-- 页脚：自动保存状态 + 错误提示 + 关闭（VD-114）。
+                     读完长文档视线停在底部，此处必须有出口——旧版唯一出口是右上角 16px 的 ×。 -->
                 <Grid Grid.Row="2" Margin="0,12,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="{Binding SaveStateText}" FontSize="{DynamicResource FontSizeCaption}"
                                VerticalAlignment="Center"
                                Foreground="{DynamicResource TextSecondaryBrush}" />
                     <TextBlock Grid.Column="1" Text="{Binding ErrorMessage}" FontSize="{DynamicResource FontSizeCaption}" TextWrapping="Wrap"
-                               HorizontalAlignment="Right" VerticalAlignment="Center" MaxWidth="480"
+                               HorizontalAlignment="Right" VerticalAlignment="Center" MaxWidth="420"
                                Foreground="{DynamicResource TagDangerFgBrush}"
                                Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <local:SOrButton Grid.Column="2" Content="{DynamicResource Common_Close}" Variant="Secondary"
+                                     Command="{Binding CloseCommand}" Padding="18,9" Margin="12,0,0,0" />
                 </Grid>
             </Grid>
         </Border>
@@ -1520,7 +1582,7 @@
                                                   DisplayMemberPath="Display" />
                             </Grid>
 
-                            <Grid>
+                            <Grid Margin="0,0,0,12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="160" />
                                     <ColumnDefinition Width="*" />
@@ -1540,6 +1602,30 @@
                                     </Grid>
                                     <TextBlock Text="{DynamicResource Settings_BlurLiveHint}" Foreground="{DynamicResource TextSecondaryBrush}"
                                                FontSize="{DynamicResource FontSizeCaption}" Margin="0,6,0,0" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- 显示焦点框（用户需求 1）：默认开。属于视觉表现，跟主题/模糊同组；
+                                 关掉只去掉额外强调环，输入框描边与光标仍在，键盘焦点依旧可辨。 -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="160" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Settings_FocusRing}" FontWeight="Medium"
+                                           FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                                <StackPanel Grid.Column="1">
+                                    <StackPanel Orientation="Horizontal">
+                                        <local:SOrToggleSwitch IsChecked="{Binding ShowFocusRing, Mode=TwoWay}"
+                                                               VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding FocusRingStateText}" Margin="12,0,0,0"
+                                                   VerticalAlignment="Center" FontWeight="Medium"
+                                                   FontSize="{DynamicResource FontSizeLabel}" />
+                                    </StackPanel>
+                                    <TextBlock Text="{DynamicResource Settings_FocusRingHint}"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               FontSize="{DynamicResource FontSizeCaption}"
+                                               Margin="0,6,0,0" TextWrapping="Wrap" MaxWidth="520" HorizontalAlignment="Left" />
                                 </StackPanel>
                             </Grid>
                         </StackPanel>
@@ -1576,19 +1662,28 @@
                             <Border Style="{StaticResource CardTitleBorderStyle}">
                                         <TextBlock Style="{StaticResource CardTitleTextStyle}" Text="{DynamicResource Settings_Data}" />
                                     </Border>
+                            <!-- VD-112：数据库路径改单行省略 + ToolTip 全路径。
+                                 旧版整行铺开，把「数据库位置」这一行撑成其它行的 3 倍高，
+                                 长路径还把卡片右半边占满；而这条信息 95% 的用户只在备份时才需要。
+                                 全路径改由「复制路径」给出（Tooltip 也能看到），两个动作并排齐平。 -->
                             <Grid Margin="0,0,0,12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="160" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="{DynamicResource Settings_DbPathLabel}" FontWeight="Medium"
-                                           FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Top" Margin="0,2,12,0" />
+                                           FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Center" Margin="0,0,12,0" />
                                 <StackPanel Grid.Column="1">
-                                    <TextBlock Text="{Binding DatabasePathText}" Foreground="{DynamicResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap" Margin="0,0,0,8" />
-                                    <local:SOrButton Content="{DynamicResource Settings_OpenFolder}" Variant="Secondary"
-                                                     Command="{Binding OpenDatabaseFolderCommand}"
-                                                     HorizontalAlignment="Left" Padding="16,8" />
+                                    <TextBlock Text="{Binding DatabasePath}" Foreground="{DynamicResource TextSecondaryBrush}"
+                                               TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"
+                                               ToolTip="{Binding DatabasePath}" Margin="0,0,0,8"
+                                               VerticalAlignment="Center" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <local:SOrButton Content="{DynamicResource Settings_OpenFolder}" Variant="Secondary"
+                                                         Command="{Binding OpenDatabaseFolderCommand}" Padding="16,8" />
+                                        <local:SOrButton Content="{DynamicResource Settings_CopyPath}" Variant="Ghost"
+                                                         Command="{Binding CopyDatabasePathCommand}" Padding="16,8" />
+                                    </StackPanel>
                                 </StackPanel>
                             </Grid>
                             <TextBlock Text="{DynamicResource Settings_AboutLocal}" TextWrapping="Wrap" Margin="0,0,0,6" />
@@ -1616,7 +1711,9 @@
                                            Foreground="{DynamicResource TextSecondaryBrush}" />
                             </Grid>
 
-                            <!-- 自动检查开关 -->
+                            <!-- 自动检查开关（VD-108）：状态用开关表达，不再让按钮文字承担「已开启/已关闭」。
+                                 按钮 = 执行动作，开关 = 保持状态；同一页上面是下拉框、下面是滑块，
+                                 唯独这里用按钮，控件语义不成体系。 -->
                             <Grid Margin="0,0,0,12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="160" />
@@ -1625,9 +1722,13 @@
                                 <TextBlock Grid.Column="0" Text="{DynamicResource Settings_AutoCheck}" FontWeight="Medium"
                                            FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Center" Margin="0,0,12,0" />
                                 <StackPanel Grid.Column="1">
-                                    <local:SOrButton Content="{Binding AutoCheckStateText}" Variant="Secondary"
-                                                     Command="{Binding ToggleAutoCheckCommand}"
-                                                     HorizontalAlignment="Left" Padding="16,8" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <local:SOrToggleSwitch IsChecked="{Binding AutoCheckForUpdates, Mode=TwoWay}"
+                                                               VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding AutoCheckStateText}" Margin="12,0,0,0"
+                                                   VerticalAlignment="Center" FontWeight="Medium"
+                                                   FontSize="{DynamicResource FontSizeLabel}" />
+                                    </StackPanel>
                                     <TextBlock Text="{DynamicResource Settings_AutoCheckHint}"
                                                Foreground="{DynamicResource TextSecondaryBrush}"
                                                FontSize="{DynamicResource FontSizeCaption}"
@@ -1635,12 +1736,18 @@
                                 </StackPanel>
                             </Grid>
 
-                            <!-- 手动检查：不受自动开关影响，永远可用 -->
+                            <!-- 显示焦点框已移到「外观」分组：它属于视觉表现，不该藏在软件更新里 -->
+
+                            <!-- 手动检查（VD-111）：补标签「手动检查」。
+                                 旧版这一行左列 160px 完全空白，按钮孤零零悬在值列，
+                                 看起来像漏了标题，又像属于上一行。 -->
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="160" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Settings_CheckNowLabel}" FontWeight="Medium"
+                                           FontSize="{DynamicResource FontSizeLabel}" VerticalAlignment="Center" Margin="0,0,12,0" />
                                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                                     <local:SOrButton Content="{DynamicResource Settings_CheckNow}" Variant="Secondary"
                                                      Command="{Binding CheckUpdatesCommand}" Padding="16,8" />
@@ -1698,18 +1805,28 @@
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="{DynamicResource FontSizeCaption}" />
 
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-                        <local:SOrButton Content="{Binding OpenPageText}" Variant="Secondary"
-                                        Command="{Binding OpenPageCommand}" Padding="14,8" />
-                        <local:SOrButton Content="{Binding SkipText}" Variant="Secondary"
+                    <!-- VD-115：四个按钮挤在一行，其中「跳过此版本」与「稍后提醒」都是「现在不装」，
+                         用户必须停下来分辨二者差别——按钮越多，主操作的确定性越低。
+                         现在只留「稍后」(Ghost) +「下载并安装」(Primary)；
+                         「不再提示此版本」降为次级文字动作，「打开发布页」移到标题下方的小链接。 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                        <local:SOrButton Content="{Binding OpenPageText}" Variant="Ghost"
+                                        Command="{Binding OpenPageCommand}" Padding="12,7"
+                                        FontSize="{DynamicResource FontSizeCaption}"
+                                        Visibility="{Binding IsOpenPageVisible, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        <local:SOrButton Content="{Binding SkipText}" Variant="Ghost"
                                         Command="{Binding SkipCommand}" IsEnabled="{Binding CanSkip}"
-                                        Margin="8,0,0,0" Padding="14,8" />
-                        <local:SOrButton Content="{Binding LaterText}" Variant="Secondary"
-                                        Command="{Binding LaterCommand}" Margin="8,0,0,0" Padding="14,8" />
+                                        Margin="8,0,0,0" Padding="12,7"
+                                        FontSize="{DynamicResource FontSizeCaption}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                        <local:SOrButton Content="{Binding LaterText}" Variant="Ghost"
+                                        Command="{Binding LaterCommand}" Margin="8,0,0,0" Padding="16,9" />
                         <local:SOrButton Content="{Binding PrimaryActionText}" Variant="Primary"
                                         Command="{Binding PrimaryActionCommand}"
                                         IsEnabled="{Binding CanStartInstall}"
-                                        Margin="10,0,0,0" Padding="16,8" />
+                                        Margin="10,0,0,0" Padding="18,9" IsDefault="True" />
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -1717,19 +1834,34 @@
     </DataTemplate>
 
     <!-- ============================ 确认 / 提示对话框 ============================ -->
+    <!-- 确认 / 提示对话框。
+         VD-117：破坏性操作（删除立项 / 删除文档）用同一模板但主按钮换危险样式、
+         标题左侧加危险图标、且不设 IsDefault——默认焦点落在「取消」上，Enter 不会误触删除。
+         VD-118：「取消」统一 Secondary（有边），不再出现一处 Secondary、一处 Ghost。 -->
     <DataTemplate DataType="{x:Type vm:ConfirmDialogViewModel}">
         <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
             <Border Style="{StaticResource BlurDialogStyle}" MinWidth="320" MaxWidth="420" Padding="0">
                 <StackPanel Margin="24">
-                    <TextBlock Text="{Binding Title}" FontSize="{DynamicResource FontSizeSection}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="!" FontSize="{DynamicResource FontSizeSection}" FontWeight="Bold"
+                                   Foreground="{DynamicResource DangerBrush}" Margin="0,0,10,0"
+                                   Visibility="{Binding IsDestructive, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="{DynamicResource FontSizeSection}"
+                                   FontWeight="SemiBold" TextWrapping="Wrap" />
+                    </Grid>
                     <TextBlock Text="{Binding Message}" Margin="0,10,0,18" TextWrapping="Wrap"
                                Foreground="{DynamicResource TextSecondaryBrush}" />
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <local:SOrButton Content="{Binding CancelText}" Variant="Secondary"
                                         Command="{Binding CancelCommand}"
                                         Visibility="{Binding IsConfirm, Converter={StaticResource BoolToVisibilityConverter}}" />
-                        <local:SOrButton Content="{Binding ConfirmText}" Variant="Primary"
-                                        Command="{Binding ConfirmCommand}" Margin="10,0,0,0" IsDefault="True" />
+                        <local:SOrButton Content="{Binding ConfirmText}" Margin="10,0,0,0"
+                                        IsDestructive="{Binding IsDestructive}"
+                                        Command="{Binding ConfirmCommand}" />
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -1744,7 +1876,8 @@
                     <TextBlock Text="{Binding Message}" Margin="0,10,0,18" TextWrapping="Wrap"
                                Foreground="{DynamicResource TextSecondaryBrush}" />
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <local:SOrButton Content="{Binding CancelText}" Variant="Ghost"
+                        <!-- VD-118：取消与普通确认统一为 Secondary（有边），不再一处 Secondary 一处 Ghost -->
+                        <local:SOrButton Content="{Binding CancelText}" Variant="Secondary"
                                         Command="{Binding CancelCommand}" />
                         <local:SOrButton Content="{Binding DiscardText}" Variant="Secondary"
                                         Command="{Binding DiscardCommand}" Margin="10,0,0,0" />

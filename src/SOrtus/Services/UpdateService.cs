@@ -194,6 +194,15 @@ internal sealed class UpdateService
                 return new UpdateCheckResult(UpdateCheckStatus.Skipped, info, null);
             }
 
+            // VD-116：「稍后提醒」真的会延后——同版本、且还在 snooze 窗口内时不再打扰
+            if (state.SnoozedUntilUtc is { } until
+                && DateTime.UtcNow < until
+                && string.Equals(state.SnoozedVersion, info.Version.ToString(), StringComparison.Ordinal))
+            {
+                Log($"发现 {info.Version}，但用户选择了稍后提醒，{until:u} 之前不再提示");
+                return new UpdateCheckResult(UpdateCheckStatus.Skipped, info, null);
+            }
+
             Log($"发现新版本 {info.Version}（当前 {CurrentVersion}）");
             return new UpdateCheckResult(UpdateCheckStatus.Available, info, null);
         }

@@ -28,6 +28,9 @@
     <Color x:Key="ColorPrimary">#F3F4F6</Color>
     <!-- 键盘焦点环专用色（VD-059）：中间灰度，与 Surface(#23262B) 和 Primary 填充(#F3F4F6) 均保持可见对比；
          不用 Primary 本身——主按钮底色即近白 Primary，同色环在按钮上不可见 -->
+    <!-- 品牌标记：窗框用主墨、光点用次级灰（深色主题为反白两档，保持同层级关系） -->
+    <Color x:Key="ColorBrandMarkFrame">#F3F4F6</Color>
+    <Color x:Key="ColorBrandMarkDot">#A9B0BA</Color>
     <Color x:Key="ColorFocusRing">#8E98A8</Color>
     <Color x:Key="ColorShadow">#000000</Color>
 

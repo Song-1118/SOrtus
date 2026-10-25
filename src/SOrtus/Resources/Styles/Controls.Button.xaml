@@ -218,6 +218,16 @@
                 <Setter Property="BorderBrush" Value="{DynamicResource TagDangerFgBrush}" />
                 <Setter Property="BorderThickness" Value="1" />
             </Trigger>
+            <!--
+                破坏性最终动作（VD-117）：只出现在二次确认弹窗里。
+                实心危险底 + 反色文字；与页面内软危险按钮不同重量，用户不会把它当成普通按钮顺手下按。
+            -->
+            <Trigger Property="IsDestructive" Value="True">
+                <Setter Property="Background" Value="{DynamicResource DangerBrush}" />
+                <Setter Property="Foreground" Value="{DynamicResource TextOnAccentBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+            </Trigger>
             <!-- 幽灵：透明底，低强调动作 -->
             <Trigger Property="Variant" Value="Ghost">
                 <Setter Property="Background" Value="Transparent" />

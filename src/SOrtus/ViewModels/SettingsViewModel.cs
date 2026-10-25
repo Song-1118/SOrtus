@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows.Input;
+using System.Windows.Threading;
 using SOrtus.Common;
 using SOrtus.Core.Services;
 using SOrtus.Repositories;
@@ -24,34 +25,61 @@ internal sealed class SettingsViewModel : ViewModelBase
     private readonly UpdatesViewModel _updates;
 
     private bool _autoCheckForUpdates;
+    private bool _showFocusRing;
     private string _updateStatusText = string.Empty;
+    private DispatcherTimer? _blurCommitTimer;
 
     public SettingsViewModel(IThemeService themeService, ILocalizationService localization, UpdatesViewModel? updates = null)
     {
         _themeService = themeService;
         _localization = localization;
         _updates = updates ?? new UpdatesViewModel(new DialogService(localization), localization);
-        _autoCheckForUpdates = AppSettings.Load().AutoCheckForUpdates;
+
+        var settings = AppSettings.Load();
+        _autoCheckForUpdates = settings.AutoCheckForUpdates;
+        _showFocusRing = settings.ShowFocusRing;
 
         OpenDatabaseFolderCommand = new RelayCommand(_ => OpenDatabaseFolder());
+        CopyDatabasePathCommand = new RelayCommand(_ => CopyDatabasePath());
         CheckUpdatesCommand = new AsyncRelayCommand(_ => CheckUpdatesAsync(), _ => !_updates.IsChecking);
         ToggleAutoCheckCommand = new RelayCommand(_ => AutoCheckForUpdates = !AutoCheckForUpdates);
 
-        ThemeOptions = new List<SettingsOption>
-        {
-            new("Light", localization.GetString("Settings_ThemeLight")),
-            new("Dark", localization.GetString("Settings_ThemeDark")),
-        };
-
-        LanguageOptions = new List<SettingsOption>
-        {
-            new("zh-CN", localization.GetString("Settings_LanguageZh")),
-            new("en-US", localization.GetString("Settings_LanguageEn")),
-        };
+        RebuildOptions();
     }
 
-    public List<SettingsOption> ThemeOptions { get; }
-    public List<SettingsOption> LanguageOptions { get; }
+    /// <summary>主题 / 语言下拉项。语言切换后需要重建（VD-110），因此用可观察集合。</summary>
+    public ObservableCollection<SettingsOption> ThemeOptions { get; } = new();
+
+    public ObservableCollection<SettingsOption> LanguageOptions { get; } = new();
+
+    private void RebuildOptions()
+    {
+        ThemeOptions.Clear();
+        ThemeOptions.Add(new SettingsOption("Light", _localization.GetString("Settings_ThemeLight")));
+        ThemeOptions.Add(new SettingsOption("Dark", _localization.GetString("Settings_ThemeDark")));
+
+        LanguageOptions.Clear();
+        LanguageOptions.Add(new SettingsOption("zh-CN", _localization.GetString("Settings_LanguageZh")));
+        LanguageOptions.Add(new SettingsOption("en-US", _localization.GetString("Settings_LanguageEn")));
+    }
+
+    /// <summary>
+    /// 语言切换后就地刷新视图模型自己拼好的文案（VD-110）。
+    /// XAML 侧 DynamicResource 会自动变，但这里 format 过的字符串不会——不刷新就会出现
+    /// 「Settings（新）」+「共 3 个立项（旧）」这种半中半英。
+    /// </summary>
+    public override void OnCultureChanged()
+    {
+        base.OnCultureChanged();
+        RebuildOptions();
+
+        // 下拉项与提示都是构造/取值时定格的，重建集合后要再通知一次
+        OnPropertyChanged(nameof(ThemeOptions));
+        OnPropertyChanged(nameof(LanguageOptions));
+
+        // 手动检查的结果句是旧语言拼的，直接清掉，让用户重新点一次，而不是留一句半中半英
+        UpdateStatusText = string.Empty;
+    }
 
     /// <summary>
     /// 未提供语言包的提示（VD-013：单一资源句，不再拼装出「P3 版本提供」的版本计划暴露）。
@@ -67,6 +95,9 @@ internal sealed class SettingsViewModel : ViewModelBase
 
     /// <summary>打开数据库所在文件夹（资源管理器中定位，便于用户备份）。</summary>
     public ICommand OpenDatabaseFolderCommand { get; }
+
+    /// <summary>复制数据库完整路径（VD-112：路径改单行省略后，需要另一条途径拿到全路径）。</summary>
+    public ICommand CopyDatabasePathCommand { get; }
 
     /// <summary>当前运行版本（软件更新区域展示）。</summary>
     public string CurrentVersionText => _updates.CurrentVersionText;
@@ -94,13 +125,45 @@ internal sealed class SettingsViewModel : ViewModelBase
         }
     }
 
-    /// <summary>开关按钮上的状态文案（本应用无 Toggle 控件，沿用按钮变体保持视觉一致）。</summary>
+    /// <summary>
+    /// VD-108：状态由开关本身表达（轨道颜色 + 圆点位置），文案只作补充说明，
+    /// 不再让按钮文字承担「当前是开还是关」——按钮表示动作，开关才表示状态。
+    /// </summary>
     public string AutoCheckStateText => _autoCheckForUpdates
         ? _localization.GetString("Settings_AutoCheckOn")
         : _localization.GetString("Settings_AutoCheckOff");
 
-    /// <summary>切换自动检查开关。</summary>
+    /// <summary>切换自动检查开关（保留给键盘快捷键与测试用，界面绑定的是 IsChecked）。</summary>
     public ICommand ToggleAutoCheckCommand { get; }
+
+    /// <summary>
+    /// 是否显示键盘焦点框（默认开）。
+    /// 关闭后只去掉那圈额外的强调环，输入框描边与文本光标保留——键盘焦点仍然可辨。
+    /// </summary>
+    public bool ShowFocusRing
+    {
+        get => _showFocusRing;
+        set
+        {
+            if (_showFocusRing == value)
+            {
+                return;
+            }
+
+            _showFocusRing = value;
+            var settings = AppSettings.Load();
+            settings.ShowFocusRing = value;
+            settings.Save();
+            FocusRingSettings.Apply(value);
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(FocusRingStateText));
+        }
+    }
+
+    /// <summary>焦点框开关的状态文案（与自动检查同一套「已开启 / 已关闭」用词）。</summary>
+    public string FocusRingStateText => _showFocusRing
+        ? _localization.GetString("Settings_AutoCheckOn")
+        : _localization.GetString("Settings_AutoCheckOff");
 
     /// <summary>手动检查更新的执行状态（按钮禁用 + 文案切换）。</summary>
     public bool IsCheckingUpdates => _updates.IsChecking;
@@ -171,6 +234,20 @@ internal sealed class SettingsViewModel : ViewModelBase
         });
     }
 
+    private void CopyDatabasePath()
+    {
+        try
+        {
+            System.Windows.Clipboard.SetText(DatabasePath);
+            UpdateStatusText = _localization.GetString("Settings_PathCopied");
+        }
+        catch (Exception ex)
+        {
+            // 剪贴板被其它进程占用时会抛 COM 异常；不弹窗，落在状态行里即可
+            UpdateStatusText = ex.Message;
+        }
+    }
+
     public string CurrentTheme
     {
         get => _themeService.CurrentTheme;
@@ -197,7 +274,13 @@ internal sealed class SettingsViewModel : ViewModelBase
         }
     }
 
-    /// <summary>模糊半径（滑块实时预览，0~30 整数）。</summary>
+    /// <summary>
+    /// 模糊半径（滑块实时预览，0~30 整数）。
+    /// <para>
+    /// VD-109：拖动中只走 <see cref="IThemeService.PreviewBlurStrength"/>（内存 + 全局资源），
+    /// 停手 400ms 才落盘一次。旧实现每 1px 写一次 settings.json，一次拖动就是几十次同步 IO。
+    /// </para>
+    /// </summary>
     public double BlurRadius
     {
         get => _themeService.GlobalBlurRadius;
@@ -206,11 +289,27 @@ internal sealed class SettingsViewModel : ViewModelBase
             var snapped = Math.Round(value);
             if (!snapped.Equals(_themeService.GlobalBlurRadius))
             {
-                _themeService.SetBlurStrength(snapped);
+                _themeService.PreviewBlurStrength(snapped);
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(BlurSummary));
+                ScheduleBlurCommit();
             }
         }
+    }
+
+    private void ScheduleBlurCommit()
+    {
+        _blurCommitTimer ??= new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
+        _blurCommitTimer.Stop();
+        _blurCommitTimer.Tick -= OnBlurCommitTick;
+        _blurCommitTimer.Tick += OnBlurCommitTick;
+        _blurCommitTimer.Start();
+    }
+
+    private void OnBlurCommitTick(object? sender, EventArgs e)
+    {
+        _blurCommitTimer?.Stop();
+        _themeService.CommitBlurStrength();
     }
 
     /// <summary>当前强度摘要（resx：Settings_BlurCurrent = 当前强度：{0}（{1}））。</summary>

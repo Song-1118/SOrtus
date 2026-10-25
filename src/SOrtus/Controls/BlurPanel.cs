@@ -1,8 +1,10 @@
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace SOrtus.Controls;
 
@@ -126,13 +128,86 @@ public static class BlurPanel
 
         effect.Radius = (double)e.NewValue;
 
-        // 模糊层挂了 BitmapCache（性能要求）：缓存会把旧的模糊结果留在屏幕上，
-        // 只改 Effect.Radius 不一定触发重绘 → 表现为「设置里调模糊没反应」。
-        // 这里换一个新的缓存实例强制失效；该分支只在用户拖动滑块时执行，不影响常态性能。
-        if (rect.CacheMode is not null)
+        // VD-109：拖动滑块时半径每变 1px 就会走到这里，界面上有 4~6 张磨砂卡，
+        // 而模糊是 GPU 上最贵的效果之一。旧实现每次都 new BitmapCache() 强制重建，
+        // 结果是「滑块跟手、背景一顿一顿」。
+        // 现在：拖动期间直接摘掉缓存（让 GPU 按当前半径直出，不再产出中间帧的缓存），
+        // 停手 220ms 后再把缓存挂回去——静止画面依旧享受缓存，拖动过程不再逐帧重建。
+        rect.CacheMode = null;
+        _liveRects.Add(rect);
+        RestartCacheRestoreTimer();
+    }
+
+    /// <summary>正在拖动、缓存被临时摘掉的模糊层。</summary>
+    private static readonly HashSet<Rectangle> _liveRects = new();
+
+    /// <summary>
+    /// 所有已建成的模糊层（弱引用，页面切走后自动回收），供主题切换时统一清缓存。
+    /// </summary>
+    private static readonly List<WeakReference<Rectangle>> _allBlurRects = new();
+
+    /// <summary>
+    /// 主题切换后必须调用：<see cref="BitmapCache"/> 缓存的是「上一套主题」渲染出的位图，
+    /// 不清就会看到卡片底色、边框、文字渐变全是旧主题的（典型现象：切到浅色后卡片仍是深色块，
+    /// 只有直接绑定前景画刷的文字变了色）。做法是先摘缓存、下一帧挂回新实例，强制重算一次。
+    /// </summary>
+    public static void InvalidateCaches()
+    {
+        for (var i = _allBlurRects.Count - 1; i >= 0; i--)
         {
-            rect.CacheMode = new BitmapCache();
+            if (!_allBlurRects[i].TryGetTarget(out var rect))
+            {
+                _allBlurRects.RemoveAt(i);
+                continue;
+            }
+
+            rect.CacheMode = null;
+            rect.InvalidateVisual();
         }
+
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null)
+        {
+            return;
+        }
+
+        dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+        {
+            foreach (var weak in _allBlurRects)
+            {
+                if (weak.TryGetTarget(out var rect) && rect.CacheMode is null)
+                {
+                    rect.CacheMode = new BitmapCache();
+                }
+            }
+        });
+    }
+
+    private static DispatcherTimer? _cacheRestoreTimer;
+
+    /// <summary>每次半径变化都把「恢复缓存」的计时往后推，停手 220ms 后才真正执行一次。</summary>
+    private static void RestartCacheRestoreTimer()
+    {
+        _cacheRestoreTimer ??= new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(220) };
+        _cacheRestoreTimer.Stop();
+        _cacheRestoreTimer.Tick -= OnCacheRestoreTick;
+        _cacheRestoreTimer.Tick += OnCacheRestoreTick;
+        _cacheRestoreTimer.Start();
+    }
+
+    private static void OnCacheRestoreTick(object? sender, EventArgs e)
+    {
+        _cacheRestoreTimer?.Stop();
+
+        foreach (var rect in _liveRects)
+        {
+            if (rect.CacheMode is null)
+            {
+                rect.CacheMode = new BitmapCache();
+            }
+        }
+
+        _liveRects.Clear();
     }
 
     private static void OnOverlayOpacityChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -268,6 +343,8 @@ public static class BlurPanel
 
         grid.Children.Add(blurRect);
         grid.Children.Add(overlay);
+
+        _allBlurRects.Add(new WeakReference<Rectangle>(blurRect));
 
         SetLayerGrid(fe, grid);
         SetBlurRect(fe, blurRect);

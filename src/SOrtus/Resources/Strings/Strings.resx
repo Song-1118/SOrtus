@@ -123,6 +123,12 @@
   <data name="Settings_CheckNow" xml:space="preserve"><value>立即检查</value></data>
   <data name="Settings_AutoCheckOn" xml:space="preserve"><value>已开启</value></data>
   <data name="Settings_AutoCheckOff" xml:space="preserve"><value>已关闭</value></data>
+  <data name="Settings_CopyPath" xml:space="preserve"><value>复制路径</value></data>
+  <data name="Settings_CheckNowLabel" xml:space="preserve"><value>手动检查</value></data>
+  <data name="Settings_PathCopied" xml:space="preserve"><value>路径已复制到剪贴板</value></data>
+  <!-- 外观 · 键盘焦点框（默认开） -->
+  <data name="Settings_FocusRing" xml:space="preserve"><value>显示焦点框</value></data>
+  <data name="Settings_FocusRingHint" xml:space="preserve"><value>键盘导航时在控件外显示一圈强调环。关闭后仅保留输入框描边与光标，焦点位置仍可辨。</value></data>
   <data name="Update_Checking" xml:space="preserve"><value>正在检查…</value></data>
   <data name="Update_UpToDate" xml:space="preserve"><value>已是最新版本（{0}）</value></data>
   <data name="Update_CheckFailed" xml:space="preserve"><value>检查失败：{0}</value></data>
@@ -147,6 +153,10 @@
   <data name="Common_OK" xml:space="preserve"><value>确定</value></data>
   <data name="Common_Cancel" xml:space="preserve"><value>取消</value></data>
   <data name="Common_Delete" xml:space="preserve"><value>删除</value></data>
+  <!-- 失败提示（VD-116）：标题一句人话，原因放 ErrorDetail 折叠区 -->
+  <data name="Common_LoadFailed" xml:space="preserve"><value>文档加载失败</value></data>
+  <data name="Common_ImportFailed" xml:space="preserve"><value>导入失败，文件可能已被占用或格式不受支持</value></data>
+  <data name="Common_DeleteFailed" xml:space="preserve"><value>删除失败，请稍后重试</value></data>
   <data name="Common_Yes" xml:space="preserve"><value>是</value></data>
   <data name="Common_No" xml:space="preserve"><value>否</value></data>
   <data name="Common_Close" xml:space="preserve"><value>关闭</value></data>
@@ -216,6 +226,22 @@
   </data>
   <data name="Detail_TechRemove" xml:space="preserve">
     <value>移除</value>
+  </data>
+  <!-- 危险区（VD-101）：删除动作从页脚搬到独立卡片，避免误触 -->
+  <data name="Detail_DangerZoneTitle" xml:space="preserve">
+    <value>危险操作</value>
+  </data>
+  <data name="Detail_DangerZoneHint" xml:space="preserve">
+    <value>删除后立项及其全部文档将从本地数据库移除，无法撤销。</value>
+  </data>
+  <data name="Detail_CardDevPlan" xml:space="preserve">
+    <value>版本迭代规划</value>
+  </data>
+  <data name="Detail_UndoRemove" xml:space="preserve">
+    <value>撤销</value>
+  </data>
+  <data name="Detail_TechRemoved" xml:space="preserve">
+    <value>已移除 {0}</value>
   </data>
   <data name="Doc_PrdTitle" xml:space="preserve">
     <value>项目 PRD 文档</value>
@@ -297,6 +323,15 @@
   </data>
   <data name="Git_Timeline" xml:space="preserve">
     <value>提交时间线</value>
+  </data>
+  <data name="Git_TimelineCount" xml:space="preserve">
+    <value>共 {0} 条提交 · 最近 {1}</value>
+  </data>
+  <data name="Git_TimelineCountWindow" xml:space="preserve">
+    <value>已显示最近 {0} 条提交 · 最近 {1}</value>
+  </data>
+  <data name="Git_TimelineMore" xml:space="preserve">
+    <value>查看更早的 {0} 条</value>
   </data>
   <data name="Git_Remote" xml:space="preserve">
     <value>远端</value>

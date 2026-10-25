@@ -881,4 +881,80 @@
         </Setter>
     </Style>
 
+    <!-- ============================ SOrToggleSwitch（VD-108） ============================ -->
+    <Style TargetType="local:SOrToggleSwitch">
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Width" Value="44" />
+        <Setter Property="Height" Value="24" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:SOrToggleSwitch">
+                    <Grid Width="44" Height="24">
+                        <!-- 关闭态轨道：与输入框边界同档，保证「这是个可操作控件」而不是一条淡线 -->
+                        <Border x:Name="PART_TrackOff"
+                                Background="{DynamicResource BorderStrongBrush}"
+                                CornerRadius="{TemplateBinding TrackCornerRadius}" />
+                        <!-- 开启态轨道：主色，透明度 0→1 过渡，避免开关瞬间「跳色」 -->
+                        <Border x:Name="PART_TrackOn"
+                                Background="{DynamicResource PrimaryBrush}"
+                                CornerRadius="{TemplateBinding TrackCornerRadius}"
+                                Opacity="0" />
+                        <!-- 圆点：反色，随 IsChecked 在轨道内平移 20px -->
+                        <Border x:Name="PART_Thumb" Width="18" Height="18" Margin="3"
+                                HorizontalAlignment="Left" VerticalAlignment="Center"
+                                Background="{DynamicResource TextOnAccentBrush}"
+                                CornerRadius="9">
+                            <Border.RenderTransform>
+                                <TranslateTransform X="0" />
+                            </Border.RenderTransform>
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="4" ShadowDepth="1" Direction="270"
+                                                  Color="{DynamicResource ColorShadow}" Opacity="0.28" />
+                            </Border.Effect>
+                        </Border>
+                        <!-- 焦点框：与其它控件同一支画刷，设置里可一键关闭 -->
+                        <Border x:Name="PART_FocusRing" Margin="-3"
+                                BorderBrush="{DynamicResource FocusRingBrush}"
+                                BorderThickness="1" CornerRadius="15"
+                                Opacity="0" IsHitTestVisible="False" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource ToggleOnStoryboard}" />
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard Storyboard="{StaticResource ToggleOffStoryboard}" />
+                            </Trigger.ExitActions>
+                            <!-- Setter 保底：首次渲染（尚未跑动画）时开启态也不会显示成关闭 -->
+                            <Setter TargetName="PART_Thumb" Property="RenderTransform">
+                                <Setter.Value>
+                                    <TranslateTransform X="20" />
+                                </Setter.Value>
+                            </Setter>
+                            <Setter TargetName="PART_TrackOn" Property="Opacity" Value="1" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource FocusRingInStoryboard}" />
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard Storyboard="{StaticResource FocusRingOutStoryboard}" />
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="PART_TrackOff" Property="Opacity" Value="0.82" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.55" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>

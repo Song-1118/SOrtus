@@ -19,6 +19,19 @@ internal sealed class UpdateState
     /// <summary>用户选择「跳过此版本」的版本号；该版本不再提示，直到出现更高版本。</summary>
     public string? SkippedVersion { get; set; }
 
+    /// <summary>
+    /// 「稍后提醒」的版本号（VD-116）。
+    /// 旧版的「稍后提醒」命令就是关闭对话框，没有任何后续——文案承诺了未来行为、实现里没有。
+    /// 现在真的会延后：到期前启动检查发现同一个版本就不再弹提示条。
+    /// </summary>
+    public string? SnoozedVersion { get; set; }
+
+    /// <summary>「稍后提醒」的到期时间（UTC）。到点之后重新提示。</summary>
+    public DateTime? SnoozedUntilUtc { get; set; }
+
+    /// <summary>稍后提醒的默认延迟：一天（与 24 小时自动检查节流对齐）。</summary>
+    public static readonly TimeSpan SnoozeDuration = TimeSpan.FromHours(24);
+
     private static readonly string StatePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "SOrtus",

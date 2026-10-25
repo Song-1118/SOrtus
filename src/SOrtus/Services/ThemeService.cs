@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
@@ -79,10 +79,30 @@ internal sealed class ThemeService : IThemeService
 
     public void SetBlurStrength(double radius)
     {
+        PreviewBlurStrength(radius);
+        CommitBlurStrength();
+    }
+
+    /// <summary>
+    /// VD-109：拖动中只改值。这里刻意不写 settings.json——一次 0→30 的拖动会产生 30 次同步 IO，
+    /// 在机械硬盘上足以让滑块「跟手但背景一顿一顿」。
+    /// </summary>
+    public void PreviewBlurStrength(double radius)
+    {
         _blurRadius = radius;
-        _settings.BlurRadius = radius;
-        _settings.Save();
         ApplyBlurRadius(radius);
+    }
+
+    /// <summary>停手后落盘一次，并广播一次（换肤过渡等监听者只关心「真的变了」）。</summary>
+    public void CommitBlurStrength()
+    {
+        if (_settings.BlurRadius is { } saved && Math.Abs(saved - _blurRadius) < 0.001)
+        {
+            return;
+        }
+
+        _settings.BlurRadius = _blurRadius;
+        _settings.Save();
         ThemeChanged?.Invoke(this, EventArgs.Empty);
     }
 

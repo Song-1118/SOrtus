@@ -50,4 +50,16 @@ public abstract class ViewModelBase : INotifyPropertyChanged
             IsBusy = false;
         }
     }
+
+    /// <summary>
+    /// 语言切换后的刷新钩子（VD-110）。
+    /// <para>
+    /// XAML 侧的 <c>{DynamicResource}</c> 会自动换成新语言，但视图模型里**拼好**的字符串不会：
+    /// 副标题、数据库位置、版本行、下拉项显示名都是在 get 里 format 一次就交给绑定。
+    /// 于是切到英文后会出现「Settings」+「共 3 个立项」这种半中半英。
+    /// 默认实现发一次「全部属性已变更」（空属性名），让所有绑定重新取值；
+    /// 需要在切换时重建集合的视图模型（如设置页的选项列表）再重写本方法。
+    /// </para>
+    /// </summary>
+    public virtual void OnCultureChanged() => OnPropertyChanged(string.Empty);
 }

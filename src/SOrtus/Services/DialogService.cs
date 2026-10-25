@@ -27,6 +27,10 @@ internal sealed class DialogService : IDialogService
     public Task<bool> ConfirmAsync(string title, string message) =>
         ShowAsync(new ViewModels.ConfirmDialogViewModel(title, message, isConfirm: true, _localization));
 
+    /// <summary>破坏性确认（VD-117）：与普通确认同一模板，但主按钮换危险样式、默认焦点在「取消」。</summary>
+    public Task<bool> ConfirmDestructiveAsync(string title, string message) =>
+        ShowAsync(new ViewModels.ConfirmDialogViewModel(title, message, isConfirm: true, _localization, isDestructive: true));
+
     public Task<ViewModels.UnsavedChangesChoice> ConfirmUnsavedAsync(string title, string message)
     {
         var tcs = new TaskCompletionSource<ViewModels.UnsavedChangesChoice>(TaskCreationOptions.RunContinuationsAsynchronously);

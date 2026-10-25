@@ -219,6 +219,27 @@
         这里在「变为可见」的那一刻给一次 160ms 淡入——比整页入场更快，
         因为用户是在同一页内切换视角，不需要重新建立空间感。
     -->
+    <!-- ===== 开关（VD-108）：圆点位移 120ms + 轨道底色淡入淡出 ===== -->
+    <Storyboard x:Key="ToggleOnStoryboard">
+        <DoubleAnimation Storyboard.TargetName="PART_Thumb"
+                         Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                         To="20" Duration="0:0:0.12"
+                         EasingFunction="{StaticResource CubicEaseOut}" />
+        <DoubleAnimation Storyboard.TargetName="PART_TrackOn"
+                         Storyboard.TargetProperty="Opacity"
+                         To="1" Duration="0:0:0.12" />
+    </Storyboard>
+
+    <Storyboard x:Key="ToggleOffStoryboard">
+        <DoubleAnimation Storyboard.TargetName="PART_Thumb"
+                         Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                         To="0" Duration="0:0:0.12"
+                         EasingFunction="{StaticResource CubicEaseOut}" />
+        <DoubleAnimation Storyboard.TargetName="PART_TrackOn"
+                         Storyboard.TargetProperty="Opacity"
+                         To="0" Duration="0:0:0.12" />
+    </Storyboard>
+
     <Style x:Key="SectionFadeInStyle" TargetType="FrameworkElement">
         <Style.Triggers>
             <Trigger Property="Visibility" Value="Visible">

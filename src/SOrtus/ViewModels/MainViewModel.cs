@@ -149,6 +149,9 @@ internal sealed class MainViewModel : ViewModelBase
     /// </summary>
     public ICommand ScrimCloseCommand { get; }
 
+    /// <summary>弹窗拒绝关闭时的抖动信号（遮罩点击被拦下时触发，由视图播放动画）。</summary>
+    public event Action? DialogNudgeRequested;
+
     /// <summary>侧边栏「最近立项」（VD-082：导航区下方不再是一整片空白）。</summary>
     public ObservableCollection<Project> RecentProjects { get; } = new();
 
@@ -340,9 +343,12 @@ internal sealed class MainViewModel : ViewModelBase
 
     private void CloseDialog(bool isScrimClick)
     {
-        // VD-083：有输入的配置类弹窗不接受「点遮罩关闭」（误点即丢）
+        // VD-083：有输入的配置类弹窗不接受「点遮罩关闭」（误点即丢）。
+        // 但不该「点了没反应」——发一个抖动信号，让弹窗左右晃一下，
+        // 告诉用户「这里点不掉，请用下面的按钮」（用户反馈：没有任何反馈像卡死）。
         if (isScrimClick && DialogContent is IOverlayDialogViewModel { AllowScrimClose: false })
         {
+            DialogNudgeRequested?.Invoke();
             return;
         }
 

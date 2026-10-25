@@ -29,6 +29,9 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <!-- 默认水平居中：Control 的 HorizontalContentAlignment 默认是 Left，
+             按钮被 Grid 拉伸时内容会贴左（用户报「创建/下一步/刷新/叉号不居中」） -->
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <!-- 自定义焦点环接管键盘焦点视觉 -->
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -89,11 +92,15 @@
                                                 <Setter Property="Grid.Column" Value="0" />
                                                 <Setter Property="Grid.ColumnSpan" Value="1" />
                                                 <Style.Triggers>
+                                                    <!-- 纯图标按钮：跨两列 + 清空边距，图标才真正落在按钮中心
+                                                         （IconGap 的右边距会让 24px 小按钮里的图标偏左约 4px） -->
                                                     <DataTrigger Binding="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}" Value="{x:Null}">
                                                         <Setter Property="Grid.ColumnSpan" Value="2" />
+                                                        <Setter Property="Margin" Value="0" />
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}" Value="">
                                                         <Setter Property="Grid.ColumnSpan" Value="2" />
+                                                        <Setter Property="Margin" Value="0" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>

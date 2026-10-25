@@ -293,14 +293,24 @@
                         <!-- 下拉浮层（原生约定：Popup 承载 ItemsPresenter）
                              VD-068：去掉系统 PopupAnimation（固定约 150ms 只淡入不位移），
                              改为自绘「8px 上移 + 150ms 淡入」，与界面其它微交互同源 -->
+                        <!-- PlacementTarget 必须显式指向 ComboBox 本体：缺省时 Popup 会 fallback 到
+                             模板内的 PART_DropDownToggle（比 ComboBox 矮 8px），浮层于是上偏 8px
+                             压住触发器——第一行选项（如「全部类型」）被遮住点不到，
+                             表现为「选项与全部类型重叠」且「选过其他项后选不回全部」。
+                             12 = 8（PopupRoot 固有上边距补偿）+ 4（与触发器的视觉间距）。
+                             另外页面容器入场动画的 RenderTransform 残留也曾造成
+                             布局坐标与视觉坐标不一致，已把动画初始态归一为 0
+                             （见 Animations.xaml 的 SectionSwitchInStyle）。 -->
                         <Popup x:Name="PART_Popup"
                                Placement="Bottom"
+                               PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
+                               VerticalOffset="12"
                                AllowsTransparency="True"
                                Focusable="False"
                                StaysOpen="False"
                                PopupAnimation="None"
                                IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
-                            <Border Style="{StaticResource OverlayInOnLoadStyle}"
+                            <Border local:Motion.PlayOnShow="OverlayInStoryboard"
                                     Background="{DynamicResource SurfaceBrush}"
                                     BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1"
@@ -545,134 +555,6 @@
     </Style>
 
     <!--
-        日历项（CalendarItem）完整自定义模板。
-        部件契约（源码验证）：PART_Root / PART_HeaderButton / PART_PreviousButton / PART_NextButton /
-        PART_MonthView(7列7行：第0行日期标题，1-6行日期) / PART_YearView(4列3行) / PART_DisabledVisual。
-        月/年视图切换：CalendarItem 代码只负责填充内容，网格可见性由本模板按 Calendar.DisplayMode 驱动。
-        DayTitleTemplate 必须位于 ControlTemplate.Resources 中（代码按 ComponentResourceKey 查找，
-        缺失时日期表头为空）；表头文字由代码把「日/一/…」字符串写入各标题单元格的 DataContext。
-    -->
-    <Style x:Key="SOrCalendarItemStyle" TargetType="CalendarItem">
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="CalendarItem">
-                    <ControlTemplate.Resources>
-                        <DataTemplate x:Key="{ComponentResourceKey ResourceId=DayTitleTemplate, TypeInTargetAssembly={x:Type CalendarItem}}">
-                            <TextBlock Text="{Binding}"
-                                       FontSize="{DynamicResource FontSizeCaption}"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       Margin="0,2,0,4" />
-                        </DataTemplate>
-                    </ControlTemplate.Resources>
-                    <Grid x:Name="PART_Root">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-                        <!-- 导航行：上月 / 年月标题（点击切换年视图）/ 下月 -->
-                        <Grid Grid.Row="0" Margin="0,0,0,2">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <Button x:Name="PART_PreviousButton"
-                                    Grid.Column="0"
-                                    Width="28" Height="28"
-                                    Style="{StaticResource SOrCalendarNavButtonStyle}"
-                                    Cursor="Hand">
-                                <Path Data="M 6,1 L 2,5 L 6,9"
-                                      Stroke="{DynamicResource TextPrimaryBrush}"
-                                      StrokeThickness="1.6"
-                                      StrokeStartLineCap="Round"
-                                      StrokeEndLineCap="Round"
-                                      Stretch="Uniform"
-                                      Width="8" Height="8" />
-                            </Button>
-                            <Button x:Name="PART_HeaderButton"
-                                    Grid.Column="1"
-                                    Height="28"
-                                    Style="{StaticResource SOrCalendarNavButtonStyle}"
-                                    FontWeight="SemiBold"
-                                    Cursor="Hand" />
-                            <Button x:Name="PART_NextButton"
-                                    Grid.Column="2"
-                                    Width="28" Height="28"
-                                    Style="{StaticResource SOrCalendarNavButtonStyle}"
-                                    Cursor="Hand">
-                                <Path Data="M 3,1 L 7,5 L 3,9"
-                                      Stroke="{DynamicResource TextPrimaryBrush}"
-                                      StrokeThickness="1.6"
-                                      StrokeStartLineCap="Round"
-                                      StrokeEndLineCap="Round"
-                                      Stretch="Uniform"
-                                      Width="8" Height="8" />
-                            </Button>
-                        </Grid>
-                        <!-- 月视图：7 列 × 7 行（第 0 行日期标题） -->
-                        <Grid x:Name="PART_MonthView" Grid.Row="1">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
-                        </Grid>
-                        <!-- 年 / 十年视图：4 列 × 3 行（内容由代码填充） -->
-                        <Grid x:Name="PART_YearView" Grid.Row="1" Visibility="Collapsed">
-                            <Grid.Style>
-                                <Style TargetType="Grid">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding DisplayMode, RelativeSource={RelativeSource AncestorType=Calendar}, Converter={StaticResource NotMonthModeConverter}}" Value="True">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Grid.Style>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
-                        </Grid>
-                        <!-- 禁用态遮罩 -->
-                        <Rectangle x:Name="PART_DisabledVisual"
-                                   Grid.RowSpan="2"
-                                   Fill="{DynamicResource ScrimBrush}"
-                                   Opacity="0.5"
-                                   Visibility="Collapsed" />
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="PART_DisabledVisual" Property="Visibility" Value="Visible" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <!--
         日历整体：保留配色与日期格样式，但**不再自定义 Calendar / CalendarItem 模板**。
         原因：自定义 CalendarItem 模板在 Popup 的自动尺寸约束下测量自洽失败
         （打开日历即抛 OutOfMemoryException，就是「选日期崩溃」的根因）。
@@ -686,6 +568,10 @@
         <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="CalendarDayButtonStyle" Value="{StaticResource SOrCalendarDayButtonStyle}" />
+        <!-- 月/年视图的按钮（点头部切换后的月份格、十年格）此前用系统默认样式——
+             白底 + 系统蓝高亮，在深色主题下十分刺眼（用户报「点击月份/年后界面未适配」）。
+             CalendarItem 仍用原生内核（自定义模板会 OOM，见下方注释），只把按钮换成项目样式。 -->
+        <Setter Property="CalendarButtonStyle" Value="{StaticResource SOrCalendarButtonStyle}" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>

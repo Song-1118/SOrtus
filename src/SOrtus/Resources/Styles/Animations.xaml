@@ -146,57 +146,28 @@
     </Storyboard>
 
 <!-- ===== 下拉 / 日历浮层：8px 上移 + 150ms 淡入（VD-068） ===== -->
+    <!-- 浮层入场：只淡入（150ms）。刻意不做位移——Popup 出现极快，位移感知不强，
+         且位移动画与 Popup 定位互相干扰（实测会让浮层相对触发器的间距多出 8px 且不稳定）。 -->
     <Storyboard x:Key="OverlayInStoryboard">
         <DoubleAnimation Storyboard.TargetProperty="Opacity"
                          From="0" To="1" Duration="0:0:0.15"
                          EasingFunction="{StaticResource CubicEaseOut}" />
-        <!-- 浮层只动 Y，用单 TranslateTransform（OverlayInOnLoadStyle 注入的就是它） -->
-        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                         From="8" To="0" Duration="0:0:0.15"
-                         EasingFunction="{StaticResource CubicEaseOut}" />
     </Storyboard>
 
 <!-- 浮层入场（下拉 / 日历）：引用者需自带 TranslateTransform.Y=8（VD-068） -->
-    <Style x:Key="OverlayInOnLoadStyle" TargetType="FrameworkElement">
-        <Setter Property="Opacity" Value="0" />
-        <Setter Property="RenderTransform">
-            <Setter.Value>
-                <TranslateTransform Y="8" />
-            </Setter.Value>
-        </Setter>
-        <Style.Triggers>
-            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                <BeginStoryboard Storyboard="{StaticResource OverlayInStoryboard}" />
-            </EventTrigger>
-        </Style.Triggers>
-    </Style>
-
-    <!--
-        版块切换入场（VD-063）：详情页三个版块靠 Visibility 互斥显示，切换时是硬切。
-        这里在「变为可见」的那一刻给一次 160ms 淡入——比整页入场更快，
-        因为用户是在同一页内切换视角，不需要重新建立空间感。
+<!--
+        弹窗拒绝关闭时的抖动（用户反馈：点遮罩没反应像卡死）。
+        左右各晃一次后归位，260ms；幅度 6/5/3 递减，最后停在 0。
+        目标是 MainWindow 的 PART_DialogHost（RenderTransform 已是 TransformGroup）。
     -->
-    <!-- ===== 开关（VD-108）：圆点位移 120ms + 轨道底色淡入淡出 ===== -->
-    <Storyboard x:Key="ToggleOnStoryboard">
-        <DoubleAnimation Storyboard.TargetName="PART_Thumb"
-                         Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
-                         To="24" Duration="0:0:0.12"
-                         EasingFunction="{StaticResource CubicEaseOut}" />
-        <DoubleAnimation Storyboard.TargetName="PART_TrackOn"
-                         Storyboard.TargetProperty="Opacity"
-                         To="1" EasingFunction="{StaticResource StdEase}"
-                         Duration="0:0:0.12" />
-    </Storyboard>
-
-    <Storyboard x:Key="ToggleOffStoryboard">
-        <DoubleAnimation Storyboard.TargetName="PART_Thumb"
-                         Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
-                         To="0" Duration="0:0:0.12"
-                         EasingFunction="{StaticResource CubicEaseOut}" />
-        <DoubleAnimation Storyboard.TargetName="PART_TrackOn"
-                         Storyboard.TargetProperty="Opacity"
-                         To="0" EasingFunction="{StaticResource ExitEase}"
-                         Duration="0:0:0.12" />
+    <Storyboard x:Key="DialogNudgeStoryboard">
+        <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.X)">
+            <LinearDoubleKeyFrame Value="0" KeyTime="0:0:0" />
+            <LinearDoubleKeyFrame Value="-6" KeyTime="0:0:0.06" />
+            <LinearDoubleKeyFrame Value="5" KeyTime="0:0:0.14" />
+            <LinearDoubleKeyFrame Value="-3" KeyTime="0:0:0.21" />
+            <LinearDoubleKeyFrame Value="0" KeyTime="0:0:0.26" />
+        </DoubleAnimationUsingKeyFrames>
     </Storyboard>
 
     <!--
@@ -214,31 +185,19 @@
         版块 / 步骤切换：淡入 + 8px 上移（180ms Enter）。
         旧版只有透明度变化，内容像「啪」地换上去；加一点位移后能看出「这一块是从下面升上来的」。
     -->
+    <!-- 版块/步骤切换：淡入 + 8px 上移（180ms Enter）。由 Motion.PlayOnShow 播放——
+         路径用 TransformGroup 索引（Motion 为每个元素注入独立的 [Scale, Translate]），
+         不能用单 Transform 路径：Style Setter 的共享变换会被冻结，第二个元素动画即崩。 -->
     <Storyboard x:Key="SectionSwitchInStoryboard">
         <DoubleAnimation Storyboard.TargetProperty="Opacity"
                          From="0" To="1" Duration="0:0:0.18"
                          EasingFunction="{StaticResource EnterEase}" />
-        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.Y)"
                          From="8" To="0" Duration="0:0:0.18"
                          EasingFunction="{StaticResource EnterEase}" />
     </Storyboard>
 
-    <Style x:Key="SectionSwitchInStyle" TargetType="FrameworkElement">
-        <Setter Property="RenderTransform">
-            <Setter.Value>
-                <TranslateTransform Y="8" />
-            </Setter.Value>
-        </Setter>
-        <Style.Triggers>
-            <Trigger Property="Visibility" Value="Visible">
-                <Trigger.EnterActions>
-                    <BeginStoryboard Storyboard="{StaticResource SectionSwitchInStoryboard}" />
-                </Trigger.EnterActions>
-            </Trigger>
-        </Style.Triggers>
-    </Style>
-
-    <!--
+<!--
         =====================================================================
         规范 §4 操作级动效清单补全（M-01 ~ M-57，M-50 下载进度本版无场景）。
         每条注释标注 M 编号，数值与《SOrtus 动效设计规范-0.3.0》一致，禁止改动。

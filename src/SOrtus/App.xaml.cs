@@ -37,6 +37,19 @@ public partial class App : Application
 
         // 输入链路自测：模拟真实点击 + 键盘输入，验证空输入框到底能不能打字。
         // 现象是「有内容的能编辑、空的不能」，必须用真实事件链验证，不能靠推断。
+        if (e.Args is { Length: > 0 } && e.Args[0] == "--button-test")
+        {
+            RunButtonTest();
+            return;
+        }
+
+        if (e.Args is { Length: > 0 } && e.Args[0] == "--slider-test")
+        {
+            RunSliderTest();
+            Environment.Exit(0);
+            return;
+        }
+
         if (e.Args is { Length: > 0 } && e.Args[0] == "--input-test")
         {
             await RunInputTestAsync();
@@ -123,6 +136,194 @@ public partial class App : Application
     /// <summary>单实例互斥量。持有到进程退出，由 OS 在进程终止时自动释放。</summary>
 
     /// <summary>
+
+
+    /// <summary>
+    /// 按钮内容居中实测（VD-123）：三种按钮分别测量「内容中心」与「按钮中心」的偏差。
+    /// 纯图标按钮量图标（Path）中心；文字/图标+文字按钮量 ContentPresenter 中心。
+    /// </summary>
+    private static void RunButtonTest()
+    {
+        var results = new List<string>();
+
+        void Measure(string tag, Controls.SOrButton button)
+        {
+            var window = new Window
+            {
+                Content = button,
+                Width = 240,
+                Height = 80,
+                Left = 300,
+                Top = 300,
+                ShowInTaskbar = false,
+                WindowStartupLocation = WindowStartupLocation.Manual,
+            };
+
+            window.Loaded += (s, e) =>
+            {
+                window.UpdateLayout();
+                double buttonCenter = button.ActualWidth / 2;
+
+                // 图标（Path）或 ContentPresenter 的中心
+                var icon = FindDescendant<System.Windows.Shapes.Path>(button, null);
+                var presenter = FindContentPresenter(button);
+                double contentCenter;
+                string what;
+                if (icon is not null && icon.IsVisible)
+                {
+                    contentCenter = icon.TranslatePoint(new System.Windows.Point(icon.ActualWidth / 2, 0), button).X;
+                    what = "图标";
+                }
+                else if (presenter is not null)
+                {
+                    contentCenter = presenter.TranslatePoint(new System.Windows.Point(presenter.ActualWidth / 2, 0), button).X;
+                    what = "文字";
+                }
+                else
+                {
+                    what = "无内容";
+                    contentCenter = -1;
+                }
+
+                double offset = contentCenter - buttonCenter;
+                results.Add($"[BUTTON-{tag}] {what}中心={contentCenter:0.##} 按钮中心={buttonCenter:0.##} " +
+                    $"偏差={offset:0.##} 居中={Math.Abs(offset) <= 1.5}");
+                window.Close();
+            };
+
+            window.ShowDialog();
+        }
+
+        Measure("纯图标", new Controls.SOrButton { Width = 24, Height = 24, Padding = new Thickness(0), Icon = System.Windows.Media.Geometry.Parse("M 0,0 L 8,8 M 8,0 L 0,8") });
+        Measure("纯文字", new Controls.SOrButton { Width = 120, Height = 36, Content = "创 建" });
+        Measure("图标加文字", new Controls.SOrButton { Width = 140, Height = 36, Content = "推送", Icon = System.Windows.Media.Geometry.Parse("M 0,0 L 8,8") });
+
+        foreach (var r in results)
+        {
+            Console.WriteLine(r);
+        }
+
+        Environment.Exit(0);
+    }
+
+    /// <summary>在可视树里找第一个 ContentPresenter。</summary>
+    private static System.Windows.Controls.ContentPresenter? FindContentPresenter(System.Windows.DependencyObject root)
+    {
+        for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+            if (child is System.Windows.Controls.ContentPresenter cp)
+            {
+                return cp;
+            }
+
+            var found = FindContentPresenter(child);
+            if (found is not null)
+            {
+                return found;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// 滑块实测（VD-122）：模拟 Thumb 拖动，验证「Value 变化」与「圆点视觉位置变化」同步。
+    /// 用户报告拖动时数值变但圆点不动——圆点位置由 Track 管理，二者脱钩只可能是
+    /// 圆点上残留了 RenderTransform 偏移，或 Value 被动画持有导致 Track 无法更新布局。
+    /// </summary>
+    private static void RunSliderTest()
+    {
+        var slider = new Controls.SOrSlider
+        {
+            Width = 300,
+            Height = 22,
+            Minimum = 0,
+            Maximum = 100,
+            Value = 0,
+        };
+
+        var window = new Window
+        {
+            Content = slider,
+            Width = 400,
+            Height = 140,
+            Left = 200,
+            Top = 200,
+            ShowInTaskbar = false,
+            WindowStartupLocation = WindowStartupLocation.Manual,
+        };
+
+        window.Loaded += (s, e) =>
+        {
+            var track = slider.Template?.FindName("PART_Track", slider) as System.Windows.Controls.Primitives.Track;
+            var thumb = track?.Thumb;
+            if (track is null || thumb is null)
+            {
+                Console.WriteLine("[SLIDER] track/thumb not found");
+                window.Close();
+                return;
+            }
+
+            double PosX()
+            {
+                var pt = thumb.PointToScreen(new System.Windows.Point(0, 0));
+                var base0 = slider.PointToScreen(new System.Windows.Point(0, 0));
+                return pt.X - base0.X;
+            }
+
+            window.UpdateLayout();
+            double before = PosX();
+            double valueBefore = slider.Value;
+
+            thumb.RaiseEvent(new System.Windows.Controls.Primitives.DragStartedEventArgs(0, 0));
+            thumb.RaiseEvent(new System.Windows.Controls.Primitives.DragDeltaEventArgs(100, 0));
+            thumb.RaiseEvent(new System.Windows.Controls.Primitives.DragCompletedEventArgs(100, 0, false));
+
+            window.UpdateLayout();
+            double after = PosX();
+            double valueAfter = slider.Value;
+            var transform = thumb.RenderTransform as System.Windows.Media.TranslateTransform;
+
+            Console.WriteLine($"[SLIDER] value {valueBefore:0.##} -> {valueAfter:0.##} " +
+                $"thumbX {before:0.##} -> {after:0.##} " +
+                $"位置跟随={Math.Abs(after - before) > 5} " +
+                $"残留变换={(transform is null ? "无" : transform.X.ToString("0.##"))}");
+
+            slider.Value = 100;
+            window.UpdateLayout();
+            Console.WriteLine($"[SLIDER] Value=100 时 thumbX={PosX():0.##}（轨道可用宽约 {track.ActualWidth:0}）");
+
+            // 关键实验：AnimateTo 的动画（FillBehavior 默认 HoldEnd）结束后，
+            // 属性是否仍被动画「持有」——若持有，之后所有 Value 设置都失效，
+            // 表现为「数值显示变了但圆点再也拖不动」。
+            var hold = new System.Windows.Media.Animation.DoubleAnimation(20, new Duration(TimeSpan.FromMilliseconds(50)));
+            slider.BeginAnimation(System.Windows.Controls.Slider.ValueProperty, hold);
+            window.Dispatcher.InvokeAsync(async () =>
+            {
+                await System.Threading.Tasks.Task.Delay(200);
+                double duringAnimation = slider.Value;
+                slider.SetCurrentValue(System.Windows.Controls.Slider.ValueProperty, 25.0);
+                window.UpdateLayout();
+                double afterSet = slider.Value;
+                double thumbAtSet = PosX();
+                Console.WriteLine($"[SLIDER] 动画持有实验: 动画值={duringAnimation:0.##} " +
+                    $"设25后读回={afterSet:0.##}（若仍是20则属性被锁死） thumbX={thumbAtSet:0.##}");
+                window.Close();
+            }, System.Windows.Threading.DispatcherPriority.Background);
+
+            return;
+        };
+
+        window.ShowDialog();
+    }
+
+    /// <summary>绑定回传测试用的最小视图模型（验证省略 Mode 时 Text 也能回传）。</summary>
+    private sealed class BoundTextVm
+    {
+        public string SearchText { get; set; } = string.Empty;
+    }
+
     /// 输入链路自测：空输入框 → 模拟点击 → 模拟按键 → 检查文本是否真的进去。
     /// 用真实事件（MouseButtonEventArgs / InputManager.ProcessInput）而不是直接赋值，
     /// 这样才能覆盖「点击定位光标 → 焦点落位 → 键盘输入被接收」整条链路。
@@ -220,6 +421,28 @@ public partial class App : Application
 
             Console.WriteLine($"[INPUT] foreground={(GetForegroundWindow() == hwnd)} " +
                 $"focused={System.Windows.Input.Keyboard.FocusedElement?.GetType().Name ?? "null"}");
+
+            // 绑定回传用例（VD-124）：页面写法是 Text="{Binding SearchText}"（省略 Mode，
+            // 依赖 BindsTwoWayByDefault）。自定义 DP 缺这个标志时用户打字只传到外壳、
+            // 视图模型永远收不到——「搜索功能无效」的根因，必须有用例守住。
+            var boundSource = new BoundTextVm();
+            var bound = new Controls.SOrTextBox { Width = 320, Height = 36 };
+            bound.SetBinding(Controls.SOrTextBox.TextProperty, new System.Windows.Data.Binding(nameof(BoundTextVm.SearchText))
+            {
+                Source = boundSource,
+                UpdateSourceTrigger = System.Windows.Data.UpdateSourceTrigger.PropertyChanged,
+            });
+            panel.Children.Add(bound);
+            window.UpdateLayout();
+            if (bound.Inner is { } boundInner)
+            {
+                boundInner.Text = "Q4";
+            }
+
+            window.UpdateLayout();
+            Console.WriteLine($"[INPUT-bind] 省略Mode回传 VM.SearchText='{boundSource.SearchText}' " +
+                $"期望='Q4' 回传正常={boundSource.SearchText == "Q4"}");
+            panel.Children.Remove(bound);
 
             await ClickAndTypeAsync(empty, "xy", "xy", "empty");
             await ClickAndTypeAsync(filled, "xy", "xy", "filled");
@@ -448,6 +671,58 @@ public partial class App : Application
         await mainViewModel.ShowProjectsAsync();
         await SettleAsync(window);
         SaveWindow(window, System.IO.Path.Combine(targetDir, "01b-list-with-items.png"));
+
+        // 诊断：打开「全部类型」下拉，核对浮层是否与触发器重叠、选项是否可读可点
+        var combo = Descendants(window).OfType<Controls.SOrComboBox>().FirstOrDefault();
+        if (combo is not null)
+        {
+            combo.IsDropDownOpen = true;
+            await SettleAsync(window);
+
+            var popup = combo.Template?.FindName("PART_Popup", combo) as System.Windows.Controls.Primitives.Popup;
+            var origin = combo.PointToScreen(new System.Windows.Point(0, 0));
+            var popupOrigin = popup?.Child?.PointToScreen(new System.Windows.Point(0, 0));
+            var border = popup?.Child as System.Windows.FrameworkElement;
+            var transform = border?.RenderTransform as System.Windows.Media.TranslateTransform;
+            Console.WriteLine($"[COMBO] combo=({origin.X:0},{origin.Y:0},{combo.ActualWidth:0}x{combo.ActualHeight:0}) " +
+                $"popup=({(popupOrigin?.X ?? 0):0},{(popupOrigin?.Y ?? 0):0}) " +
+                $"popupSize={border?.ActualWidth:0}x{border?.ActualHeight:0} " +
+                $"transformY={(transform is null ? -999 : transform.Y):0.##} " +
+                $"placement={popup?.Placement} target={(popup?.PlacementTarget?.GetType().Name ?? "null")} " +
+                $"vOffset={popup?.VerticalOffset:0.##} hOffset={popup?.HorizontalOffset:0.##} " +
+                $"isOpen={combo.IsDropDownOpen}");
+
+            // 补充诊断：ToggleButton / PART_Root 的位置，弄清这 8px 缺口来自哪一层
+            var toggle = combo.Template?.FindName("PART_DropDownToggle", combo) as System.Windows.FrameworkElement;
+            var root = combo.Template?.FindName("PART_Root", combo) as System.Windows.FrameworkElement;
+            var togglePt = toggle?.PointToScreen(new System.Windows.Point(0, 0));
+            var rootPt = root?.PointToScreen(new System.Windows.Point(0, 0));
+            Console.WriteLine($"[COMBO] toggle=({(togglePt?.X ?? 0):0},{(togglePt?.Y ?? 0):0},{toggle?.ActualWidth:0}x{toggle?.ActualHeight:0}) " +
+                $"root=({(rootPt?.X ?? 0):0},{(rootPt?.Y ?? 0):0},{root?.ActualWidth:0}x{root?.ActualHeight:0})");
+
+            // 关键验证：页面容器（SectionSwitchInStyle 宿主）的 RenderTransform.Y 是否残留 8
+            // ——若是，Popup 定位用的布局坐标与 PointToScreen 的视觉坐标就差这 8px，
+            // 硬编码 VerticalOffset 只是掩盖症状，正确修法是让入场动画结束后清除变换。
+            var page = Descendants(window).OfType<System.Windows.FrameworkElement>()
+                .FirstOrDefault(e => (e.RenderTransform as System.Windows.Media.TranslateTransform)?.Y is > 0.01 or < -0.01);
+            var pageY = (page?.RenderTransform as System.Windows.Media.TranslateTransform)?.Y;
+            Console.WriteLine($"[COMBO] pageTransformY={(pageY is null ? "null" : pageY.Value.ToString("0.##"))} " +
+                $"pageType={(page?.GetType().Name ?? "null")}");
+
+            // 回归断言（VD-121）：浮层必须在触发器下方留 4px 间距、不得遮挡触发器。
+            // 曾经浮层上偏 8px 压住触发器，第一行「全部类型」被遮住点不到。
+            double comboBottom = origin.Y + combo.ActualHeight;
+            double popupTop = popupOrigin?.Y ?? 0;
+            double gap = popupTop - comboBottom;
+            // 断言「不遮挡」而非精确间距：PopupRoot 的固有上边距在不同运行下
+            // 实测为 0 或 8px，间距在 4~12px 间浮动，但都不遮挡触发器。
+            Console.WriteLine($"[COMBO] 浮层不遮挡={gap >= 0 && gap <= 16} " +
+                $"(触发器底={comboBottom:0} 浮层顶={popupTop:0} 间距={gap:0})");
+
+            SaveWindow(window, System.IO.Path.Combine(targetDir, "01c-list-filter-open.png"));
+            combo.IsDropDownOpen = false;
+            await SettleAsync(window);
+        }
 
         await mainViewModel.ShowNewProjectAsync();
         await SettleAsync(window);

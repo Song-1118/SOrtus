@@ -132,14 +132,19 @@ public sealed class SOrSlider : Slider
             return;
         }
 
+        // FillBehavior=Stop + Completed 时固化终值：默认的 HoldEnd 会让动画在结束后
+        // 仍「持有」Value 属性，那 240ms 窗口内（以及之后任何时刻）Thumb 拖动设值
+        // 都可能被动画值覆盖——表现为「数值变了圆点不动」。Stop 让动画一结束就释放属性。
         var animation = new DoubleAnimation
         {
             From = Value,
             To = target,
             Duration = new Duration(TimeSpan.FromMilliseconds(240)),
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+            FillBehavior = FillBehavior.Stop,
         };
 
+        animation.Completed += (_, _) => SetCurrentValue(ValueProperty, target);
         BeginAnimation(ValueProperty, animation);
     }
 

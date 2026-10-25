@@ -223,9 +223,11 @@
                         <Style TargetType="Border">
                             <Setter Property="Opacity" Value="0" />
                             <Setter Property="IsHitTestVisible" Value="False" />
+                            <!-- 初始态 Y=0：位移只由 ToastIn 动画提供（From=8），
+                                 避免动画未播放时残留偏移（与 SectionSwitchInStyle 同一坑） -->
                             <Setter Property="RenderTransform">
                                 <Setter.Value>
-                                    <TranslateTransform Y="8" />
+                                    <TranslateTransform Y="0" />
                                 </Setter.Value>
                             </Setter>
                             <Style.Triggers>

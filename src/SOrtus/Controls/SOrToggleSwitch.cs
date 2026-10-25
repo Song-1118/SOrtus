@@ -58,12 +58,12 @@ public sealed class SOrToggleSwitch : ToggleButton
 
         // 初始就处于开启态（绑定初值）时没有状态变化，动画不会触发——这里补一次，
         // 保证圆点落在开启位置而不是停在关闭端。
+        // 必须**替换整个 TranslateTransform 实例**而不能改现有实例的 X：WPF 动画系统
+        // 会在动画结束后冻结目标 Freezable，改它的属性会抛
+        // InvalidOperationException（「第二次进入有开关的页面直接崩溃」的根因）。
         if (IsChecked == true && Template?.FindName("PART_Thumb", this) is FrameworkElement thumb)
         {
-            if (thumb.RenderTransform is TranslateTransform transform)
-            {
-                transform.X = 24;
-            }
+            thumb.RenderTransform = new TranslateTransform(24, 0);
         }
     }
 
@@ -74,15 +74,30 @@ public sealed class SOrToggleSwitch : ToggleButton
             return;
         }
 
-        var key = isOn ? "ToggleOnStoryboard" : "ToggleOffStoryboard";
-        if (Application.Current?.TryFindResource(key) is not Storyboard storyboard)
-        {
-            return;
-        }
+        // 同样替换新实例：上一次动画可能已把旧实例冻结，动画对冻结对象也会抛异常
+        var transform = new TranslateTransform(isOn ? 24 : 0, 0);
+        thumb.RenderTransform = transform;
 
-        // 克隆后在本控件的模板命名作用域里播放，才能解析到 PART_Thumb / PART_TrackOn
-        var clone = storyboard.Clone();
-        clone.Begin(this);
+        // 直接对变换实例做动画，**不走 Storyboard.Begin(this)**：
+        // 绑定激活等时机下模板 NameScope 可能尚未就绪，Storyboard 解析 TargetName
+        // 会抛「无法在模板范围中找到 PART_Thumb」（实测正是这个栈）。
+        transform.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation
+        {
+            To = isOn ? 24 : 0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(120)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+        });
+
+        // 开启态轨道底色同步过渡
+        if (Template?.FindName("PART_TrackOn", this) is FrameworkElement trackOn)
+        {
+            trackOn.BeginAnimation(OpacityProperty, new DoubleAnimation
+            {
+                To = isOn ? 1 : 0,
+                Duration = new Duration(TimeSpan.FromMilliseconds(120)),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+            });
+        }
     }
 
     public CornerRadius TrackCornerRadius

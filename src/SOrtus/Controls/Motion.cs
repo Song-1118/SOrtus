@@ -274,6 +274,48 @@ public static class Motion
         fe.Loaded += (_, _) => Begin(fe, key);
     }
 
+    /// <summary>
+    /// 每次变为可见时播放指定 Storyboard（版块 tab 切换、下拉浮层打开等「反复出现」的场景）。
+    /// <para>
+    /// <b>为什么不再用 Style Trigger 动画</b>：Style Setter 里的 <c>TranslateTransform</c>
+    /// 会被 WPF 冻结并共享给所有应用该样式的元素。第一个元素的动画播放成功后对象进入
+    /// 只读状态，第二个元素再对它做动画就抛
+    /// <c>InvalidOperationException: 无法对 TranslateTransform 进行动画处理</c>——
+    /// 表现为「第一次进向导正常，再次进入直接崩溃」。
+    /// 这里由代码为每个元素创建独立的 <c>TransformGroup</c>，动画目标不共享，无冻结问题。
+    /// </para>
+    /// </summary>
+    public static readonly DependencyProperty PlayOnShowProperty =
+        DependencyProperty.RegisterAttached(
+            "PlayOnShow", typeof(string), typeof(Motion),
+            new PropertyMetadata(null, OnPlayOnShowChanged));
+
+    public static string? GetPlayOnShow(DependencyObject obj) => (string?)obj.GetValue(PlayOnShowProperty);
+    public static void SetPlayOnShow(DependencyObject obj, string? value) => obj.SetValue(PlayOnShowProperty, value);
+
+    private static void OnPlayOnShowChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not FrameworkElement fe || e.NewValue is not string key)
+        {
+            return;
+        }
+
+        EnsureTransformGroup(fe);
+
+        if (fe.IsVisible)
+        {
+            Begin(fe, key);
+        }
+
+        fe.IsVisibleChanged += (_, _) =>
+        {
+            if (fe.IsVisible)
+            {
+                Begin(fe, key);
+            }
+        };
+    }
+
     #endregion
 
     /// <summary>

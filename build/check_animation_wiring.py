@@ -34,7 +34,7 @@ def main():
         content = path.read_text(encoding="utf-8", errors="ignore")
         for m in re.finditer(r'\{(?:Static|Dynamic)Resource\s+([A-Za-z0-9_]+)\}', content):
             xaml_hits.add(m.group(1))
-        for m in re.finditer(r'\.(?:PlayOnLoad|StaggerStoryboard|PulseStoryboard|PulseStoryboardOut|PageEnter)="([A-Za-z0-9_]+)"', content):
+        for m in re.finditer(r'\.(?:PlayOnLoad|PlayOnShow|StaggerStoryboard|PulseStoryboard|PulseStoryboardOut|PageEnter)="([A-Za-z0-9_]+)"', content):
             xaml_hits.add(m.group(1))
 
     # C# 里的字符串引用（Motion.Begin(fe, "XxxStoryboard") 等）

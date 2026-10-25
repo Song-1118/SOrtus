@@ -25,11 +25,19 @@ namespace SOrtus.Controls;
 /// </summary>
 public sealed class SOrTextBox : ContentControl
 {
-    /// <summary>文本内容（与内部原生 TextBox 双向同步）。</summary>
+    /// <summary>
+    /// 文本内容（与内部原生 TextBox 双向同步）。
+    /// <para>
+    /// 元数据必须带 <see cref="FrameworkPropertyMetadataOptions.BindsTwoWayByDefault"/>：
+    /// 系统 TextBox.Text 自带该标志，所以页面里 <c>Text="{Binding SearchText}"</c>
+    /// 省略 Mode 也是双向；自定义 DP 不写就是 OneWay——那用户打字只传到外壳，
+    /// 视图模型永远收不到（「搜索功能无效」的根因：列表页的搜索框正是这种写法）。
+    /// </para>
+    /// </summary>
     public static readonly DependencyProperty TextProperty =
         DependencyProperty.Register(
             nameof(Text), typeof(string), typeof(SOrTextBox),
-            new PropertyMetadata(string.Empty, OnTextChanged));
+            new FrameworkPropertyMetadata(string.Empty, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnTextChanged));
 
     /// <summary>占位符文本（内容为空且未聚焦时显示）。</summary>
     public static readonly DependencyProperty PlaceholderProperty =

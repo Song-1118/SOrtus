@@ -55,7 +55,21 @@ public partial class MainWindow : Window
 
             // M-07：内容不再由绑定直接换对象（那样是瞬切），首次也走同一套「先出后进」
             ShowView(vm.CurrentView, immediate: true);
+
+            // 遮罩点击被拦下（弹窗不可关闭）时，弹窗左右抖一下作为反馈
+            vm.DialogNudgeRequested += NudgeDialog;
         }
+    }
+
+    /// <summary>弹窗抖动反馈：点遮罩关不掉时告诉用户「这里点不掉」。</summary>
+    private void NudgeDialog()
+    {
+        if (FindName("PART_DialogHost") is not FrameworkElement host)
+        {
+            return;
+        }
+
+        Controls.Motion.Begin(host, "DialogNudgeStoryboard");
     }
 
     /// <summary>

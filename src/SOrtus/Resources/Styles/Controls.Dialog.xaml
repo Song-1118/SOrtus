@@ -17,10 +17,16 @@
     <SolidColorBrush x:Key="ScrimBrush" Color="#99000000" />
 
     <!-- 浮层 / 弹窗样式：在磨砂卡片基础上使用更强模糊 -->
+    <!--
+        弹窗观感收敛（用户反馈「弹窗光晕太严重」）：
+        模糊半径 20 → 10（强模糊会把背后内容糊成大片色块，视觉上就是「光晕」；
+        10 仍能看出「背后有内容但读不了」，又不抢弹窗本身）；
+        覆盖层 0.9 → 0.96（底色更实，正文不再透出来糊在文字上）。
+    -->
     <Style x:Key="BlurDialogStyle" TargetType="Border" BasedOn="{StaticResource BlurCardStyle}">
-        <Setter Property="local:BlurPanel.BlurRadius" Value="{DynamicResource BlurRadiusStrong}" />
+        <Setter Property="local:BlurPanel.BlurRadius" Value="10" />
         <!-- 弹窗需要「压住」背后的页面：覆盖层更实，避免正文透出来糊在文字上 -->
-        <Setter Property="local:BlurPanel.OverlayOpacity" Value="0.9" />
+        <Setter Property="local:BlurPanel.OverlayOpacity" Value="0.96" />
         <Setter Property="CornerRadius" Value="{DynamicResource CornerRadiusLarge}" />
     </Style>
 

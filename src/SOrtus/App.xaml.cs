@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -46,6 +46,13 @@ public partial class App : Application
         if (e.Args is { Length: > 0 } && e.Args[0] == "--button-test")
         {
             RunButtonTest();
+            return;
+        }
+
+        // 悬停残留自测：真实光标高速扫过一排 Nav 按钮后再移开，检查覆盖层是否残留
+        if (e.Args is { Length: > 0 } && e.Args[0] == "--hover-test")
+        {
+            RunHoverTest();
             return;
         }
 
@@ -372,10 +379,10 @@ public partial class App : Application
     [System.Runtime.InteropServices.DllImport("user32.dll")]
     private static extern IntPtr GetWindowDC(IntPtr hWnd);
 
-    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    [System.Runtime.InteropServices.DllImport("gdi32.dll")]
     private static extern IntPtr CreateCompatibleDC(IntPtr hdc);
 
-    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    [System.Runtime.InteropServices.DllImport("gdi32.dll")]
     private static extern IntPtr CreateCompatibleBitmap(IntPtr hdc, int nWidth, int nHeight);
 
     [System.Runtime.InteropServices.DllImport("gdi32.dll")]
@@ -384,7 +391,7 @@ public partial class App : Application
     [System.Runtime.InteropServices.DllImport("gdi32.dll")]
     private static extern bool BitBlt(IntPtr hdcDest, int nXDest, int nYDest, int nWidth, int nHeight, IntPtr hdcSrc, int nXSrc, int nYSrc, int dwRop);
 
-    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    [System.Runtime.InteropServices.DllImport("gdi32.dll")]
     private static extern bool DeleteObject(IntPtr hObject);
 
     [System.Runtime.InteropServices.DllImport("user32.dll")]
@@ -417,6 +424,35 @@ public partial class App : Application
         using var stream = System.IO.File.Create(path);
         encoder.Save(stream);
         Console.WriteLine($"[COMBO] 真实桌面截图 {width}x{height} -> {System.IO.Path.GetFileName(path)}");
+    }
+
+    /// <summary>读回屏幕截图（屏幕级合成结果，<c>RenderTargetBitmap</c> 拍不到脏区残留）。</summary>
+    private static System.Windows.Media.Imaging.BitmapSource LoadPng(string path)
+    {
+        using var stream = System.IO.File.OpenRead(path);
+        var decoder = new System.Windows.Media.Imaging.PngBitmapDecoder(
+            stream,
+            System.Windows.Media.Imaging.BitmapCreateOptions.PreservePixelFormat,
+            System.Windows.Media.Imaging.BitmapCacheOption.OnLoad);
+        return decoder.Frames[0];
+    }
+
+    /// <summary>取屏幕上某个点的颜色（BGRA8）。</summary>
+    private static System.Windows.Media.Color ReadPixel(System.Windows.Media.Imaging.BitmapSource source, int x, int y)
+    {
+        if (x < 0 || y < 0 || x >= source.PixelWidth || y >= source.PixelHeight)
+        {
+            return System.Windows.Media.Colors.Transparent;
+        }
+
+        var converted = new System.Windows.Media.Imaging.FormatConvertedBitmap(
+            source,
+            System.Windows.Media.PixelFormats.Bgra32,
+            null,
+            0);
+        var buffer = new byte[4];
+        converted.CopyPixels(new System.Windows.Int32Rect(x, y, 1, 1), buffer, 4, 0);
+        return System.Windows.Media.Color.FromArgb(buffer[3], buffer[2], buffer[1], buffer[0]);
     }
 
 
@@ -622,6 +658,320 @@ public partial class App : Application
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// 悬停残留自测（用户 2026-10-26 反馈「鼠标划得太快，悬停残留在背景里，直到下一次滑过才更新」）：
+    /// 真实光标高速扫过一排 Nav 按钮，再分别停到「窗口内按钮之外」与「窗口之外」，
+    /// 停稳后采样每个按钮 <c>PART_Hover.Opacity</c>——>0 即残留。
+    /// 用真实光标而不是伪造事件：只改 IsMouseOver 无法复现输入链路上的丢帧。
+    /// </summary>
+    private static void RunHoverTest()
+    {
+        Console.OutputEncoding = System.Text.Encoding.UTF8;
+        // 场景一关窗后默认 ShutdownMode=OnLastWindowClose 会开始关应用，后续窗口就加载不出来
+        System.Windows.Application.Current!.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        // 图标 / 文案走资源字典，提前初始化，避免干扰判断
+        new LocalizationService().Initialize();
+
+        var buttons = new List<Controls.SOrButton>();
+        var panel = new System.Windows.Controls.StackPanel { Width = 220 };
+        for (int i = 0; i < 3; i++)
+        {
+            var button = new Controls.SOrButton
+            {
+                Variant = Controls.SOrButtonVariant.Nav,
+                Content = $"导航 {i + 1}",
+                Height = 36,
+                Margin = new System.Windows.Thickness(0, 5, 0, 5),
+            };
+            buttons.Add(button);
+            panel.Children.Add(button);
+        }
+
+        // 与真实侧边栏同构：磨砂卡片承载导航（残留若与卡片缓存/模糊有关，这里能复现）
+        var card = new Controls.SOrCard
+        {
+            Width = 248,
+            Content = panel,
+            VerticalAlignment = System.Windows.VerticalAlignment.Stretch,
+        };
+
+        var window = new Window
+        {
+            Content = card,
+            Width = 320,
+            Height = 280,
+            Left = 320,
+            Top = 320,
+            ShowInTaskbar = false,
+            WindowStartupLocation = WindowStartupLocation.Manual,
+        };
+
+        void Report(string phase)
+        {
+            int residual = 0;
+            for (int i = 0; i < buttons.Count; i++)
+            {
+                var hover = FindDescendant<System.Windows.Controls.Border>(buttons[i], "PART_Hover");
+                double opacity = hover?.Opacity ?? -1;
+                if (opacity > 0.001)
+                {
+                    residual++;
+                }
+
+                Console.WriteLine($"[HOVER] {phase} 按钮{i + 1} IsMouseOver={buttons[i].IsMouseOver} " +
+                    $"PART_Hover.Opacity={opacity:0.###}");
+            }
+
+            Console.WriteLine(residual == 0
+                ? $"[HOVER] {phase} PASS: 无残留"
+                : $"[HOVER] {phase} FAIL: {residual} 个按钮残留悬停背景");
+        }
+
+        window.Loaded += (s, e) =>
+        {
+            window.UpdateLayout();
+            window.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+
+            // 高速扫：一趟依次掠过三个按钮中心，来回共 12 趟，每步只给 4ms
+            for (int pass = 0; pass < 12; pass++)
+            {
+                for (int step = 0; step < buttons.Count; step++)
+                {
+                    int index = pass % 2 == 0 ? step : buttons.Count - 1 - step;
+                    var target = buttons[index];
+                    var point = target.PointToScreen(new System.Windows.Point(
+                        target.ActualWidth / 2, target.ActualHeight / 2));
+                    SetCursorPos((int)point.X, (int)point.Y);
+                    PumpMessages(window, 4);
+                }
+            }
+
+            // 场景一：快速划到窗口内、按钮之外（最常见：扫完侧边栏划进内容区）
+            SetCursorPos((int)window.Left + 300, (int)window.Top + 250);
+            PumpMessages(window, 450);
+            Report("移出按钮");
+
+            // 场景二：直接划出窗口
+            SetCursorPos(5, 5);
+            PumpMessages(window, 450);
+            Report("移出窗口");
+
+            window.Close();
+        };
+
+        window.ShowDialog();
+
+        // 场景三：真实主窗口——带 WindowChrome 非客户区、磨砂侧边栏与入场动画。
+        // 单独建窗口是因为「划得太快」最常见的出口是窗口顶部的标题栏 / 三键（非客户区），
+        // 指针进了非客户区后 WPF 内容未必收到 MouseLeave，悬停态可能一直亮着。
+        var themeService = new ThemeService();
+        themeService.Initialize();
+        var projectService = new SmokeProjectService();
+        projectService.Add(MakeSampleProject(1, "示例立项 A", ProjectType.Programming, ProjectStatus.Active, 40, DateTime.Today));
+        projectService.Add(MakeSampleProject(2, "示例立项 B", ProjectType.Clip, ProjectStatus.OnHold, 65, DateTime.Today.AddDays(-2)));
+        var mainViewModel = new MainViewModel(
+            projectService,
+            themeService,
+            new LocalizationService(),
+            new NavigationService(),
+            new DialogService(new LocalizationService()),
+            new SmokeDocumentRepository(),
+            new DocumentImportService(),
+            new SmokeGitService(),
+            new SmokeFilePickerService());
+        mainViewModel.Initialize();
+
+        var mainWindow = new MainWindow
+        {
+            DataContext = mainViewModel,
+            Width = 1180,
+            Height = 760,
+            Left = 180,
+            Top = 120,
+        };
+        mainWindow.Show();
+        PumpMessages(mainWindow, 700); // 等侧边栏入场动画（240ms）跑完
+
+        var allButtons = Descendants(mainWindow).OfType<Controls.SOrButton>().ToList();
+        Console.WriteLine($"[HOVER] 主窗口已加载={mainWindow.IsLoaded} 可视树元素={Descendants(mainWindow).Count()} " +
+            $"SOrButton={allButtons.Count}（变体：{string.Join(",", allButtons.Select(b => b.Variant))}）");
+        var navButtons = allButtons.Where(b => b.Variant == Controls.SOrButtonVariant.Nav && b.IsVisible).ToList();
+        Console.WriteLine($"[HOVER] 主窗口内 Nav 按钮 {navButtons.Count} 个");
+
+        void ReportReal(string phase)
+        {
+            int residual = 0;
+            foreach (var button in navButtons)
+            {
+                var hover = FindDescendant<System.Windows.Controls.Border>(button, "PART_Hover");
+                double opacity = hover?.Opacity ?? -1;
+                if (opacity > 0.001)
+                {
+                    residual++;
+                }
+
+                Console.WriteLine($"[HOVER] {phase} 「{button.Content}」 IsMouseOver={button.IsMouseOver} " +
+                    $"PART_Hover.Opacity={opacity:0.###}");
+            }
+
+            Console.WriteLine(residual == 0
+                ? $"[HOVER] {phase} PASS: 无残留"
+                : $"[HOVER] {phase} FAIL: {residual} 个按钮残留悬停背景");
+        }
+
+        // 先验证链路真的生效：停在第一个导航项上 250ms，覆盖层应到 1
+        if (navButtons.Count > 0)
+        {
+            var first = navButtons[0];
+            var firstCenter = first.PointToScreen(new System.Windows.Point(
+                first.ActualWidth / 2, first.ActualHeight / 2));
+            SetCursorPos((int)firstCenter.X, (int)firstCenter.Y);
+            PumpMessages(mainWindow, 250);
+            var firstHover = FindDescendant<System.Windows.Controls.Border>(first, "PART_Hover");
+            Console.WriteLine($"[HOVER] 单点验证 「{first.Content}」 IsMouseOver={first.IsMouseOver} " +
+                $"Opacity={firstHover?.Opacity:0.###}（应为 1，否则说明扫动没真正命中）");
+        }
+
+        // 快速来回掠过前三个主导航
+        for (int pass = 0; pass < 10; pass++)
+        {
+            foreach (var button in navButtons.Take(3))
+            {
+                var center = button.PointToScreen(new System.Windows.Point(
+                    button.ActualWidth / 2, button.ActualHeight / 2));
+                SetCursorPos((int)center.X, (int)center.Y);
+                PumpMessages(mainWindow, 4);
+            }
+        }
+
+        // 关键场景：从导航项直接甩到窗口顶部非客户区（标题栏 / 三键那一行）
+        var caption = mainWindow.PointToScreen(new System.Windows.Point(mainWindow.ActualWidth / 2, 16));
+        SetCursorPos((int)caption.X, (int)caption.Y);
+        PumpMessages(mainWindow, 450);
+        ReportReal("划入标题栏");
+
+        // 再划回内容区
+        var content = mainWindow.PointToScreen(new System.Windows.Point(760, 420));
+        SetCursorPos((int)content.X, (int)content.Y);
+        PumpMessages(mainWindow, 450);
+        ReportReal("划回内容区");
+
+        // 场景四：模糊强度 = 0 时才有此 bug（用户 2026-10-26 补充条件）。
+        // 这属于屏幕合成层的脏区问题，Opacity 采样看不出来，必须截屏取色：
+        // 同一张截图里「刚悬停过的项」与「从未悬停的同类项」像素应完全一致。
+        double originalBlur = themeService.GlobalBlurRadius;
+        string shotDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "sortus-hover");
+        System.IO.Directory.CreateDirectory(shotDir);
+
+        void ProbeGhost(string tag, double blurRadius)
+        {
+            themeService.SetBlurStrength(blurRadius);
+            PumpMessages(mainWindow, 400);
+
+            // 覆盖全部按钮：导航 + 最近立项 + 内容区（残留可能出现在列表行 / 打开按钮上）
+            var all = Descendants(mainWindow)
+                .OfType<Controls.SOrButton>()
+                .Where(b => b.IsVisible)
+                .ToList();
+            var away = mainWindow.PointToScreen(new System.Windows.Point(780, 430));
+
+            // 清场：指针停在内容区空白处，等所有覆盖层归零
+            SetCursorPos((int)away.X, (int)away.Y);
+            PumpMessages(mainWindow, 800);
+
+            // 高速扫过所有按钮（用户场景：鼠标划得太快）
+            for (int pass = 0; pass < 6; pass++)
+            {
+                foreach (var button in all)
+                {
+                    var center = button.PointToScreen(new System.Windows.Point(
+                        button.ActualWidth / 2, button.ActualHeight / 2));
+                    SetCursorPos((int)center.X, (int)center.Y);
+                    PumpMessages(mainWindow, 4);
+                }
+            }
+
+            // 移开后连续采样 1.6s：残留的特征是「指针已离开，悬停层还活着」。
+            // 正常淡出 ≤160ms，超过 600ms 必属异常。
+            SetCursorPos((int)away.X, (int)away.Y);
+            var run = new int[all.Count];
+            var maxRun = new int[all.Count];
+            const int step = 40;
+            for (int frame = 0; frame < 40; frame++)
+            {
+                PumpMessages(mainWindow, step);
+                for (int i = 0; i < all.Count; i++)
+                {
+                    double opacity = FindDescendant<System.Windows.Controls.Border>(all[i], "PART_Hover")?.Opacity ?? 0;
+                    if (opacity > 0.05)
+                    {
+                        run[i] += step;
+                        maxRun[i] = Math.Max(maxRun[i], run[i]);
+                    }
+                    else
+                    {
+                        run[i] = 0;
+                    }
+                }
+            }
+
+            int stuck = 0;
+            for (int i = 0; i < all.Count; i++)
+            {
+                if (maxRun[i] > 600)
+                {
+                    stuck++;
+                    Console.WriteLine($"[HOVER] {tag} 残留：按钮「{all[i].Content}」悬停层在指针离开后仍存活 {maxRun[i]}ms");
+                }
+            }
+
+            Console.WriteLine(stuck == 0
+                ? $"[HOVER] {tag} PASS: {all.Count} 个按钮的悬停层都在 600ms 内归零"
+                : $"[HOVER] {tag} FAIL: {stuck}/{all.Count} 个按钮残留");
+
+            // 留一张侧边栏 1:1 裁剪图供目视
+            if (navButtons.Count > 0)
+            {
+                var origin = navButtons[0].PointToScreen(new System.Windows.Point(0, 0));
+                string path = System.IO.Path.Combine(shotDir, $"hover-blur{blurRadius:0}-sidebar.png");
+                CaptureScreen(path);
+                var shot = LoadPng(path);
+                int cropX = Math.Max(0, (int)origin.X - 20);
+                int cropY = Math.Max(0, (int)origin.Y - 90);
+                int cropW = Math.Min(shot.PixelWidth - cropX, (int)navButtons[0].ActualWidth + 40);
+                int cropH = Math.Min(shot.PixelHeight - cropY, 380);
+                var cropped = new System.Windows.Media.Imaging.CroppedBitmap(
+                    shot, new System.Windows.Int32Rect(cropX, cropY, cropW, cropH));
+                var cropEncoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                cropEncoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(cropped));
+                using var cropStream = System.IO.File.Create(path.Replace(".png", "-crop.png"));
+                cropEncoder.Save(cropStream);
+            }
+        }
+
+        mainWindow.Activate();
+        PumpMessages(mainWindow, 300);
+        ProbeGhost("模糊=0", 0);
+        ProbeGhost("模糊=12", 12);
+
+        // 还原用户的模糊设置（SetBlurStrength 会落盘）
+        themeService.SetBlurStrength(originalBlur);
+
+        mainWindow.Close();
+        Environment.Exit(0);
+    }
+
+    /// <summary>抽一段时间的 Dispatcher 消息：真实鼠标移动要靠窗口处理输入才会更新 IsMouseOver。</summary>
+    private static void PumpMessages(Window window, int milliseconds)
+    {
+        long deadline = Environment.TickCount64 + milliseconds;
+        while (Environment.TickCount64 < deadline)
+        {
+            window.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Background);
+            System.Threading.Thread.Sleep(1);
+        }
     }
 
     /// 输入链路自测：空输入框 → 模拟点击 → 模拟按键 → 检查文本是否真的进去。

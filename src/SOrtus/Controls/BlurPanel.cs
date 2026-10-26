@@ -121,12 +121,37 @@ public static class BlurPanel
     private static void OnBlurRadiusChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var rect = GetBlurRect(d);
-        if (rect?.Effect is not BlurEffect effect)
+        if (rect is null)
         {
             return;
         }
 
-        effect.Radius = (double)e.NewValue;
+        var radius = (double)e.NewValue;
+
+        // 半径 0（无模糊）= 纯静态色块：摘掉 Effect 与 BitmapCache。
+        // 没有可模糊的内容，缓存毫无收益，却会让这块区域变成一张不再重绘的位图，
+        // 内容变化时留下脏区——用户反馈「模糊强度 0 时，鼠标划过的悬停底色残留在背景里」。
+        if (radius <= 0.01)
+        {
+            rect.Effect = null;
+            rect.CacheMode = null;
+            return;
+        }
+
+        if (rect.Effect is BlurEffect blur)
+        {
+            blur.Radius = radius;
+        }
+        else
+        {
+            // 之前是 0（无效果），重新挂回模糊效果
+            rect.Effect = new BlurEffect
+            {
+                Radius = radius,
+                KernelType = KernelType.Gaussian,
+                RenderingBias = RenderingBias.Performance,
+            };
+        }
 
         // VD-109：拖动滑块时半径每变 1px 就会走到这里，界面上有 4~6 张磨砂卡，
         // 而模糊是 GPU 上最贵的效果之一。旧实现每次都 new BitmapCache() 强制重建，
@@ -175,7 +200,8 @@ public static class BlurPanel
         {
             foreach (var weak in _allBlurRects)
             {
-                if (weak.TryGetTarget(out var rect) && rect.CacheMode is null)
+                // 同上：半径 0（无 Effect）的纯色块不挂缓存
+                if (weak.TryGetTarget(out var rect) && rect.CacheMode is null && rect.Effect is not null)
                 {
                     rect.CacheMode = new BitmapCache();
                 }
@@ -201,7 +227,8 @@ public static class BlurPanel
 
         foreach (var rect in _liveRects)
         {
-            if (rect.CacheMode is null)
+            // 只有真的挂着模糊效果才恢复缓存：半径 0 时不挂（那是纯色块，缓存只会制造脏区）
+            if (rect.CacheMode is null && rect.Effect is not null)
             {
                 rect.CacheMode = new BitmapCache();
             }
@@ -315,17 +342,26 @@ public static class BlurPanel
             Margin = new Thickness(0),
         };
 
+        var blurRadius = GetBlurRadius(fe);
+
+        // 半径 0 = 没开模糊：不挂 Effect、也不挂 BitmapCache。
+        // 「效果 + 位图缓存」在半径 0 时会退化成一张不再重绘的静态位图，内容变化留下脏区
+        // （用户反馈：模糊强度 0 时鼠标划过的悬停底色残留在背景里）。
+        var hasBlur = blurRadius > 0.01;
+
         var blurRect = new Rectangle
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch,
-            CacheMode = new BitmapCache(),
-            Effect = new BlurEffect
-            {
-                Radius = GetBlurRadius(fe),
-                KernelType = KernelType.Gaussian,
-                RenderingBias = RenderingBias.Performance,
-            },
+            CacheMode = hasBlur ? new BitmapCache() : null,
+            Effect = hasBlur
+                ? new BlurEffect
+                {
+                    Radius = blurRadius,
+                    KernelType = KernelType.Gaussian,
+                    RenderingBias = RenderingBias.Performance,
+                }
+                : null,
             Fill = ResolveBackdropFill(fe),
         };
 

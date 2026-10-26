@@ -685,6 +685,21 @@ public class ViewModelTests
     }
 
     [Fact]
+    public void AppSettings_NullTheme_FallsBackToDefault()
+    {
+        // 回归：settings.json 里出现 "Theme": null 时，启动会走 ApplyTheme(null) →
+        // 拼出 resources/themes/.xaml → IOException，整个应用起不来（与 Culture: null 同类）。
+        var settings = new SOrtus.Services.AppSettings { Theme = null! };
+        Assert.Equal("Light", settings.Theme);
+
+        settings.Theme = string.Empty;
+        Assert.Equal("Light", settings.Theme);
+
+        settings.Theme = "Dark";
+        Assert.Equal("Dark", settings.Theme);
+    }
+
+    [Fact]
     public void FocusRingSettings_TogglesWithoutApplicationInstance()
     {
         // 单测进程没有 Application.Current：开关仍要能记录状态且不抛

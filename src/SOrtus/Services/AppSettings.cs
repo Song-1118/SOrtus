@@ -9,7 +9,22 @@ namespace SOrtus.Services;
 /// </summary>
 internal sealed class AppSettings
 {
-    public string Theme { get; set; } = "Light";
+    /// <summary>默认主题（应用只内置浅色 / 深色两套）。</summary>
+    public const string DefaultTheme = "Light";
+
+    private string _theme = DefaultTheme;
+
+    /// <summary>
+    /// 主题名。写入端必须兜底：任何一次把空值落盘（历史 bug、手改文件、JSON 里写成 null），
+    /// 下次启动 <c>ApplyTheme(null)</c> 会去找 <c>resources/themes/.xaml</c>，
+    /// 直接抛 <see cref="System.IO.IOException"/>——整个应用起不来。
+    /// 与 <see cref="Culture"/> 的 null 兜底同一类问题，这里同样在属性层收口。
+    /// </summary>
+    public string Theme
+    {
+        get => _theme;
+        set => _theme = string.IsNullOrWhiteSpace(value) ? DefaultTheme : value;
+    }
 
     /// <summary>
     /// 用户自定义的模糊强度（null = 未自定义，取 Sizes.xaml 中 BlurRadiusNormal 档位默认值）。
@@ -64,9 +79,10 @@ internal sealed class AppSettings
             var json = File.ReadAllText(SettingsPath);
             var settings = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
 
-            // 自我修复：历史版本可能把 Culture 写成 null（语言下拉回写 null 所致）。
-            // 内存里已兜底成默认语言，这里顺手把文件改回正常值，避免每次启动都读到脏数据。
-            if (json.Contains("\"Culture\": null", StringComparison.OrdinalIgnoreCase))
+            // 自我修复：历史版本可能把 Culture / Theme 写成 null（语言与主题下拉回写 null 所致）。
+            // 内存里已兜底成默认值，这里顺手把文件改回正常值，避免每次启动都读到脏数据。
+            if (json.Contains("\"Culture\": null", StringComparison.OrdinalIgnoreCase)
+                || json.Contains("\"Theme\": null", StringComparison.OrdinalIgnoreCase))
             {
                 settings.Save();
             }

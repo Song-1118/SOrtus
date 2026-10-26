@@ -82,6 +82,9 @@ internal sealed class ThemeService : IThemeService
 
     public void SetTheme(string themeName)
     {
+        // 与 AppSettings.Theme 的兜底一致：空值一律回默认主题，避免 null 落盘 / 拼出空 URI
+        themeName = string.IsNullOrWhiteSpace(themeName) ? AppSettings.DefaultTheme : themeName;
+
         if (string.Equals(_currentTheme, themeName, StringComparison.OrdinalIgnoreCase))
         {
             return;
@@ -149,6 +152,12 @@ internal sealed class ThemeService : IThemeService
         if (app is null)
         {
             return;
+        }
+
+        // 兜底：主题名为空会拼出 resources/themes/.xaml，加载即抛 IOException（启动崩溃）
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            name = AppSettings.DefaultTheme;
         }
 
         var themeDict = app.Resources.MergedDictionaries

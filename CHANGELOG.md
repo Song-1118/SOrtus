@@ -138,6 +138,14 @@
 - **文档预览滚轮灵敏度**：新增 `MouseWheelScroll` 附加属性，文档阅读区每格滚轮 6 行（系统默认 3），按正文行高 24px 换算像素并接管事件，避免系统再滚一次造成双倍位移。
 - **全局非线性缓动**：补齐 8 处仍为线性插值的动画——类型卡淡出、tab 指示条收起、开关轨道色、占位符淡入淡出、加载指示器退出、进度条 400ms 填充（改 Exit 缓动）。规范令牌 `Std / Enter / Exit / Back` 已在 `Animations.xaml` 统一提供；仅加载指示的匀速旋转与 0ms 的焦点环失焦保持原语义。
 
+### 用户反馈批次六（筛选器「全部」改为真实选项，默认选中）
+
+- **改法（用户指定）**：不再把 `null` 本身当下拉项，也不再用 Placeholder 表示「无选中」。新增 `FilterOption` 包装（`Value` 为 null 即「全部」），`TypeOptions` / `StatusOptions` 的第一项就是「全部类型 / 全部状态」，构造时默认选中——「全部」与「编程开发 / 剪辑 / 待办」走**同一条选中链路**，从根上消除「选了非全部就选不回去」。
+- `HasFilter` 改判 `FilterOption.Value is not null`；`ClearFilters` 复位到第一项（不再是 null）；查询层仍收到 `null`（= 不筛选），服务层与 SQL 条件零改动。
+- 新增 `TypeFilterItemTemplate` / `StatusFilterItemTemplate`（绑定 `FilterOption.Value`，复用原转换器，null → 全部类型 / 全部状态）；详情页编辑状态下拉继续用原 `StatusItemTemplate`，两者互不影响。
+- **实测证据**：`--combo-test` 覆盖「默认选中全部 → 切到编程开发 → 真实点击点回第一行」全链路——默认 `SelectedItem=All`、框内文字「全部类型」、占位符 `Collapsed`；切到编程开发后文字「编程开发」、占位符仍 `Collapsed`（无重叠）；点回第一行 `SelectedItem=All` → PASS。
+- 单测新增 `List_Filters_DefaultToAllOption_AndAllIsSelectableBack`：默认 All → 查询层收到 null；选 Clip → 收到 Clip；选回 All → 回到 null。
+
 ### 用户反馈批次五（下拉框选中后占位符与选中内容重叠）
 
 - **根因（实测复现）**：`--combo-test` 验证——选中枚举项（Programming）后，模板里 `SelectedItem==null` 的 `DataTrigger` **不退出**，`PART_Placeholder`（占位符「全部类型」）保持 `Visible`，与 `PART_ContentSite` 的选中内容**同时显示在框里**，正是用户报的「选择后选择的内容和原始内容全部留在框里造成重叠」。此前几轮修的都是浮层位置（间距 12px）与打开期间隐藏，未命中这个真因。

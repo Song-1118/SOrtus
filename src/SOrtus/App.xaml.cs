@@ -424,23 +424,37 @@ public partial class App : Application
     /// ComboBox 选中态实测（VD-128）：选中枚举项后，占位符必须消失、只显示选中内容。
     /// 用户报「选择后选择的内容和原始内容全部留在框里造成重叠」——即占位符
     /// （全部类型）在选中后没有隐藏，与新选中项叠在一起。
+    /// <para>
+    /// 2026-10-25 起「全部类型」改为真实选项（FilterOption，Value=null）且默认选中：
+    /// 验证默认态显示「全部类型」、切到编程开发只显示编程开发、再点回第一项仍能选中「全部类型」。
+    /// </para>
     /// </summary>
     private static void RunComboTest()
     {
+        // 必须在任何输出前切编码：中途切会让已写入的半行按新编码解码成乱码
+        Console.OutputEncoding = System.Text.Encoding.UTF8;
+
+        // 下拉项文字走转换器 → Application 资源里的字符串字典。--combo-test 在 OnStartup
+        // 里提前返回，正常启动路径的本地化初始化没跑过，这里补一次；否则转换器查不到键
+        // 会回落到 ToString()（显示 "Programming" 而不是「编程开发」）。
+        new LocalizationService().Initialize();
+
+        // 与列表页一致：「全部类型」是真实第一项（Value=null），默认选中
+        var options = new List<FilterOption>
+        {
+            new(null),
+            new(ProjectType.Programming),
+            new(ProjectType.Clip),
+        };
         var combo = new Controls.SOrComboBox
         {
             Width = 200,
             Height = 36,
-            ItemsSource = new System.Collections.Generic.List<SOrtus.Core.Models.ProjectType?>
-            {
-                null,
-                SOrtus.Core.Models.ProjectType.Programming,
-                SOrtus.Core.Models.ProjectType.Clip,
-            },
+            ItemsSource = options,
+            SelectedItem = options[0],
         };
-        // 与列表页一致：ItemTemplate 用转换器取显示文字，Placeholder 是「全部类型」
-        combo.ItemTemplate = (System.Windows.DataTemplate)System.Windows.Application.Current.FindResource("TypeItemTemplate");
-        combo.Placeholder = "全部类型";
+        // 与列表页一致：ItemTemplate 绑定 FilterOption.Value，经转换器取显示文字
+        combo.ItemTemplate = (System.Windows.DataTemplate)System.Windows.Application.Current.FindResource("TypeFilterItemTemplate");
 
         var window = new Window
         {
@@ -459,10 +473,11 @@ public partial class App : Application
             var placeholder = combo.Template?.FindName("PART_Placeholder", combo) as System.Windows.FrameworkElement;
             var contentSite = combo.Template?.FindName("PART_ContentSite", combo) as System.Windows.Controls.ContentPresenter;
 
-            Console.WriteLine($"[COMBO-TEST] 初始(未选中): SelectedItem={(combo.SelectedItem?.ToString() ?? "null")} " +
-                $"占位符可见={placeholder?.Visibility} 选中内容可见={contentSite?.Visibility}");
+            Console.WriteLine($"[COMBO-TEST] 初始(默认选中全部): SelectedItem={ComboFmt(combo.SelectedItem)} " +
+                $"占位符可见={placeholder?.Visibility}（有选中项应为 Collapsed） 选中内容可见={contentSite?.Visibility} " +
+                $"选中内容文字='{ContentText(contentSite)}'（应为 全部类型）");
 
-            combo.SelectedItem = SOrtus.Core.Models.ProjectType.Programming;
+            combo.SelectedItem = options[1]; // 编程开发
             window.UpdateLayout();
 
             // 排除时序：等 Dispatcher 完全空闲后再读（Trigger 绑定理论上同步，
@@ -476,17 +491,137 @@ public partial class App : Application
                 $"选中内容Content={(contentSite?.Content?.ToString() ?? "null")}");
 
             // 选中项文字内容（经 ItemTemplate 渲染后取文本）
-            if (contentSite is not null)
-            {
-                var tb = FindDescendant<System.Windows.Controls.TextBlock>(contentSite, null);
-                Console.WriteLine($"[COMBO-TEST] 选中内容文字='{(tb is null ? "null" : tb.Text)}'");
-            }
+            Console.WriteLine($"[COMBO-TEST] 选中内容文字='{ContentText(contentSite)}'（应为 编程开发）");
+
+            // 选中非「全部」后能否点回「全部类型」（用户 2026-10-25 反馈：
+            // 「一旦选了非全部，就选不回去了」）。现在「全部类型」是真实第一项，
+            // 必须用真实点击链路验证选回，不能靠赋值推断。
+            ReproSelectAllBack(combo, window);
 
             window.Close();
         };
 
         window.ShowDialog();
         Environment.Exit(0);
+    }
+
+    /// <summary>
+    /// 验证「选中非全部项后能否点回全部」：用户报「一旦选了非全部，就选不回去了」。
+    /// 旧实现里「全部类型」是 ItemsSource 的 null 项，WPF ComboBox 无法像普通项一样
+    /// 被点击选中；现在它是真实第一项（FilterOption，Value=null）。
+    /// 先点第三行（Clip，与当前选中项不同）做链路有效性对照，再点第一行（全部）
+    /// 验证选回；两组对照才能区分「点击链路无效」与「全部项点不回」。
+    /// </summary>
+    private static void ReproSelectAllBack(Controls.SOrComboBox combo, Window window)
+    {
+        var options = (List<FilterOption>)combo.ItemsSource;
+        combo.SelectedItem = options[1]; // 编程开发
+        window.UpdateLayout();
+
+        combo.IsDropDownOpen = true;
+        window.UpdateLayout();
+        window.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+        window.UpdateLayout();
+
+        var popup = combo.Template?.FindName("PART_Popup", combo) as System.Windows.Controls.Primitives.Popup;
+        if (popup?.Child is not System.Windows.DependencyObject popupRoot)
+        {
+            Console.WriteLine("[COMBO-选回全部] FAIL: 浮层未渲染（PART_Popup.Child 为空）");
+            return;
+        }
+
+        var containers = FindDescendants<System.Windows.Controls.ComboBoxItem>(popupRoot);
+        Console.WriteLine($"[COMBO-选回全部] 浮层内选项容器数={containers.Count}");
+        for (int i = 0; i < containers.Count; i++)
+        {
+            var c = containers[i];
+            Console.WriteLine($"[COMBO-选回全部]   [{i}] Content={(c.Content?.ToString() ?? "null")} 可见={c.IsVisible} " +
+                $"IsSelected={c.IsSelected} 命中测试={c.IsHitTestVisible} 启用={c.IsEnabled} " +
+                $"尺寸={c.ActualWidth:0.##}x{c.ActualHeight:0.##}");
+        }
+
+        if (containers.Count < 3)
+        {
+            Console.WriteLine("[COMBO-选回全部] FAIL: 选项容器不足 3 个，无法完成对照");
+            return;
+        }
+
+        // 对照组：先点第三行（Clip，与当前选中项不同），证明合成点击链路确实能改变选中态。
+        // 若这步之后 SelectedItem 不是 Clip，说明合成点击本身无效，后面的结论不成立。
+        ClickContainer(containers[2]);
+        window.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+        var afterOther = combo.SelectedItem;
+        Console.WriteLine($"[COMBO-选回全部] 点击第三行(Clip)后 SelectedItem={ComboFmt(afterOther)}" +
+            "（链路有效性对照，应为 Clip）");
+        Console.WriteLine(afterOther is FilterOption { Value: ProjectType.Clip }
+            ? "[COMBO-选回全部] 对照通过：合成点击可改变选中态"
+            : "[COMBO-选回全部] 对照失败：合成点击无法改变选中态，后续结论无效");
+
+        // 正式复现：点第一行（「全部类型」真实项）。点击后浮层可能被原生逻辑收起，
+        // 重新打开并重新取容器，保证点的就是当前浮层里的第一行。
+        if (!combo.IsDropDownOpen)
+        {
+            combo.IsDropDownOpen = true;
+            window.UpdateLayout();
+            window.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+            containers = FindDescendants<System.Windows.Controls.ComboBoxItem>(popupRoot);
+        }
+
+        ClickContainer(containers[0]);
+        window.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+        var back = combo.SelectedItem;
+        Console.WriteLine($"[COMBO-选回全部] 点击第一行(全部类型)后 SelectedItem={ComboFmt(back)}");
+        Console.WriteLine(back is FilterOption { IsAll: true }
+            ? "[COMBO-选回全部] PASS: 可以选回全部"
+            : $"[COMBO-选回全部] FAIL: 选不回全部（仍是 {back}）");
+
+        var placeholder = combo.Template?.FindName("PART_Placeholder", combo) as System.Windows.FrameworkElement;
+        Console.WriteLine($"[COMBO-选回全部] 最终 占位符可见={placeholder?.Visibility}（有选中项应为 Collapsed）");
+
+        combo.IsDropDownOpen = false;
+    }
+
+    private static string ComboFmt(object? v) => v?.ToString() ?? "null";
+
+    /// <summary>取内容宿主里实际渲染出来的文字（经 ItemTemplate / 转换器后的结果）。</summary>
+    private static string ContentText(System.Windows.Controls.ContentPresenter? site)
+        => site is null ? "?" : FindDescendant<System.Windows.Controls.TextBlock>(site, null)?.Text ?? "?";
+
+    /// <summary>对选项容器派发合成鼠标点击（Down + Up），模拟用户点一行下拉选项。</summary>
+    private static void ClickContainer(System.Windows.Controls.ComboBoxItem item)
+    {
+        var device = System.Windows.Input.Mouse.PrimaryDevice;
+        var down = new System.Windows.Input.MouseButtonEventArgs(device, 0, System.Windows.Input.MouseButton.Left)
+        {
+            RoutedEvent = System.Windows.UIElement.MouseLeftButtonDownEvent,
+            Source = item,
+        };
+        item.RaiseEvent(down);
+        var up = new System.Windows.Input.MouseButtonEventArgs(device, 0, System.Windows.Input.MouseButton.Left)
+        {
+            RoutedEvent = System.Windows.UIElement.MouseLeftButtonUpEvent,
+            Source = item,
+        };
+        item.RaiseEvent(up);
+    }
+
+    /// <summary>收集可视树内所有指定类型的后代元素（含 Popup 子树）。</summary>
+    private static List<T> FindDescendants<T>(System.Windows.DependencyObject root)
+        where T : System.Windows.DependencyObject
+    {
+        var result = new List<T>();
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is T match)
+            {
+                result.Add(match);
+            }
+
+            result.AddRange(FindDescendants<T>(child));
+        }
+
+        return result;
     }
 
     /// 输入链路自测：空输入框 → 模拟点击 → 模拟按键 → 检查文本是否真的进去。
@@ -654,13 +789,17 @@ public partial class App : Application
         return placeholder?.Opacity ?? -1;
     }
 
-    private static T? FindDescendant<T>(System.Windows.DependencyObject root, string name)
+    /// <summary>
+    /// 按名查找后代；<paramref name="name"/> 传 null / 空串 时不过滤名字，返回第一个匹配类型的元素
+    /// （WPF 元素的 Name 缺省是空串而非 null，用 <c>Name == null</c> 匹配会永远找不到）。
+    /// </summary>
+    private static T? FindDescendant<T>(System.Windows.DependencyObject root, string? name)
         where T : System.Windows.FrameworkElement
     {
         for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(root); i++)
         {
             var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
-            if (child is T match && match.Name == name)
+            if (child is T match && (string.IsNullOrEmpty(name) || match.Name == name))
             {
                 return match;
             }

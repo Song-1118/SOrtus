@@ -43,12 +43,22 @@
         <Setter Property="local:Motion.PageEnter" Value="Auto" />
     </Style>
 
-    <!-- 下拉框通用：可空枚举 → 本地化文本 -->
+    <!-- 下拉框通用：可空枚举 → 本地化文本（详情页编辑状态等场景，选项是枚举本身） -->
     <DataTemplate x:Key="TypeItemTemplate">
         <TextBlock Text="{Binding Converter={StaticResource ProjectTypeDisplayConverter}}" />
     </DataTemplate>
     <DataTemplate x:Key="StatusItemTemplate">
         <TextBlock Text="{Binding Converter={StaticResource ProjectStatusDisplayConverter}}" />
+    </DataTemplate>
+
+    <!-- 列表页筛选项：「全部」是真实一项（FilterOption，Value=null），默认选中。
+         绑定包装项的 Value，仍走上面两个转换器（null → List_TypeAll / List_StatusAll）。
+         不再用 null 当选中态 + Placeholder 占位——那样选过其它项后选不回「全部」。 -->
+    <DataTemplate x:Key="TypeFilterItemTemplate">
+        <TextBlock Text="{Binding Value, Converter={StaticResource ProjectTypeDisplayConverter}}" />
+    </DataTemplate>
+    <DataTemplate x:Key="StatusFilterItemTemplate">
+        <TextBlock Text="{Binding Value, Converter={StaticResource ProjectStatusDisplayConverter}}" />
     </DataTemplate>
 
     <!-- ============================ 立项列表 ============================ -->
@@ -97,15 +107,15 @@
                                           IsClearable="True"
                                           Placeholder="{DynamicResource List_SearchPlaceholder}"
                                           Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+                        <!-- 「全部类型 / 全部状态」是选项集合里的真实第一项，默认选中，
+                             因此不再需要 Placeholder（无选中态不存在） -->
                         <local:SOrComboBox Grid.Column="1" ItemsSource="{Binding TypeOptions}"
                                           SelectedItem="{Binding FilterType}"
-                                          ItemTemplate="{StaticResource TypeItemTemplate}"
-                                          Placeholder="{DynamicResource List_TypeAll}"
+                                          ItemTemplate="{StaticResource TypeFilterItemTemplate}"
                                           Margin="10,0,0,0" MinWidth="130" />
                         <local:SOrComboBox Grid.Column="2" ItemsSource="{Binding StatusOptions}"
                                           SelectedItem="{Binding FilterStatus}"
-                                          ItemTemplate="{StaticResource StatusItemTemplate}"
-                                          Placeholder="{DynamicResource List_StatusAll}"
+                                          ItemTemplate="{StaticResource StatusFilterItemTemplate}"
                                           Margin="10,0,0,0" MinWidth="130" />
                     </Grid>
 

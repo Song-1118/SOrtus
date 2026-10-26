@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Linq;
 using SOrtus.Core.Models;
 using SOrtus.Navigation;
 using SOrtus.Core.Services;
@@ -42,11 +43,21 @@ public class ViewModelTests
 
         public int SaveCalls { get; private set; }
 
+        /// <summary>最近一次查询收到的类型筛选（null = 不筛选）。</summary>
+        public ProjectType? LastType { get; private set; }
+
+        /// <summary>最近一次查询收到的状态筛选（null = 不筛选）。</summary>
+        public ProjectStatus? LastStatus { get; private set; }
+
         public Task<IReadOnlyList<Project>> GetAllAsync() =>
             Task.FromResult<IReadOnlyList<Project>>(Items.ToList());
 
-        public Task<IReadOnlyList<Project>> QueryAsync(ProjectType? type, ProjectStatus? status, string? keyword) =>
-            Task.FromResult<IReadOnlyList<Project>>(Items.ToList());
+        public Task<IReadOnlyList<Project>> QueryAsync(ProjectType? type, ProjectStatus? status, string? keyword)
+        {
+            LastType = type;
+            LastStatus = status;
+            return Task.FromResult<IReadOnlyList<Project>>(Items.ToList());
+        }
 
         public Task<Project?> GetByIdAsync(int id) =>
             Task.FromResult(Items.FirstOrDefault(p => p.Id == id));
@@ -398,17 +409,46 @@ public class ViewModelTests
         await vm.LoadAsync();
 
         vm.SearchText = "abc";
-        vm.FilterType = ProjectType.Programming;
-        vm.FilterStatus = ProjectStatus.Completed;
+        vm.FilterType = vm.TypeOptions.Single(o => o.Value is ProjectType.Programming);
+        vm.FilterStatus = vm.StatusOptions.Single(o => o.Value is ProjectStatus.Completed);
         Assert.True(vm.HasFilter);
 
         vm.ClearFiltersCommand.Execute(null);
 
         // 清空是同步的（先复位条件再统一刷新一次），因此无需等待 LoadAsync
         Assert.Equal(string.Empty, vm.SearchText);
-        Assert.Null(vm.FilterType);
-        Assert.Null(vm.FilterStatus);
+        // 复位到「全部」真实项（不再是 null——null 项在 ComboBox 里选不回来）
+        Assert.True(vm.FilterType.IsAll);
+        Assert.True(vm.FilterStatus.IsAll);
         Assert.False(vm.HasFilter);
+    }
+
+    [Fact]
+    public async Task List_Filters_DefaultToAllOption_AndAllIsSelectableBack()
+    {
+        var service = new StubProjectService();
+        var vm = new ProjectListViewModel(service, new StubLocalization(), _ => { }, () => { });
+        await vm.LoadAsync();
+
+        // 默认选中「全部」真实项，不是「无选中」；查询层收到 null（= 不筛选）
+        Assert.NotNull(vm.FilterType);
+        Assert.True(vm.FilterType.IsAll);
+        Assert.NotNull(vm.FilterStatus);
+        Assert.True(vm.FilterStatus.IsAll);
+        Assert.False(vm.HasFilter);
+        Assert.Null(service.LastType);
+        Assert.Null(service.LastStatus);
+
+        // 「全部」与普通项同链路：选得出（值真的下推到查询层），也选得回（用户 2026-10-25 反馈的根因）
+        vm.FilterType = vm.TypeOptions.Single(o => o.Value is ProjectType.Clip);
+        await vm.LoadAsync();
+        Assert.True(vm.HasFilter);
+        Assert.Equal(ProjectType.Clip, service.LastType);
+
+        vm.FilterType = vm.TypeOptions[0];
+        await vm.LoadAsync();
+        Assert.False(vm.HasFilter);
+        Assert.Null(service.LastType);
     }
 
     [Fact]

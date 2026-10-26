@@ -21,8 +21,13 @@ internal sealed class ProjectListViewModel : ViewModelBase
     private readonly Action _requestNew;
 
     private string _searchText = string.Empty;
-    private ProjectType? _filterType;
-    private ProjectStatus? _filterStatus;
+
+    /// <summary>
+    /// 当前筛选项（「全部」也是真实一项，默认选中它，见 <see cref="FilterOption"/>）。
+    /// 构造时赋值为选项集合第一项，不会是 null。
+    /// </summary>
+    private FilterOption _filterType = null!;
+    private FilterOption _filterStatus = null!;
     private Project? _selectedProject;
     private int _totalCount;
     private bool _totalDirty = true;
@@ -34,8 +39,11 @@ internal sealed class ProjectListViewModel : ViewModelBase
 
     public ObservableCollection<Project> Projects { get; } = new();
 
-    public ObservableCollection<ProjectType?> TypeOptions { get; }
-    public ObservableCollection<ProjectStatus?> StatusOptions { get; }
+    /// <summary>类型筛选选项：第一项是「全部类型」（真实项，Value 为 null），默认选中。</summary>
+    public ObservableCollection<FilterOption> TypeOptions { get; }
+
+    /// <summary>状态筛选选项：第一项是「全部状态」（真实项，Value 为 null），默认选中。</summary>
+    public ObservableCollection<FilterOption> StatusOptions { get; }
 
     public ICommand NewCommand { get; }
     public ICommand OpenDetailCommand { get; }
@@ -56,9 +64,9 @@ internal sealed class ProjectListViewModel : ViewModelBase
     /// <summary>是否处于空列表（无任何立项）。</summary>
     public bool IsEmpty => Projects.Count == 0 && TotalCount == 0;
 
-    /// <summary>是否应用了搜索 / 筛选（区分两种空状态文案）。</summary>
+    /// <summary>是否应用了搜索 / 筛选（区分两种空状态文案）。「全部」项不算筛选。</summary>
     public bool HasFilter =>
-        !string.IsNullOrWhiteSpace(_searchText) || _filterType.HasValue || _filterStatus.HasValue;
+        !string.IsNullOrWhiteSpace(_searchText) || _filterType.Value is not null || _filterStatus.Value is not null;
 
     /// <summary>有数据但被筛选过滤为空（区别于「完全没有任何立项」）。</summary>
     public bool HasNoResults => Projects.Count == 0 && TotalCount > 0;
@@ -79,8 +87,8 @@ internal sealed class ProjectListViewModel : ViewModelBase
 
         // 直接改字段再统一刷新一次，避免三个 setter 各触发一次查询
         _searchText = string.Empty;
-        _filterType = null;
-        _filterStatus = null;
+        _filterType = TypeOptions[0];
+        _filterStatus = StatusOptions[0];
 
         OnPropertyChanged(nameof(SearchText));
         OnPropertyChanged(nameof(FilterType));
@@ -111,11 +119,15 @@ internal sealed class ProjectListViewModel : ViewModelBase
     /// <summary>清空搜索词（搜索框内的 ×）。</summary>
     public ICommand ClearSearchCommand { get; }
 
-    public ProjectType? FilterType
+    /// <summary>类型筛选（「全部类型」项 = 不筛选）。与下拉框双向绑定，默认选中第一项。</summary>
+    public FilterOption FilterType
     {
         get => _filterType;
         set
         {
+            // 兜底：ComboBox 在 ItemsSource 清空等场景可能回写 null，
+            // 回落「全部」——否则后续 _filterType.Value 直接空引用崩溃
+            value ??= TypeOptions[0];
             if (SetProperty(ref _filterType, value))
             {
                 OnPropertyChanged(nameof(HasFilter));
@@ -124,11 +136,14 @@ internal sealed class ProjectListViewModel : ViewModelBase
         }
     }
 
-    public ProjectStatus? FilterStatus
+    /// <summary>状态筛选（「全部状态」项 = 不筛选）。与下拉框双向绑定，默认选中第一项。</summary>
+    public FilterOption FilterStatus
     {
         get => _filterStatus;
         set
         {
+            // 同上：null 回写统一回落「全部」
+            value ??= StatusOptions[0];
             if (SetProperty(ref _filterStatus, value))
             {
                 OnPropertyChanged(nameof(HasFilter));
@@ -156,16 +171,25 @@ internal sealed class ProjectListViewModel : ViewModelBase
         _openDetail = openDetail;
         _requestNew = requestNew;
 
-        TypeOptions = new ObservableCollection<ProjectType?> { null, ProjectType.Programming, ProjectType.Clip, ProjectType.Todo };
-        StatusOptions = new ObservableCollection<ProjectStatus?>
+        // 「全部」也是真实一项：默认选中第一项，不再用 null 当「无选中」占位
+        TypeOptions = new ObservableCollection<FilterOption>
         {
-            null,
-            ProjectStatus.Planning,
-            ProjectStatus.Active,
-            ProjectStatus.OnHold,
-            ProjectStatus.Completed,
-            ProjectStatus.Archived,
+            new(null),
+            new(ProjectType.Programming),
+            new(ProjectType.Clip),
+            new(ProjectType.Todo),
         };
+        StatusOptions = new ObservableCollection<FilterOption>
+        {
+            new(null),
+            new(ProjectStatus.Planning),
+            new(ProjectStatus.Active),
+            new(ProjectStatus.OnHold),
+            new(ProjectStatus.Completed),
+            new(ProjectStatus.Archived),
+        };
+        _filterType = TypeOptions[0];
+        _filterStatus = StatusOptions[0];
 
         NewCommand = new RelayCommand(_ => _requestNew());
         OpenDetailCommand = new RelayCommand(o => { if (o is Project p) _openDetail(p); });
@@ -217,7 +241,10 @@ internal sealed class ProjectListViewModel : ViewModelBase
         await RunBusyAsync(async () =>
         {
             var keyword = string.IsNullOrWhiteSpace(_searchText) ? null : _searchText;
-            var items = await _service.QueryAsync(_filterType, _filterStatus, keyword);
+            // 「全部」项的 Value 是 null，直接交给服务层即「不筛选」
+            var typeFilter = _filterType.Value as ProjectType?;
+            var statusFilter = _filterStatus.Value as ProjectStatus?;
+            var items = await _service.QueryAsync(typeFilter, statusFilter, keyword);
 
             // 过期结果直接丢弃：连续输入时后到的旧结果会把新结果盖掉，列表看起来在闪跳
             if (token.IsCancellationRequested || version != _loadVersion)
